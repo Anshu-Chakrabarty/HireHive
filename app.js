@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // ------------------------------------------------------------------
             // 1. GLOBAL CONFIGURATION & TOKEN MANAGEMENT
             // ------------------------------------------------------------------
-            const BASE_URL = "http://localhost:5000/api";
+            const BASE_URL = "https://hirehive-api.onrender.com";
 
             const getToken = () => localStorage.getItem("hirehiveToken");
             const setToken = (token) => localStorage.setItem("hirehiveToken", token);
