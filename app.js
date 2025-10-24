@@ -1,66 +1,115 @@
 document.addEventListener("DOMContentLoaded", () => {
-            // ---- MOBILE MENU TOGGLE LOGIC ---
-            const menuToggle = document.getElementById('menuToggle');
-            const navLinks = document.getElementById('navLinks');
+            // ------------------------------------------------------------------
+            // 1. GLOBAL CONFIGURATION & TOKEN MANAGEMENT
+            // ------------------------------------------------------------------
+            const BASE_URL = "http://localhost:5000/api";
 
-            if (menuToggle && navLinks) {
-                menuToggle.addEventListener('click', () => {
-                    navLinks.classList.toggle('active');
-                });
+            const getToken = () => localStorage.getItem("hirehiveToken");
+            const setToken = (token) => localStorage.setItem("hirehiveToken", token);
+            const removeToken = () => localStorage.removeItem("hirehiveToken");
 
-                // Close menu after clicking a link (important for single-page apps)
-                navLinks.querySelectorAll('a').forEach(link => {
-                    link.addEventListener('click', () => {
-                        if (navLinks.classList.contains('active')) {
-                            navLinks.classList.remove('active');
-                        }
-                    });
-                });
-            }
-            // ---------------------------------
+            // Helper function to simulate current month's job count (Local-only, needs API help for accurate count)
+            const getCurrentMonthJobCount = () => {
+                const currentUser = getLocalUser();
+                if (!currentUser || currentUser.role !== 'employer') return 0;
 
-            // ---- DATABASE INITIALIZATION ----
-            if (!localStorage.getItem("hirehiveDB")) {
-                const db = {
-                    users: [],
-                    jobs: [],
-                    applications: [],
-                    currentUser: null,
-                };
-                localStorage.setItem("hirehiveDB", JSON.stringify(db));
-            }
-
-            // ---- HELPERS ----
-            const getDb = () => JSON.parse(localStorage.getItem("hirehiveDB"));
-            const saveDb = (db) => localStorage.setItem("hirehiveDB", JSON.stringify(db));
-
-            // Helper to simulate current month's job count
-            const getCurrentMonthJobCount = (employerId) => {
+                // --- NOTE: In a real app, this count would be fetched from the API. ---
                 const db = getDb();
                 const startOfMonth = new Date();
                 startOfMonth.setDate(1);
                 startOfMonth.setHours(0, 0, 0, 0);
 
                 return db.jobs.filter(job =>
-                    job.employerId === employerId &&
+                    job.employerId === currentUser.id &&
                     new Date(job.postedDate) >= startOfMonth
                 ).length;
             };
 
+            // --- API Fetch Helper (Handles Authentication) ---
+            async function fetchApi(endpoint, method = 'GET', data = null, isFormData = false) {
+                const token = getToken();
+                const url = `${BASE_URL}/${endpoint}`;
+                const headers = {};
 
-            // ---- SPA ROUTER / VIEW MANAGER ----
-            const homeView = document.getElementById("home-view");
-            const dashboardView = document.getElementById("dashboard-view");
-            const adminView = document.getElementById("admin-view");
-            const aboutView = document.getElementById("about-view");
-            const contactView = document.getElementById("contact-view");
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
 
+                const config = { method, headers };
+
+                if (data) {
+                    if (isFormData) {
+                        // For file uploads (POST, PUT), let the browser set the Content-Type
+                        config.body = data;
+                        delete config.headers['Content-Type'];
+                    } else {
+                        // For JSON data (default)
+                        headers['Content-Type'] = 'application/json';
+                        config.body = JSON.stringify(data);
+                    }
+                }
+
+                try {
+                    const response = await fetch(url, config);
+                    const responseData = await response.json();
+
+                    if (!response.ok) {
+                        const errorMessage = responseData.error || `Request failed with status ${response.status}`;
+                        throw new Error(errorMessage);
+                    }
+
+                    return responseData;
+                } catch (error) {
+                    console.error("API Error:", error.message);
+                    alert(`Error: ${error.message}`);
+                    throw error;
+                }
+            }
+
+
+            // ------------------------------------------------------------------
+            // 2. BACKEND SIMULATION HELPERS (Kept for initial local state consistency)
+            // ------------------------------------------------------------------
+            // KEEPING LOCAL DB FOR SIMULATION OF CURRENT USER STATE (Which should ideally be JWT payload)
+            if (!localStorage.getItem("hirehiveDB")) {
+                const db = {
+                    users: [
+                        { id: 100, name: "Sita Sharma", email: "sita@example.com", phone: "9999911111", role: "seeker", skills: ["JavaScript", "React", "HTML", "CSS"], education: "B.Tech in CS", cvFileName: "sita_sharma_cv.pdf", subscription: { active: false, plan: "none" } },
+                        { id: 200, name: "Acme Corp", email: "acme@example.com", phone: "9999922222", role: "employer", skills: [], education: "", cvFileName: "", subscription: { active: true, plan: "premium" } },
+                        { id: 300, name: "Admin", email: "admin@hirehive.com", phone: "0000000000", role: "admin", skills: [], education: "", cvFileName: "", subscription: { active: true, plan: "premium" } },
+                    ],
+                    jobs: [
+                        { id: 1, postedDate: new Date().toISOString(), employerId: 200, title: "Senior React Developer", category: "IT & Tech", location: "Bangalore", experience: "4-6 years", salary: "₹15-20 LPA", requiredSkills: ["React", "JavaScript", "Redux"], description: "Build scalable web applications.", noticePeriod: "60 days", ctc: "₹12 LPA", screeningQuestions: ["Minimum 4 years React experience?", "Can join within 30 days?"], postedBy: "Acme Corp" }
+                    ],
+                    applications: [
+                        { jobId: 1, seekerId: 100, status: "applied", answers: ["Yes, 5 years.", "Yes"] }
+                    ],
+                    currentUser: null,
+                };
+                localStorage.setItem("hirehiveDB", JSON.stringify(db));
+            }
+
+            const getDb = () => JSON.parse(localStorage.getItem("hirehiveDB"));
+            const saveDb = (db) => localStorage.setItem("hirehiveDB", JSON.stringify(db));
+
+            // Simulates fetching user data from JWT or a stored user object
+            const getLocalUser = () => getDb().currentUser;
+            const setLocalUser = (user) => {
+                const db = getDb();
+                db.currentUser = user;
+                saveDb(db);
+            };
+
+
+            // ------------------------------------------------------------------
+            // 3. SPA ROUTER / VIEW MANAGER (Updated to check for API status)
+            // ------------------------------------------------------------------
             const views = {
-                'home': homeView,
-                'dashboard': dashboardView,
-                'admin': adminView,
-                'about': aboutView,
-                'contact': contactView,
+                'home': document.getElementById("home-view"),
+                'dashboard': document.getElementById("dashboard-view"),
+                'admin': document.getElementById("admin-view"),
+                'about': document.getElementById("about-view"),
+                'contact': document.getElementById("contact-view"),
             };
 
             const dashboardLink = document.getElementById("dashboardLink");
@@ -71,15 +120,12 @@ document.addEventListener("DOMContentLoaded", () => {
             const welcomeMessage = document.getElementById("welcome-message");
             const seekerDashboard = document.getElementById("seeker-dashboard");
             const employerDashboard = document.getElementById("employer-dashboard");
-            const postJobSubmitBtn = document.getElementById("postJobSubmitBtn");
 
-            // Employer View elements
             const employerPostView = document.getElementById("employer-post-view");
             const employerManagementView = document.getElementById("employer-management-view");
-            const viewManagementBtn = document.getElementById("viewManagementBtn");
-            const postNewJobBtn = document.getElementById("postNewJobBtn");
+            const employerSeekerView = document.getElementById("employer-seeker-view");
+            const employerNavTabs = document.getElementById("employer-nav-tabs");
 
-            // NEW Seeker View elements
             const seekerJobView = document.getElementById("seeker-job-view");
             const seekerProfileView = document.getElementById("seeker-profile-view");
             const editProfileBtn = document.getElementById("editProfileBtn");
@@ -87,90 +133,72 @@ document.addEventListener("DOMContentLoaded", () => {
             const jobFilterBtns = document.querySelectorAll(".job-filter-btn");
             const jobViewSections = document.querySelectorAll(".job-view-section");
 
+            // Load initial view and UI state based on token
+            function updateHeaderUI() {
+                const user = getLocalUser();
+                const token = getToken();
 
-            const showView = (viewName, updateHash = true) => {
-                // Hide all views
-                Object.values(views).forEach(v => v.classList.add("hidden"));
-
-                // Get the view element
-                const viewToShow = views[viewName];
-                if (viewToShow) {
-                    viewToShow.classList.remove("hidden");
-                    // Execute view-specific initialization logic
-                    if (viewName === 'dashboard') initDashboard();
-                    if (viewName === 'admin') initAdmin();
-                }
-
-                // Update URL hash for Back button support
-                if (updateHash) {
-                    const hash = (viewName === 'home') ? '' : `#${viewName}`;
-                    // Use pushState to manage history for navigation, but only if the hash changes
-                    if (window.location.hash !== hash) {
-                        history.pushState(null, '', hash);
-                    }
-                }
-
-                // Scroll to top when switching views (unless it's a home-link anchor)
-                if (!viewName.includes('home-link')) {
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-            };
-
-            // --- Hash Routing Listener (Enables Browser Back Button) ---
-            window.addEventListener('hashchange', () => {
-                const hash = window.location.hash.replace('#', '');
-                const viewName = hash || 'home';
-
-                // Check if the hash corresponds to a valid view and load it without pushing state again
-                if (views[viewName]) {
-                    showView(viewName, false);
-                } else {
-                    // Default to home if hash is invalid
-                    showView('home', true);
-                }
-            });
-
-
-            // --- GLOBAL UI / AUTH MANAGEMENT (FIXED LOGIC) ---
-            const updateHeaderUI = () => {
-                const db = getDb();
-                const user = db.currentUser;
-
-                // Reset visibility of auth buttons
                 [loginBtn, signupBtn, logoutBtn, dashboardLink, adminLink, welcomeMessage].forEach(el => el.classList.add("hidden"));
                 welcomeMessage.textContent = "";
 
-                if (user) {
-                    // Logged In: Show user specific controls
+                if (token && user) {
                     logoutBtn.classList.remove("hidden");
                     dashboardLink.classList.remove("hidden");
                     welcomeMessage.classList.remove("hidden");
                     welcomeMessage.textContent = `Welcome, ${user.name}`;
 
-                    if (user.type === 'admin') {
+                    if (user.role === 'admin') {
                         adminLink.classList.remove("hidden");
                     }
                 } else {
-                    // Logged Out: Show public controls
                     loginBtn.classList.remove("hidden");
                     signupBtn.classList.remove("hidden");
+                    setLocalUser(null); // Clear user if token is missing/expired
                 }
 
-                // Load the appropriate view based on current state
                 const hash = window.location.hash.replace('#', '');
                 let targetView = hash || 'home';
 
-                if (user) {
-                    // If logged in, prioritize dashboard/admin if the current hash is home or empty
+                if (token && user) {
                     if (targetView === 'home' || targetView === '') {
-                        targetView = (user.type === 'admin') ? 'admin' : 'dashboard';
+                        targetView = (user.role === 'admin') ? 'admin' : 'dashboard';
                     }
                 }
 
                 showView(targetView, false);
+            }
+
+            const showView = (viewName, updateHash = true) => {
+                Object.values(views).forEach(v => v.classList.add("hidden"));
+                const viewToShow = views[viewName];
+                if (viewToShow) {
+                    viewToShow.classList.remove("hidden");
+                    if (viewName === 'dashboard') initDashboard();
+                    if (viewName === 'admin') initAdmin();
+                }
+
+                if (updateHash) {
+                    const hash = (viewName === 'home') ? '' : `#${viewName}`;
+                    if (window.location.hash !== hash) {
+                        history.pushState(null, '', hash);
+                    }
+                }
+
+                if (!viewName.includes('home-link')) {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
             };
 
-            // --- Initial setup and navigation listeners ---
+            window.addEventListener('hashchange', () => {
+                const hash = window.location.hash.replace('#', '');
+                const viewName = hash || 'home';
+                if (views[viewName]) {
+                    showView(viewName, false);
+                } else {
+                    showView('home', true);
+                }
+            });
+
             document.querySelectorAll('[data-view]').forEach(el => {
                 el.addEventListener('click', (e) => {
                     const view = el.dataset.view;
@@ -182,61 +210,19 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             logoutBtn.onclick = () => {
-                const db = getDb();
-                db.currentUser = null;
-                saveDb(db);
-                // Clear hash and reload UI, triggering default to home
+                removeToken();
+                setLocalUser(null);
                 window.location.hash = '';
                 updateHeaderUI();
             };
 
-            // Initialize UI and view based on state
             updateHeaderUI();
-
-
-            // --- MODAL LOGIC (for all pages) ---
-            const modal = document.getElementById("authModal");
-            const applicantsModal = document.getElementById("applicantsModal");
-            const loginFormContainer = document.getElementById("login-form-container");
-            const signupFormContainer = document.getElementById("signup-form-container");
-            const otpFormContainer = document.getElementById("otp-form-container");
-            const closeBtn = document.querySelector(".close-btn");
-
-            const showForm = (formToShow) => {
-                [loginFormContainer, signupFormContainer, otpFormContainer].forEach(
-                    (f) => f.classList.add("hidden")
-                );
-                formToShow.classList.remove("hidden");
-                modal.style.display = "block";
-            };
-
-            loginBtn.onclick = () => showForm(loginFormContainer);
-            signupBtn.onclick = () => showForm(signupFormContainer);
-            closeBtn.onclick = () => { modal.style.display = "none"; };
-            // Close modal via window click only for auth modal
-            window.onclick = (event) => {
-                if (event.target == modal) modal.style.display = "none";
-                if (event.target == applicantsModal) applicantsModal.style.display = "none";
-            };
-
-            document.getElementById("switch-form-link").onclick = (e) => {
-                e.preventDefault();
-                showForm(
-                    signupFormContainer.classList.contains("hidden") ?
-                    signupFormContainer :
-                    loginFormContainer
-                );
-            };
-            document.getElementById("switch-to-otp").onclick = (e) => {
-                e.preventDefault();
-                showForm(otpFormContainer);
-            };
 
             // --- OPPORTUNITY CLICK (LOGIN GATE) ---
             document.querySelectorAll(".opportunity-link").forEach((link) => {
                 link.addEventListener("click", (e) => {
                     e.preventDefault();
-                    if (getDb().currentUser) {
+                    if (getToken()) {
                         showView('dashboard');
                     } else {
                         showForm(loginFormContainer);
@@ -244,73 +230,104 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             });
 
-            // --- AUTH LOGIC (Signup, Login, OTP) ---
-            document.getElementById("signupForm").addEventListener("submit", (e) => {
+            // ------------------------------------------------------------------
+            // 4. AUTH & MODAL LOGIC (MIGRATED TO API)
+            // ------------------------------------------------------------------
+            const modal = document.getElementById("authModal");
+            const loginFormContainer = document.getElementById("login-form-container");
+            const signupFormContainer = document.getElementById("signup-form-container");
+            const otpFormContainer = document.getElementById("otp-form-container");
+            const closeBtn = document.querySelector("#authModal .close-btn");
+            const applicantsModal = document.getElementById("applicantsModal");
+            const subscriptionModal = document.getElementById("subscriptionModal");
+            const closeApplicantsModalBtn = document.getElementById("close-applicants-modal");
+            const closeSubscriptionModalBtn = document.getElementById("close-subscription-modal");
+
+
+            const showForm = (formToShow) => {
+                [loginFormContainer, signupFormContainer, otpFormContainer].forEach((f) => f.classList.add("hidden"));
+                formToShow.classList.remove("hidden");
+                modal.style.display = "block";
+            };
+
+            loginBtn.onclick = () => showForm(loginFormContainer);
+            signupBtn.onclick = () => showForm(signupFormContainer);
+            closeBtn.onclick = () => { modal.style.display = "none"; };
+            closeApplicantsModalBtn.onclick = () => { applicantsModal.style.display = "none"; };
+            closeSubscriptionModalBtn.onclick = () => { subscriptionModal.style.display = "none"; };
+
+            window.onclick = (event) => {
+                if (event.target == modal) modal.style.display = "none";
+                if (event.target == applicantsModal) applicantsModal.style.display = "none";
+                if (event.target == subscriptionModal) subscriptionModal.style.display = "none";
+            };
+
+            document.getElementById("switch-form-link").onclick = (e) => {
                 e.preventDefault();
-                const db = getDb();
+                showForm(signupFormContainer.classList.contains("hidden") ? signupFormContainer : loginFormContainer);
+            };
+            document.getElementById("switch-to-otp").onclick = (e) => {
+                e.preventDefault();
+                showForm(otpFormContainer);
+            };
+
+            // --- API SIGNUP ---
+            document.getElementById("signupForm").addEventListener("submit", async(e) => {
+                e.preventDefault();
                 const email = document.getElementById("signupEmail").value;
-                const userType = document.getElementById("userType").value;
+                const password = 'Password123'; // Simplified password for demo, would require a password field
+                const role = document.getElementById("userType").value;
+                const name = document.getElementById("signupName").value;
+                const phone = document.getElementById("signupPhone").value;
 
-                if (db.users.find((u) => u.email === email)) {
-                    alert("User with this email already exists!");
-                    return;
+                try {
+                    const data = await fetchApi('auth/signup', 'POST', { name, email, password, role, phone });
+
+                    setToken(data.token);
+                    setLocalUser(data.user);
+                    alert("Signup successful! Redirecting to dashboard...");
+                    modal.style.display = "none";
+                    updateHeaderUI();
+                } catch (error) {
+                    // Error is handled by fetchApi helper
                 }
-
-                let subscriptionStatus = { active: false, plan: "none" };
-                if (userType === 'employer') {
-                    subscriptionStatus = { active: false, plan: "basic" };
-                }
-
-                const newUser = {
-                    id: Date.now(),
-                    name: document.getElementById("signupName").value,
-                    email: email,
-                    phone: document.getElementById("signupPhone").value,
-                    type: userType,
-                    skills: [],
-                    education: "",
-                    cvFileName: "",
-                    subscription: subscriptionStatus,
-                };
-
-                if (email === "admin@hirehive.com") newUser.type = "admin";
-
-                db.users.push(newUser);
-                db.currentUser = newUser;
-                saveDb(db);
-                alert("Signup successful! Redirecting to dashboard...");
-                modal.style.display = "none";
-                updateHeaderUI();
             });
 
-            document.getElementById("loginForm").addEventListener("submit", (e) => {
+            // --- API LOGIN ---
+            document.getElementById("loginForm").addEventListener("submit", async(e) => {
                 e.preventDefault();
-                const db = getDb();
-                const user = db.users.find(
-                    (u) => u.email === document.getElementById("loginEmail").value
-                );
-                if (user) {
-                    db.currentUser = user;
-                    saveDb(db);
+                const email = document.getElementById("loginEmail").value;
+                const password = 'Password123'; // Simplified password for demo
+
+                try {
+                    const data = await fetchApi('auth/login', 'POST', { email, password });
+
+                    setToken(data.token);
+                    setLocalUser(data.user);
                     alert("Login successful! Redirecting to dashboard...");
                     modal.style.display = "none";
                     updateHeaderUI();
-                } else {
-                    alert("User not found!");
+                } catch (error) {
+                    // Error is handled by fetchApi helper
                 }
             });
 
-            document.getElementById("otpForm").addEventListener("submit", (e) => {
+            // --- API OTP LOGIN (Simulated) ---
+            document.getElementById("otpForm").addEventListener("submit", async(e) => {
                 e.preventDefault();
+                const phone = document.getElementById("otpPhone").value;
+                // In a real app, this would be a sequence of two API calls (send OTP, verify OTP)
+
                 const db = getDb();
-                const user = db.users.find(
-                    (u) => u.phone === document.getElementById("otpPhone").value
-                );
+                const user = db.users.find((u) => u.phone === phone); // Fall back to local check for demo
+
                 if (user) {
                     const fakeOtp = prompt("We've 'sent' an OTP to your number. (Hint: It's 123456)");
                     if (fakeOtp === "123456") {
-                        db.currentUser = user;
-                        saveDb(db);
+                        // Simulating a successful login and token generation
+                        // In a real app, the API would return the token and user data here.
+                        setToken('fake-otp-token');
+                        setLocalUser(user);
                         alert("Login successful!");
                         modal.style.display = "none";
                         updateHeaderUI();
@@ -322,49 +339,83 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
 
-            // --- SUBSCRIPTION LOGIC (For Employers) ---
-            document.getElementById("upgradeToPremiumBtn").onclick = () => {
-                const db = getDb();
-                if (!db.currentUser || db.currentUser.type !== "employer") {
-                    alert("Only Employers can upgrade their subscription.");
-                    return;
+            // --- SUBSCRIPTION LOGIC (Placeholder for API Upgrade) ---
+            const showSubscriptionModal = () => {
+                const user = getLocalUser();
+                if (!user || user.role !== "employer") return;
+
+                // NOTE: In a real app, the job count and plan status should be fetched from the API.
+                const isPremium = user.subscription.active;
+                const currentJobs = getCurrentMonthJobCount();
+                const jobLimit = 5;
+
+                document.getElementById("modal-plan-status").innerHTML = isPremium ?
+                    `<h3 style="color:var(--success-color)">Premium Employer Plan Active</h3>` :
+                    `<h3 style="color:var(--secondary-color)">Basic Employer Plan Active</h3>`;
+
+                document.getElementById("modal-plan-limit").textContent = isPremium ?
+                    `Unlimited job posts per month.` :
+                    `You have posted ${currentJobs} of ${jobLimit} jobs this month.`;
+
+                const upgradeBtn = document.getElementById("modalUpgradeToPremiumBtn");
+                if (isPremium) {
+                    upgradeBtn.classList.add("hidden");
+                } else {
+                    upgradeBtn.classList.remove("hidden");
                 }
 
-                setTimeout(() => {
-                    alert("Payment successful! Your Premium Employer subscription is now active.");
-                    const userIndex = db.users.findIndex((u) => u.id === db.currentUser.id);
-                    db.users[userIndex].subscription = { active: true, plan: "premium" };
-                    db.currentUser = db.users[userIndex];
-                    saveDb(db);
-                    showEmployerPostView(); // Reload post view to update status
-                }, 1000);
+                subscriptionModal.style.display = "block";
             };
 
-            // ==============================================
-            // DASHBOARD LOGIC 
-            // ==============================================
+            document.getElementById("modalUpgradeToPremiumBtn").onclick = () => {
+                // --- API UPGRADE SIMULATION ---
+                setTimeout(() => {
+                    alert("Payment simulated! Your Premium Employer subscription is now active.");
+
+                    // NOTE: In a real app, this would be a PUT request to /api/employer/profile with { subscription: {active: true, plan: 'premium'} }
+                    const db = getDb();
+                    const userIndex = db.users.findIndex((u) => u.id === getLocalUser().id);
+                    db.users[userIndex].subscription = { active: true, plan: "premium" };
+                    setLocalUser(db.users[userIndex]);
+
+                    subscriptionModal.style.display = "none";
+                    if (!employerPostView.classList.contains("hidden")) {
+                        loadEmployerPostForm();
+                    }
+                }, 500);
+            };
+
+            window.showSubscriptionModal = showSubscriptionModal;
+
+            // ------------------------------------------------------------------
+            // 5. DASHBOARD ENTRY POINT
+            // ------------------------------------------------------------------
             function initDashboard() {
-                const currentUser = getDb().currentUser;
+                const currentUser = getLocalUser();
 
-                if (!currentUser || currentUser.type === 'admin') return;
-
-                if (currentUser.type === "seeker") {
+                if (currentUser.role === "seeker") {
                     seekerDashboard.classList.remove("hidden");
                     employerDashboard.classList.add("hidden");
-                    showSeekerJobView(); // Default to job view
-                } else if (currentUser.type === "employer") {
+                    showSeekerJobView();
+                } else if (currentUser.role === "employer") {
                     employerDashboard.classList.remove("hidden");
                     seekerDashboard.classList.add("hidden");
-                    // Default employer view to Post/Subscription view
-                    showEmployerPostView();
 
-                    // Add listeners for view switching
-                    viewManagementBtn.onclick = showEmployerManagementView;
-                    postNewJobBtn.onclick = showEmployerPostView;
+                    employerNavTabs.querySelectorAll('.employer-tab-btn').forEach(btn => {
+                        btn.onclick = (e) => {
+                            const target = e.target.dataset.viewTarget;
+                            switchEmployerView(target);
+                        };
+                    });
+
+                    document.getElementById("postNewJobBtn").onclick = () => switchEmployerView("employer-post-view");
+                    switchEmployerView("employer-management-view"); // Default to management view
                 }
             }
 
-            // --- SEEKER VIEW SWITCHERS ---
+            // ------------------------------------------------------------------
+            // 6. SEEKER DASHBOARD (MIGRATED TO API)
+            // ------------------------------------------------------------------
             const showSeekerProfileView = () => {
                 seekerProfileView.classList.remove('hidden');
                 seekerJobView.classList.add('hidden');
@@ -378,38 +429,18 @@ document.addEventListener("DOMContentLoaded", () => {
             };
 
             editProfileBtn.onclick = showSeekerProfileView;
-            backToJobsBtn.onclick = showSeekerJobView; // Now handles the back action
+            backToJobsBtn.onclick = showSeekerJobView;
 
-            // --- Job Filter Logic ---
-            jobFilterBtns.forEach(btn => {
-                btn.onclick = (e) => {
-                    // Reset all buttons
-                    jobFilterBtns.forEach(b => b.classList.remove('btn-primary'));
-                    e.target.classList.add('btn-primary');
+            // --- SEEKER PROFILE LOAD (API) ---
+            async function loadSeekerProfileForm() {
+                const currentUser = getLocalUser();
 
-                    const filterType = e.target.dataset.filter;
+                // In a real app, you would fetch the latest user data here. 
+                // For simplicity, we use the local state.
 
-                    jobViewSections.forEach(section => {
-                        section.classList.add('hidden');
-                    });
-
-                    if (filterType === 'all') {
-                        document.getElementById('all-jobs').classList.remove('hidden');
-                        document.getElementById('shortlisted-jobs').classList.remove('hidden');
-                    } else if (filterType === 'shortlisted') {
-                        document.getElementById('shortlisted-jobs').classList.remove('hidden');
-                    } else if (filterType === 'applied') {
-                        document.getElementById('applied-jobs').classList.remove('hidden');
-                    }
-                };
-            });
-
-            function loadSeekerProfileForm() {
-                const db = getDb();
-                const currentUser = db.currentUser;
-                document.getElementById("seeker-name").value = currentUser.name;
-                document.getElementById("seeker-email").value = currentUser.email;
-                document.getElementById("seeker-skills").value = currentUser.skills.join(", ");
+                document.getElementById("seeker-name").value = currentUser.name || "";
+                document.getElementById("seeker-email").value = currentUser.email || "";
+                document.getElementById("seeker-skills").value = (currentUser.skills || []).join(", ");
                 document.getElementById("seeker-education").value = currentUser.education || "";
 
                 const cvFilenameEl = document.getElementById("cv-filename");
@@ -422,163 +453,221 @@ document.addEventListener("DOMContentLoaded", () => {
                 cvFilenameEl.querySelectorAll('.cv-link').forEach(link => {
                     link.onclick = (e) => {
                         e.preventDefault();
-                        alert(`Simulating download/view of CV: ${e.target.dataset.filename}. (In a real application, this would fetch the file from the server.)`);
+                        // NOTE: Real CV link would hit a server endpoint for secure download/view.
+                        alert(`Simulating download/view of CV: ${e.target.dataset.filename}.`);
                     };
                 });
 
-
-                document.getElementById("profile-form").onsubmit = (e) => {
+                // --- SEEKER PROFILE SAVE (API) ---
+                document.getElementById("profile-form").onsubmit = async(e) => {
                     e.preventDefault();
-                    const db = getDb();
-                    const userIndex = db.users.findIndex((u) => u.id === currentUser.id);
-                    db.users[userIndex].name = document.getElementById("seeker-name").value;
-                    db.users[userIndex].skills = document.getElementById("seeker-skills").value.split(",").map((s) => s.trim()).filter(Boolean);
-                    db.users[userIndex].education = document.getElementById("seeker-education").value;
-
+                    const name = document.getElementById("seeker-name").value;
+                    const skills = document.getElementById("seeker-skills").value;
+                    const education = document.getElementById("seeker-education").value;
                     const cvFile = document.getElementById("cv-upload").files[0];
+
+                    const formData = new FormData();
+                    formData.append('name', name);
+                    formData.append('education', education);
+                    formData.append('skills', skills); // Send as comma-separated string
                     if (cvFile) {
-                        db.users[userIndex].cvFileName = cvFile.name;
+                        formData.append('cvFile', cvFile); // Key matches backend Multer field
                     }
 
-                    db.currentUser = db.users[userIndex];
-                    saveDb(db);
-                    alert("Profile updated!");
-                    showSeekerJobView(); // Go back to job view after saving
+                    try {
+                        const data = await fetchApi('seeker/profile', 'PUT', formData, true);
+
+                        // Update local user state from API response
+                        setLocalUser(data.user);
+                        alert("Profile updated!");
+                        showSeekerJobView();
+                    } catch (error) {
+                        // Error handled by fetchApi
+                    }
                 };
             }
 
-            function loadJobs() {
-                const db = getDb();
+            // --- JOB BOARD LOAD (API) ---
+            async function loadJobs() {
                 const allJobsList = document.getElementById("all-jobs-list");
                 const shortlistedJobsList = document.getElementById("shortlisted-jobs-list");
                 const appliedJobsList = document.getElementById("applied-jobs-list");
+                const currentUser = getLocalUser();
 
-                allJobsList.innerHTML = shortlistedJobsList.innerHTML = appliedJobsList.innerHTML = "";
+                allJobsList.innerHTML = shortlistedJobsList.innerHTML = appliedJobsList.innerHTML = "Loading jobs...";
 
-                const seekerSkills = db.currentUser.skills.map((s) => s.toLowerCase());
+                try {
+                    const jobs = await fetchApi('seeker/jobs', 'GET');
 
-                db.jobs.forEach((job) => {
-                            const hasApplied = db.applications.some(
-                                (app) => app.jobId === job.id && app.seekerId === db.currentUser.id
-                            );
+                    // In a real app, you would fetch applications separately or join them in the query
+                    // Falling back to local applications data for filtering logic demo
+                    const db = getDb();
+                    const seekerApplications = db.applications.filter(app => app.seekerId === currentUser.id);
 
-                            // Shortlisted Logic: Job meets at least ONE of the seeker's skills
-                            const isShortlisted = job.requiredSkills.map((s) => s.toLowerCase()).some((skill) => seekerSkills.includes(skill));
+                    allJobsList.innerHTML = shortlistedJobsList.innerHTML = appliedJobsList.innerHTML = "";
+                    const seekerSkills = (currentUser.skills || []).map((s) => s.toLowerCase());
 
-                            const isDisabled = hasApplied;
-                            const applyButtonText = hasApplied ? "Applied" : "Apply Now";
+                    jobs.forEach((job) => {
+                                const hasApplied = seekerApplications.some((app) => app.jobId === job.id);
+                                const isShortlisted = job.requiredSkills.map((s) => s.toLowerCase()).some((skill) => seekerSkills.includes(skill));
 
-                            const jobCardHTML = `
+                                const isDisabled = hasApplied;
+                                const applyButtonText = hasApplied ? "Applied" : "Apply Now";
+
+                                const jobCardHTML = `
                 <div class="job-card" data-job-id="${job.id}">
-                    <h4>${job.title}</h4>
+                    <h4>${job.title} (${job.employer.name})</h4>
                     <p><i class="fas fa-map-marker-alt"></i> ${job.location} | <i class="fas fa-briefcase"></i> ${job.experience} | <i class="fas fa-money-bill-wave"></i> ${job.salary}</p>
                     <p>${job.description.substring(0, 100)}...</p>
                     <div class="skills">${job.requiredSkills.map((s) => `<span>${s}</span>`).join("")}</div>
-                    <button class="btn apply-btn btn-primary" ${isDisabled ? "disabled" : ""}>
+                    <button class="btn apply-btn btn-primary" data-job-id="${job.id}" ${isDisabled ? "disabled" : ""}>
                         ${applyButtonText}
                     </button>
                 </div>`;
-            
-            allJobsList.innerHTML += jobCardHTML;
-            
-            if (isShortlisted) shortlistedJobsList.innerHTML += jobCardHTML;
-            if (hasApplied) appliedJobsList.innerHTML += jobCardHTML;
+
+                allJobsList.innerHTML += jobCardHTML;
+                if (isShortlisted) shortlistedJobsList.innerHTML += jobCardHTML;
+                if (hasApplied) appliedJobsList.innerHTML += jobCardHTML;
+            });
+
+            if (shortlistedJobsList.innerHTML === "") shortlistedJobsList.innerHTML = "<p>No jobs match your profile yet.</p>";
+            if (appliedJobsList.innerHTML === "") appliedJobsList.innerHTML = "<p>You have not applied to any jobs yet.</p>";
+
+            // Re-attach apply listeners (Now calling API)
+            document.querySelectorAll(".apply-btn:not([disabled])").forEach((button) => {
+                button.onclick = async (e) => {
+                    const jobId = parseInt(e.target.dataset.jobId);
+                    const job = jobs.find(j => j.id === jobId);
+                    let answers = [];
+
+                    if (job.screeningQuestions && job.screeningQuestions.length > 0) {
+                        alert("This job requires screening questions before application.");
+                        for (const q of job.screeningQuestions) {
+                            const answer = prompt(q);
+                            if (answer === null) {
+                                alert("Application cancelled.");
+                                return;
+                            }
+                            answers.push(answer);
+                        }
+                    }
+
+                    try {
+                        await fetchApi(`seeker/apply/${jobId}`, 'POST', { answers });
+                        
+                        // Update local applications table for demo purpose
+                        db.applications.push({jobId, seekerId: currentUser.id, status: "applied", answers: answers});
+                        saveDb(db); 
+                        
+                        alert("Application submitted!");
+                        loadJobs(); // Reload UI to update 'Applied' status
+                    } catch (error) {
+                        // Error handled by fetchApi
+                    }
+                };
+            });
+
+            const defaultFilterBtn = document.querySelector('.job-filter-btn[data-filter="all"]');
+            if (defaultFilterBtn && !defaultFilterBtn.classList.contains('btn-primary')) {
+                defaultFilterBtn.click();
+            }
+
+        } catch (error) {
+            allJobsList.innerHTML = "<p style='color:red;'>Failed to load jobs. Please check your backend server status.</p>";
+        }
+    }
+
+
+    // ------------------------------------------------------------------
+    // 7. EMPLOYER DASHBOARD (MIGRATED TO API)
+    // ------------------------------------------------------------------
+    function switchEmployerView(targetViewId) {
+        [employerPostView, employerManagementView, employerSeekerView].forEach(view => {
+            view.classList.add("hidden");
         });
 
-        // Ensure applied/shortlisted lists show "No jobs" message if empty
-        if (shortlistedJobsList.innerHTML === "") shortlistedJobsList.innerHTML = "<p>No jobs match your profile yet.</p>";
-        if (appliedJobsList.innerHTML === "") appliedJobsList.innerHTML = "<p>You have not applied to any jobs yet.</p>";
+        employerNavTabs.querySelectorAll('.employer-tab-btn').forEach(btn => {
+            if (btn.dataset.viewTarget === targetViewId) {
+                btn.classList.add('btn-primary');
+            } else {
+                btn.classList.remove('btn-primary');
+            }
+        });
 
-
-        document.querySelectorAll(".apply-btn").forEach(
-            (button) =>
-                (button.onclick = (e) => {
-                    const jobId = parseInt(e.target.closest(".job-card").dataset.jobId);
-                    const db = getDb();
-                    db.applications.push({
-                        jobId,
-                        seekerId: db.currentUser.id,
-                        status: "applied",
-                    });
-                    saveDb(db);
-                    
-                    // Update UI immediately (reload jobs to update all views)
-                    loadJobs();
-                    alert("Application submitted!");
-                })
-        );
-        
-        // Ensure default view (All Jobs) is active on load
-        // This is done once after loading jobs to set the default filter view
-        const defaultFilterBtn = document.querySelector('.job-filter-btn[data-filter="all"]');
-        if (!defaultFilterBtn.classList.contains('btn-primary')) {
-            defaultFilterBtn.click();
+        const targetView = document.getElementById(targetViewId);
+        if (targetView) {
+            targetView.classList.remove("hidden");
+            if (targetViewId === "employer-post-view") loadEmployerPostForm();
+            if (targetViewId === "employer-management-view") loadPostedJobs();
+            if (targetViewId === "employer-seeker-view") loadSeekerCVs();
         }
     }
 
-    // --- EMPLOYER VIEW SWITCHERS ---
-    function showEmployerPostView() {
-        employerPostView.classList.remove("hidden");
-        employerManagementView.classList.add("hidden");
-        loadEmployerPostForm(); 
-    }
-    
-    function showEmployerManagementView() {
-        employerManagementView.classList.remove("hidden");
-        employerPostView.classList.add("hidden");
-        loadPostedJobs(); 
-        document.getElementById("seeker-count").textContent = getDb().users.filter((u) => u.type === "seeker").length;
-    }
-
-
+    // --- JOB POST/UPDATE FORM (API) ---
     function loadEmployerPostForm() {
-        const db = getDb();
-        const currentUser = db.currentUser;
+        const user = getLocalUser();
         
-        const isPremium = currentUser.subscription.active;
-        const currentJobs = getCurrentMonthJobCount(currentUser.id);
-        const jobLimit = isPremium ? Infinity : 5;
+        // NOTE: Job limit checks still rely on local count for demo
+        const isPremium = user.subscription.active;
+        const currentJobs = getCurrentMonthJobCount();
+        const jobLimit = 5;
 
-        // Update Employer Subscription UI
-        document.getElementById("employer-plan-title").textContent = isPremium ? "Premium Employer Plan" : "Basic Employer Plan";
+        const statusEl = document.getElementById("employer-subscription-status-small");
+        statusEl.innerHTML = isPremium
+            ? `<a href="#" onclick="event.preventDefault(); showSubscriptionModal();" class="premium">Premium: Unlimited Posts</a>`
+            : `<a href="#" onclick="event.preventDefault(); showSubscriptionModal();">Basic: ${currentJobs}/${jobLimit} Posts</a>`;
+
+        const canPost = currentJobs < jobLimit || isPremium;
+
+        const postJobSubmitBtn = document.getElementById("postJobSubmitBtn");
+        postJobSubmitBtn.disabled = !canPost;
+        postJobSubmitBtn.textContent = canPost ? "Review & Post Job" : "Limit Reached";
         
-        if (isPremium) {
-            document.getElementById("employer-plan-limit").textContent = `Unlimited job posts active.`;
-            document.getElementById("upgradeToPremiumBtn").classList.add("hidden");
-        } else {
-            document.getElementById("employer-plan-limit").textContent = `You have posted ${currentJobs} of ${jobLimit} jobs this month.`;
-            document.getElementById("upgradeToPremiumBtn").classList.remove("hidden");
-        }
+        // Reset form to post logic
+        postJobSubmitBtn.onclick = (e) => {
+            e.preventDefault();
+            const form = document.getElementById("jobStep3Form");
+            if (form.checkValidity()) {
+                handleJobPost(e);
+            } else {
+                form.reportValidity();
+            }
+        };
 
-        // --- Multi-Step Form Logic Setup ---
-        let newJobData = {};
+        // Screening Questions Toggle Logic
+        const screeningSelect = document.getElementById("add-screening-questions");
+        const screeningContainer = document.getElementById("screening-questions-container");
 
+        screeningContainer.classList.add("hidden");
+        screeningSelect.value = "no";
+        document.getElementById("sq1").value = "";
+        document.getElementById("sq2").value = "";
+        document.getElementById("sq3").value = "";
+        
+        screeningSelect.onchange = () => {
+            if (screeningSelect.value === 'yes') {
+                screeningContainer.classList.remove("hidden");
+            } else {
+                screeningContainer.classList.add("hidden");
+            }
+        };
+        
+        // --- Multi-Step Form Navigation --- (Logic remains purely frontend)
         const jobForms = {
             1: document.getElementById("jobStep1Form"),
             2: document.getElementById("jobStep2Form"),
             3: document.getElementById("jobStep3Form"),
         };
 
-        const canPost = currentJobs < jobLimit || isPremium;
-        
-        // Disable post button/form if limit is reached
-        if (!canPost) {
-            postJobSubmitBtn.disabled = true;
-            postJobSubmitBtn.textContent = "Limit Reached (Upgrade)";
-        } else {
-            postJobSubmitBtn.disabled = false;
-            postJobSubmitBtn.textContent = "Post Job Now";
-        }
-        
-        // Reset to Step 1 on load
         jobForms[1].classList.remove("hidden");
         jobForms[2].classList.add("hidden");
         jobForms[3].classList.add("hidden");
-        
+
         document.querySelectorAll(".next-step-btn").forEach((button) => {
             button.onclick = () => {
                 if (!canPost) {
-                    alert("Your job posting limit has been reached. Please upgrade to the Premium Plan to post more jobs this month.");
+                    alert("Your job posting limit has been reached. Please upgrade to the Premium Plan.");
+                    showSubscriptionModal();
                     return;
                 }
                 const currentStep = parseInt(button.dataset.step);
@@ -587,19 +676,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (!currentForm.checkValidity()) {
                     currentForm.reportValidity();
                     return;
-                }
-
-                if (currentStep === 1) {
-                    newJobData.title = document.getElementById("job-title").value;
-                    newJobData.category = document.getElementById("job-category").value;
-                    newJobData.location = document.getElementById("job-location").value;
-                } else if (currentStep === 2) {
-                    newJobData.experience = document.getElementById("job-experience").value;
-                    newJobData.salary = document.getElementById("job-salary").value;
-                    newJobData.requiredSkills = document.getElementById("job-skills").value
-                        .split(",")
-                        .map((s) => s.trim())
-                        .filter(Boolean);
                 }
 
                 currentForm.classList.add("hidden");
@@ -614,146 +690,357 @@ document.addEventListener("DOMContentLoaded", () => {
                 jobForms[currentStep - 1].classList.remove("hidden");
             };
         });
+    }
 
-        document.getElementById("jobStep3Form").onsubmit = (e) => {
-            e.preventDefault();
+    // --- API JOB POST HANDLER ---
+    async function handleJobPost(e, jobId = null) {
+        e.preventDefault();
 
-            if (!canPost) {
-                 alert("Your job posting limit has been reached. Please upgrade to the Premium Plan.");
-                 return;
+        const jobData = {
+            title: document.getElementById("job-title").value,
+            category: document.getElementById("job-category").value,
+            location: document.getElementById("job-location").value,
+            experience: document.getElementById("job-experience").value,
+            salary: document.getElementById("job-salary").value,
+            ctc: document.getElementById("job-current-ctc").value,
+            requiredSkills: document.getElementById("job-skills").value
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean),
+            description: document.getElementById("job-description").value,
+            noticePeriod: document.getElementById("job-notice-period").value,
+        };
+
+        const screeningQ = [];
+        if (document.getElementById("add-screening-questions").value === 'yes') {
+            const q1 = document.getElementById("sq1").value.trim();
+            const q2 = document.getElementById("sq2").value.trim();
+            const q3 = document.getElementById("sq3").value.trim();
+            
+            if (q1 === "" || q2 === "") {
+                alert("Question 1 and Question 2 are mandatory.");
+                return;
+            }
+            if (q1) screeningQ.push(q1);
+            if (q2) screeningQ.push(q2);
+            if (q3) screeningQ.push(q3);
+        }
+        jobData.screeningQuestions = screeningQ;
+
+        try {
+            if (jobId) {
+                // Update existing job
+                await fetchApi(`employer/jobs/${jobId}`, 'PUT', jobData);
+                alert("Job updated successfully! Redirecting to management view.");
+            } else {
+                // Post new job
+                await fetchApi('employer/jobs', 'POST', jobData);
+                alert("Job posted successfully! Redirecting to management view.");
+            }
+            
+            document.getElementById("jobStep3Form").reset();
+            loadEmployerPostForm(); // Reset form state
+            switchEmployerView("employer-management-view");
+        } catch (error) {
+            // Error handled by fetchApi
+        }
+    }
+
+
+    // --- POSTED JOBS LOAD (API) ---
+    async function loadPostedJobs() {
+        const postedJobsList = document.getElementById("posted-jobs-list");
+        postedJobsList.innerHTML = "Loading posted jobs...";
+        
+        try {
+            const myJobs = await fetchApi('employer/jobs', 'GET');
+            postedJobsList.innerHTML = ""; // Clear "Loading..."
+
+            // NOTE: The backend now returns the applicant count, which is ideal!
+            const totalSeekerCount = "N/A (Fetch from separate admin API)"; // Can't be reliably fetched here
+            document.getElementById("seeker-count").textContent = totalSeekerCount; 
+
+            if (myJobs.length === 0) {
+                postedJobsList.innerHTML = "<p>You have not posted any jobs yet. Click 'Post New Job' to start.</p>";
+                return;
             }
 
-            newJobData.noticePeriod = document.getElementById("job-notice-period").value;
-            newJobData.description = document.getElementById("job-description").value;
+            myJobs.forEach((job) => {
+                const applicantCount = job.applications[0].count; // Access count from backend
+                
+                postedJobsList.innerHTML += `
+                    <div class="job-card" data-job-id="${job.id}">
+                        <div class="job-card-header">
+                            <h4 class="job-title">${job.title}</h4>
+                            <div class="job-actions">
+                                <button class="btn view-applicants-btn" data-job-id="${job.id}" data-job-title="${job.title}">
+                                    <i class="fas fa-users"></i> Applicants (<span class="applicant-count">${applicantCount}</span>)
+                                </button>
+                                <button class="btn btn-secondary edit-job-btn" data-job-id="${job.id}"><i class="fas fa-edit"></i> Edit</button>
+                                <button class="btn delete-job-btn" data-job-id="${job.id}"><i class="fas fa-trash-alt"></i> Delete</button>
+                            </div>
+                        </div>
+                        <div class="job-card-meta">
+                            <span class="job-location"><i class="fas fa-map-marker-alt"></i> ${job.location}</span>
+                            <span class="job-posted-date"> | Posted: ${new Date(job.postedDate).toLocaleDateString()}</span>
+                        </div>
+                    </div>
+                `;
+            });
 
-            const finalJob = {
-                id: Date.now(),
-                postedDate: new Date().toISOString(),
-                employerId: currentUser.id,
-                ...newJobData,
-            };
-
-            const db = getDb();
-            db.jobs.push(finalJob);
-            saveDb(db);
-            alert("Job posted successfully! Redirecting to management view.");
-
-            e.target.reset();
-            
-            showEmployerManagementView(); 
-        };
-    }
-
-    function loadPostedJobs() {
-        const db = getDb();
-        const postedJobsList = document.getElementById("posted-jobs-list");
-        postedJobsList.innerHTML = "";
-        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-        const myRecentJobs = db.jobs.filter(
-            (job) => job.employerId === db.currentUser.id && new Date(job.postedDate) > sevenDaysAgo
-        );
-
-        if (myRecentJobs.length === 0) {
-            postedJobsList.innerHTML = "<p>You have no jobs posted in the last 7 days.</p>";
-            return;
-        }
-        
-        myRecentJobs.forEach((job) => {
-            const applicantCount = db.applications.filter((app) => app.jobId === job.id).length;
-            postedJobsList.innerHTML += `<div class="job-card"><h4>${job.title}</h4><p>Applicants: ${applicantCount}</p><button class="btn btn-primary view-applicants-btn" data-job-id="${job.id}">View Applicants</button></div>`;
-        });
-        
-        document.querySelectorAll(".view-applicants-btn").forEach(
-            (button) =>
-                (button.onclick = (e) =>
-                    showApplicantsModal(parseInt(e.target.dataset.jobId)))
-        );
-    }
-
-    // --- RENDER APPLICANTS IN TABLE FORMAT ---
-    function showApplicantsModal(jobId) {
-        const db = getDb();
-        const job = db.jobs.find((j) => j.id === jobId);
-        const applicants = db.applications
-            .filter((app) => app.jobId === jobId)
-            .map((app) => db.users.find((u) => u.id === app.seekerId));
-        
-        const listElement = document.getElementById("applicants-list");
-        document.getElementById("applicants-job-title").textContent = job.title;
-        
-        if (applicants.length === 0) {
-            listElement.innerHTML = "<p>No applicants yet.</p>";
-        } else {
-            const tableRows = applicants.map(app => `
-                <tr>
-                    <td>${app.name}</td>
-                    <td>${app.email}</td>
-                    <td>${app.phone || 'N/A'}</td>
-                    <td>${app.skills.join(", ") || 'N/A'}</td>
-                    <td>${app.education || 'N/A'}</td>
-                    <td>
-                        ${app.cvFileName 
-                            ? `<a href="#" class="cv-link" data-filename="${app.cvFileName}">${app.cvFileName}</a>`
-                            : 'N/A'}
-                    </td>
-                </tr>
-            `).join('');
-
-            listElement.innerHTML = `
-                <div class="table-responsive" style="overflow-x: auto;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Phone</th>
-                                <th>Skills</th>
-                                <th>Education</th>
-                                <th>CV</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${tableRows}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-            
-            // Re-attach CV link handlers
-             listElement.querySelectorAll('.cv-link').forEach(link => {
-                link.onclick = (e) => {
+            // Re-attach listeners
+            document.querySelectorAll(".view-applicants-btn").forEach((button) => {
+                button.onclick = (e) => {
                     e.preventDefault();
-                    // Simulate file access/download
-                    alert(`Simulating secure CV download/view for: ${e.target.dataset.filename}. (In a real application, this would fetch the file from the server.)`);
+                    showApplicantsModal(parseInt(e.currentTarget.dataset.jobId));
                 };
             });
-        }
             
-        applicantsModal.style.display = "block";
-        document.getElementById("close-applicants-modal").onclick = () => {
-            applicantsModal.style.display = "none";
-        };
+            document.querySelectorAll(".edit-job-btn").forEach((button) => {
+                button.onclick = (e) => {
+                    e.preventDefault();
+                    editJob(parseInt(e.currentTarget.dataset.jobId), myJobs.find(j => j.id === parseInt(e.currentTarget.dataset.jobId)));
+                };
+            });
+
+            document.querySelectorAll(".delete-job-btn").forEach((button) => {
+                button.onclick = (e) => {
+                    e.preventDefault();
+                    deleteJob(parseInt(e.currentTarget.dataset.jobId));
+                };
+            });
+
+        } catch (error) {
+            postedJobsList.innerHTML = "<p style='color:red;'>Failed to load posted jobs. Please ensure your backend is running.</p>";
+        }
     }
 
-    // ==============================================
-    // ADMIN LOGIC (initAdmin)
-    // ==============================================
+    // --- JOB EDIT PRE-FILL ---
+    function editJob(jobId, jobToEdit) {
+        if (!confirm(`Are you sure you want to edit the job: ${jobToEdit.title}? This will pre-fill the posting form.`)) {
+            return;
+        }
+
+        document.getElementById("job-title").value = jobToEdit.title || '';
+        document.getElementById("job-category").value = jobToEdit.category || '';
+        document.getElementById("job-location").value = jobToEdit.location || '';
+        document.getElementById("job-experience").value = jobToEdit.experience || '';
+        document.getElementById("job-salary").value = jobToEdit.salary || '';
+        document.getElementById("job-current-ctc").value = jobToEdit.ctc || '';
+        document.getElementById("job-skills").value = (jobToEdit.requiredSkills || []).join(", ");
+        document.getElementById("job-description").value = jobToEdit.description || '';
+        document.getElementById("job-notice-period").value = jobToEdit.noticePeriod || '';
+
+        const screeningSelect = document.getElementById("add-screening-questions");
+        const screeningContainer = document.getElementById("screening-questions-container");
+        const questions = jobToEdit.screeningQuestions || [];
+
+        if (questions.length > 0) {
+            screeningSelect.value = "yes";
+            screeningContainer.classList.remove("hidden");
+            document.getElementById("sq1").value = questions[0] || '';
+            document.getElementById("sq2").value = questions[1] || '';
+            document.getElementById("sq3").value = questions[2] || '';
+        } else {
+            screeningSelect.value = "no";
+            screeningContainer.classList.add("hidden");
+        }
+        
+        const postJobSubmitBtn = document.getElementById("postJobSubmitBtn");
+        postJobSubmitBtn.textContent = "Save Changes & Update Job";
+        postJobSubmitBtn.onclick = (e) => handleJobPost(e, jobId);
+
+        document.getElementById("jobStep1Form").classList.remove("hidden");
+        document.getElementById("jobStep2Form").classList.add("hidden");
+        document.getElementById("jobStep3Form").classList.add("hidden");
+
+        switchEmployerView("employer-post-view");
+    }
+
+    // --- JOB DELETE (API) ---
+    async function deleteJob(jobId) {
+        if (!confirm("Are you sure you want to delete this job? This action cannot be undone.")) {
+            return;
+        }
+
+        try {
+            await fetchApi(`employer/jobs/${jobId}`, 'DELETE');
+            alert("Job successfully deleted.");
+            loadPostedJobs(); // Reload the list
+        } catch (error) {
+            // Error handled by fetchApi
+        }
+    }
+
+    // --- RENDER APPLICANTS MODAL (API) ---
+    async function showApplicantsModal(jobId) {
+        const listElement = document.getElementById("applicants-list");
+        listElement.innerHTML = "Loading applicants...";
+
+        try {
+            const data = await fetchApi(`employer/applicants/${jobId}`, 'GET');
+            const job = { title: "Job Title", screeningQuestions: data.screeningQuestions }; // Mock job for title
+            const applicants = data.applicants;
+            
+            document.getElementById("applicants-job-title").textContent = job.title;
+
+            if (applicants.length === 0) {
+                listElement.innerHTML = "<p>No applicants yet.</p>";
+            } else {
+                const screeningHeaders = (job.screeningQuestions || []).map((q, index) => `<th>Q${index + 1} Answer</th>`).join('');
+                const screeningCells = (app) => (job.screeningQuestions || []).map((q, index) => `<td>${app.applicationAnswers[index] || 'N/A'}</td>`).join('');
+                
+                const tableRows = applicants.map(app => `
+                    <tr>
+                        <td>${app.name}</td>
+                        <td>${app.email}</td>
+                        <td>${app.phone || 'N/A'}</td>
+                        <td>${app.skills.join(", ") || 'N/A'}</td>
+                        <td>
+                            ${app.cvFileName 
+                                ? `<a href="#" class="cv-link" data-filename="${app.cvFileName}">${app.cvFileName}</a>`
+                                : 'N/A'}
+                        </td>
+                        ${screeningCells(app)}
+                    </tr>
+                `).join('');
+
+                listElement.innerHTML = `
+                    <div class="table-responsive" style="overflow-x: auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Skills</th>
+                                    <th>CV</th>
+                                    ${screeningHeaders}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tableRows}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                listElement.querySelectorAll('.cv-link').forEach(link => {
+                    link.onclick = (e) => {
+                        e.preventDefault();
+                        // NOTE: Real download link would be fetched from Supabase Storage access API
+                        alert(`Simulating secure CV download/view for: ${e.target.dataset.filename}.`);
+                    };
+                });
+            }
+            applicantsModal.style.display = "block";
+        } catch (error) {
+            listElement.innerHTML = "<p style='color:red;'>Failed to load applicants.</p>";
+        }
+    }
+
+    // --- SEEKER CV LOAD (API) ---
+    async function loadSeekerCVs() {
+        const listContainer = document.getElementById("seeker-cv-list");
+        listContainer.innerHTML = "Loading talent pool data...";
+        
+        try {
+            const allSeekers = await fetchApi('employer/seekers', 'GET');
+
+            const categoryFilter = document.getElementById("seeker-filter-category");
+            const skillFilter = document.getElementById("seeker-filter-skill");
+
+            const renderCVs = (seekers) => {
+                if (seekers.length === 0) {
+                    listContainer.innerHTML = "<p>No job seekers match your current filter requirements. Try a broader search!</p>";
+                    return;
+                }
+
+                listContainer.innerHTML = seekers.map(seeker => `
+                    <div class="seeker-cv-card" data-seeker-id="${seeker.id}">
+                        <h4>${seeker.name}</h4>
+                        <p><strong>Education:</strong> ${seeker.education || 'N/A'}</p>
+                        <div class="skills">${(seeker.skills || []).map(s => `<span>${s}</span>`).join('')}</div>
+                        <a href="#" class="btn btn-primary view-cv-details" data-userid="${seeker.id}">View Details & CV</a>
+                    </div>
+                `).join('');
+
+                listContainer.querySelectorAll('.view-cv-details').forEach(link => {
+                    link.onclick = (e) => {
+                        e.preventDefault();
+                        const seekerId = parseInt(e.target.dataset.userid);
+                        const seeker = allSeekers.find(u => u.id === seekerId);
+
+                        alert(
+                            `SEEKER PROFILE:\n` +
+                            `Name: ${seeker.name}\n` +
+                            `Email: ${seeker.email}\n` +
+                            `Phone: ${seeker.phone || 'N/A'}\n` +
+                            `Skills: ${seeker.skills.join(", ") || 'N/A'}\n` +
+                            `Education: ${seeker.education || 'N/A'}\n` +
+                            `CV: ${seeker.cvFileName || 'Not Uploaded'}\n\n`
+                        );
+                    };
+                });
+            };
+
+            const applyFilters = () => {
+                const selectedCategory = categoryFilter.value;
+                const skillText = skillFilter.value.toLowerCase().trim();
+
+                let filteredSeekers = allSeekers;
+
+                if (skillText.length > 0) {
+                    filteredSeekers = filteredSeekers.filter(seeker =>
+                        (seeker.skills || []).some(s => s.toLowerCase().includes(skillText))
+                    );
+                }
+
+                if (selectedCategory !== 'all') {
+                    const categoryKeywords = {
+                        'IT & Tech': ['javascript', 'react', 'python', 'developer', 'software', 'cloud'],
+                        'Marketing & Finance': ['marketing', 'finance', 'accounting', 'seo', 'excel', 'audit'],
+                        'Manufacturing': ['mechanical', 'engineer', 'production', 'supply', 'quality', 'cad'],
+                        'Hospitality': ['hotel', 'chef', 'service', 'front desk', 'f&b'],
+                        'Sales': ['sales', 'b2b', 'account', 'crm'],
+                        'Management': ['manager', 'leadership', 'operations', 'project', 'hr'],
+                    };
+
+                    filteredSeekers = filteredSeekers.filter(seeker => {
+                        const seekerSkillsLower = (seeker.skills || []).map(s => s.toLowerCase());
+                        return categoryKeywords[selectedCategory].some(keyword => 
+                            seekerSkillsLower.some(skill => skill.includes(keyword))
+                        );
+                    });
+                }
+                renderCVs(filteredSeekers);
+            };
+
+            categoryFilter.onchange = applyFilters;
+            skillFilter.oninput = applyFilters; 
+            applyFilters();
+        } catch (error) {
+            listContainer.innerHTML = "<p style='color:red;'>Failed to load talent pool data. Check your backend and employer role.</p>";
+        }
+    }
+    
+    // ------------------------------------------------------------------
+    // 8. ADMIN LOGIC (API)
+    // ------------------------------------------------------------------
     function initAdmin() {
         const db = getDb();
         
-        if (!db.currentUser || db.currentUser.type !== 'admin') {
-            updateHeaderUI();
-            return;
-        }
+        // NOTE: Admin stats need dedicated API endpoints to fetch counts securely. 
+        // We will keep the local values for structure demonstration.
         
-        document.getElementById("total-seekers").textContent = db.users.filter((u) => u.type === "seeker").length;
-        document.getElementById("total-employers").textContent = db.users.filter((u) => u.type === "employer").length;
+        document.getElementById("total-seekers").textContent = db.users.filter((u) => u.role === "seeker").length;
+        document.getElementById("total-employers").textContent = db.users.filter((u) => u.role === "employer").length;
         document.getElementById("total-jobs").textContent = db.jobs.length;
-        document.getElementById("total-subscriptions").textContent = db.users.filter((u) => u.subscription.active).length; 
+        document.getElementById("total-subscriptions").textContent = db.users.filter((u) => u.subscription.active).length;
 
         // Load Seekers List
         const seekersListContainer = document.getElementById("job-seekers-list");
-        const seekers = db.users.filter((u) => u.type === "seeker");
+        const seekers = db.users.filter((u) => u.role === "seeker");
         if (seekers.length > 0) {
             seekersListContainer.innerHTML = `<ul>${seekers.map(
                 (seeker) => `<li>${seeker.name} (${seeker.email}) - <a href="#" class="view-profile" data-userid="${seeker.id}">View Profile</a></li>`
@@ -764,7 +1051,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Load Employers List
         const employersListContainer = document.getElementById("employer-profiles-list");
-        const employers = db.users.filter((u) => u.type === "employer");
+        const employers = db.users.filter((u) => u.role === "employer");
         if (employers.length > 0) {
             employersListContainer.innerHTML = `<ul>${employers.map(
                 (employer) => `<li>${employer.name} (${employer.email}) - <a href="#" class="view-profile" data-userid="${employer.id}">View Details</a></li>`
@@ -773,16 +1060,15 @@ document.addEventListener("DOMContentLoaded", () => {
             employersListContainer.innerHTML = "<p>No employers have registered yet.</p>";
         }
 
-        // Add event listeners for View Profile links
         document.querySelectorAll(".view-profile").forEach(
             (link) =>
-                (link.onclick = (e) => {
-                    e.preventDefault();
-                    const userProfile = db.users.find((u) => u.id === parseInt(e.target.dataset.userid));
-                    alert(
-                        `${userProfile.type.toUpperCase()} Profile:\nName: ${userProfile.name}\nEmail: ${userProfile.email}\nPhone: ${userProfile.phone || "N/A"}\nPlan: ${userProfile.subscription.active ? 'Premium' : 'Basic'}\nSkills: ${userProfile.skills.join(", ") || 'N/A'}\nCV: ${userProfile.cvFileName || 'N/A'}`
-                    );
-                })
+            (link.onclick = (e) => {
+                e.preventDefault();
+                const userProfile = db.users.find((u) => u.id === parseInt(e.target.dataset.userid));
+                alert(
+                    `${userProfile.role.toUpperCase()} Profile:\nName: ${userProfile.name}\nEmail: ${userProfile.email}\nPlan: ${userProfile.subscription.active ? 'Premium' : 'Basic'}`
+                );
+            })
         );
     }
 });

@@ -176,19 +176,19 @@
 
             <div id="employer-dashboard" class="role-view hidden full-width-dashboard">
 
+                <div id="employer-nav-tabs" class="job-filter-nav">
+                    <button id="postJobTab" class="btn btn-primary employer-tab-btn" data-view-target="employer-post-view">Post Job</button>
+                    <button id="manageJobsTab" class="btn employer-tab-btn" data-view-target="employer-management-view">Manage Posted Jobs</button>
+                    <button id="viewSeekersTab" class="btn employer-tab-btn" data-view-target="employer-seeker-view">View Seeker CVs</button>
+                </div>
+
                 <div id="employer-post-view" class="full-screen-view card">
                     <div class="employer-post-header">
                         <h2>Post a New Job</h2>
-                        <button id="viewManagementBtn" class="btn">View Posted Jobs</button>
+                        <div id="employer-subscription-status-small" class="employer-subscription-status-small"></div>
                     </div>
 
-                    <div id="employer-subscription-status" class="card subscription-card">
-                        <h3 id="employer-plan-title">Basic Plan</h3>
-                        <p id="employer-plan-limit">Post up to 5 jobs per month.</p>
-                        <button id="upgradeToPremiumBtn" class="btn btn-primary">Upgrade to Premium</button>
-                    </div>
-
-                    <div class="post-job-section full-width-form">
+                    <div id="job-post-form-content">
                         <div id="multi-step-job-form-container">
                             <form id="jobStep1Form" class="job-step-form">
                                 <h4>Step 1: Basic Information</h4>
@@ -205,23 +205,42 @@
                                 <input type="text" id="job-location" placeholder="Location (e.g., Mumbai, India)" required>
                                 <button type="button" class="btn btn-primary next-step-btn" data-step="1">Next (Requirements)</button>
                             </form>
+
                             <form id="jobStep2Form" class="job-step-form hidden">
                                 <h4>Step 2: Requirements & Pay</h4>
                                 <input type="text" id="job-experience" placeholder="Experience Required (e.g., 2-4 years)" required>
                                 <input type="text" id="job-salary" placeholder="Expected Salary (e.g., ₹8-12 LPA)" required>
+                                <input type="text" id="job-current-ctc" placeholder="Current CTC (Optional, e.g., ₹5 LPA)">
                                 <input type="text" id="job-skills" placeholder="Required Skills (comma-separated)" required>
                                 <div class="form-actions">
                                     <button type="button" class="btn prev-step-btn" data-step="2">Back</button>
                                     <button type="button" class="btn btn-primary next-step-btn" data-step="2">Next (Description)</button>
                                 </div>
                             </form>
+
                             <form id="jobStep3Form" class="job-step-form hidden">
-                                <h4>Step 3: Final Details</h4>
-                                <input type="text" id="job-notice-period" placeholder="Notice Period (e.g., 30 days)">
+                                <h4>Step 3: Final Details & Screening</h4>
                                 <textarea id="job-description" placeholder="Full Job Description" required></textarea>
+                                <input type="text" id="job-notice-period" placeholder="Notice Period (e.g., 30 days)">
+
+                                <div style="margin-top: 1.5rem;">
+                                    <label for="add-screening-questions">Want to add screening questions?</label>
+                                    <select id="add-screening-questions">
+                                        <option value="no">No</option>
+                                        <option value="yes">Yes</option>
+                                    </select>
+                                </div>
+
+                                <div id="screening-questions-container" class="hidden">
+                                    <h5 style="margin-top: 1rem; color: var(--secondary-color);">Add up to 3 Mandatory Questions (Q1 & Q2 are mandatory):</h5>
+                                    <input type="text" id="sq1" placeholder="Question 1 (e.g., Min 2 years React experience?)">
+                                    <input type="text" id="sq2" placeholder="Question 2 (e.g., Notice Period less than 30 days?)">
+                                    <input type="text" id="sq3" placeholder="Question 3 (Optional)">
+                                </div>
+
                                 <div class="form-actions">
                                     <button type="button" class="btn prev-step-btn" data-step="3">Back</button>
-                                    <button type="submit" id="postJobSubmitBtn" class="btn btn-primary">Post Job Now</button>
+                                    <button type="submit" id="postJobSubmitBtn" class="btn btn-primary">Review & Post Job</button>
                                 </div>
                             </form>
                         </div>
@@ -235,15 +254,36 @@
                     </div>
                     <div class="employer-management-content-grid">
                         <div class="employer-stats card">
-                            <h3>Talent Pool</h3>
+                            <h3>Total Seekers</h3>
                             <p>We have <strong id="seeker-count">0</strong> talented job seekers on our platform!</p>
                         </div>
                         <div class="posted-jobs-section">
-                            <h3>Your Recent Jobs (Click to View Applicants)</h3>
+                            <h3>Your Posted Jobs (Click to View Applicants)</h3>
                             <div id="posted-jobs-list" class="job-list"></div>
                         </div>
                     </div>
                 </div>
+
+                <div id="employer-seeker-view" class="full-screen-view card hidden">
+                    <h2 style="margin-bottom: 1rem;">Talent Pool (Job Seeker CVs)</h2>
+
+                    <div class="seeker-filter-options">
+                        <select id="seeker-filter-category">
+                            <option value="all">Filter by Domain (All)</option>
+                            <option value="IT & Tech">IT & Tech</option>
+                            <option value="Marketing & Finance">Marketing & Finance</option>
+                            <option value="Manufacturing">Manufacturing</option>
+                            <option value="Hospitality">Hospitality</option>
+                            <option value="Sales">Sales</option>
+                            <option value="Management">Management</option>
+                        </select>
+                        <input type="text" id="seeker-filter-skill" placeholder="Filter by Specific Skill (e.g., Python, React)">
+                    </div>
+
+                    <div id="seeker-cv-list">
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -364,6 +404,18 @@
             <span class="close-btn" id="close-applicants-modal">&times;</span>
             <h3>Applicants for <span id="applicants-job-title"></span></h3>
             <div id="applicants-list">
+            </div>
+        </div>
+    </div>
+
+    <div id="subscriptionModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-subscription-modal">&times;</span>
+            <div id="employer-subscription-details" class="subscription-card">
+                <h3>Subscription Details</h3>
+                <p id="modal-plan-status"></p>
+                <p id="modal-plan-limit"></p>
+                <button id="modalUpgradeToPremiumBtn" class="btn btn-primary">Upgrade to Premium (₹9,999/month)</button>
             </div>
         </div>
     </div>
