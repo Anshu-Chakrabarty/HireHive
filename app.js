@@ -2,28 +2,12 @@ document.addEventListener("DOMContentLoaded", () => {
             // ------------------------------------------------------------------
             // 1. GLOBAL CONFIGURATION & TOKEN MANAGEMENT
             // ------------------------------------------------------------------
-            const BASE_URL = "https://hirehive-api.onrender.com";
+            // IMPORTANT: REPLACE THIS with your LIVE Render domain URL
+            const BASE_URL = "https://hirehive-api.onrender.com/api";
 
             const getToken = () => localStorage.getItem("hirehiveToken");
             const setToken = (token) => localStorage.setItem("hirehiveToken", token);
             const removeToken = () => localStorage.removeItem("hirehiveToken");
-
-            // Helper function to simulate current month's job count (Local-only, needs API help for accurate count)
-            const getCurrentMonthJobCount = () => {
-                const currentUser = getLocalUser();
-                if (!currentUser || currentUser.role !== 'employer') return 0;
-
-                // --- NOTE: In a real app, this count would be fetched from the API. ---
-                const db = getDb();
-                const startOfMonth = new Date();
-                startOfMonth.setDate(1);
-                startOfMonth.setHours(0, 0, 0, 0);
-
-                return db.jobs.filter(job =>
-                    job.employerId === currentUser.id &&
-                    new Date(job.postedDate) >= startOfMonth
-                ).length;
-            };
 
             // --- API Fetch Helper (Handles Authentication) ---
             async function fetchApi(endpoint, method = 'GET', data = null, isFormData = false) {
@@ -70,20 +54,13 @@ document.addEventListener("DOMContentLoaded", () => {
             // ------------------------------------------------------------------
             // 2. BACKEND SIMULATION HELPERS (Kept for initial local state consistency)
             // ------------------------------------------------------------------
-            // KEEPING LOCAL DB FOR SIMULATION OF CURRENT USER STATE (Which should ideally be JWT payload)
+            // Local storage helpers are kept only to maintain the currentUser object,
+            // which should ideally come entirely from the decoded JWT payload or a profile API call.
             if (!localStorage.getItem("hirehiveDB")) {
                 const db = {
-                    users: [
-                        { id: 100, name: "Sita Sharma", email: "sita@example.com", phone: "9999911111", role: "seeker", skills: ["JavaScript", "React", "HTML", "CSS"], education: "B.Tech in CS", cvFileName: "sita_sharma_cv.pdf", subscription: { active: false, plan: "none" } },
-                        { id: 200, name: "Acme Corp", email: "acme@example.com", phone: "9999922222", role: "employer", skills: [], education: "", cvFileName: "", subscription: { active: true, plan: "premium" } },
-                        { id: 300, name: "Admin", email: "admin@hirehive.com", phone: "0000000000", role: "admin", skills: [], education: "", cvFileName: "", subscription: { active: true, plan: "premium" } },
-                    ],
-                    jobs: [
-                        { id: 1, postedDate: new Date().toISOString(), employerId: 200, title: "Senior React Developer", category: "IT & Tech", location: "Bangalore", experience: "4-6 years", salary: "₹15-20 LPA", requiredSkills: ["React", "JavaScript", "Redux"], description: "Build scalable web applications.", noticePeriod: "60 days", ctc: "₹12 LPA", screeningQuestions: ["Minimum 4 years React experience?", "Can join within 30 days?"], postedBy: "Acme Corp" }
-                    ],
-                    applications: [
-                        { jobId: 1, seekerId: 100, status: "applied", answers: ["Yes, 5 years.", "Yes"] }
-                    ],
+                    users: [],
+                    jobs: [],
+                    applications: [],
                     currentUser: null,
                 };
                 localStorage.setItem("hirehiveDB", JSON.stringify(db));
@@ -100,9 +77,27 @@ document.addEventListener("DOMContentLoaded", () => {
                 saveDb(db);
             };
 
+            // Helper to simulate current month's job count (Local-only, since API doesn't provide this count)
+            const getCurrentMonthJobCount = () => {
+                const db = getDb();
+                const currentUser = getLocalUser();
+                if (!currentUser || currentUser.role !== 'employer') return 0;
+
+                // This relies on the local 'jobs' list still being synced/updated, which is unreliable. 
+                // In a real app, this MUST be an API call.
+                const startOfMonth = new Date();
+                startOfMonth.setDate(1);
+                startOfMonth.setHours(0, 0, 0, 0);
+
+                return db.jobs.filter(job =>
+                    job.employerId === currentUser.id &&
+                    new Date(job.postedDate) >= startOfMonth
+                ).length;
+            };
+
 
             // ------------------------------------------------------------------
-            // 3. SPA ROUTER / VIEW MANAGER (Updated to check for API status)
+            // 3. SPA ROUTER / VIEW MANAGER
             // ------------------------------------------------------------------
             const views = {
                 'home': document.getElementById("home-view"),
@@ -344,7 +339,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const user = getLocalUser();
                 if (!user || user.role !== "employer") return;
 
-                // NOTE: In a real app, the job count and plan status should be fetched from the API.
+                // NOTE: Job count and plan status still rely on local storage for this demo
                 const isPremium = user.subscription.active;
                 const currentJobs = getCurrentMonthJobCount();
                 const jobLimit = 5;
@@ -372,7 +367,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 setTimeout(() => {
                     alert("Payment simulated! Your Premium Employer subscription is now active.");
 
-                    // NOTE: In a real app, this would be a PUT request to /api/employer/profile with { subscription: {active: true, plan: 'premium'} }
+                    // NOTE: This would be a real API call to PUT /api/employer/profile with { subscription: {active: true, plan: 'premium'} }
                     const db = getDb();
                     const userIndex = db.users.findIndex((u) => u.id === getLocalUser().id);
                     db.users[userIndex].subscription = { active: true, plan: "premium" };
@@ -431,12 +426,9 @@ document.addEventListener("DOMContentLoaded", () => {
             editProfileBtn.onclick = showSeekerProfileView;
             backToJobsBtn.onclick = showSeekerJobView;
 
-            // --- SEEKER PROFILE LOAD (API) ---
+            // --- SEEKER PROFILE LOAD/SAVE (API) ---
             async function loadSeekerProfileForm() {
                 const currentUser = getLocalUser();
-
-                // In a real app, you would fetch the latest user data here. 
-                // For simplicity, we use the local state.
 
                 document.getElementById("seeker-name").value = currentUser.name || "";
                 document.getElementById("seeker-email").value = currentUser.email || "";
@@ -453,12 +445,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 cvFilenameEl.querySelectorAll('.cv-link').forEach(link => {
                     link.onclick = (e) => {
                         e.preventDefault();
-                        // NOTE: Real CV link would hit a server endpoint for secure download/view.
                         alert(`Simulating download/view of CV: ${e.target.dataset.filename}.`);
                     };
                 });
 
-                // --- SEEKER PROFILE SAVE (API) ---
                 document.getElementById("profile-form").onsubmit = async(e) => {
                     e.preventDefault();
                     const name = document.getElementById("seeker-name").value;
@@ -692,7 +682,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // --- API JOB POST HANDLER ---
+    // --- API JOB POST/UPDATE HANDLER ---
     async function handleJobPost(e, jobId = null) {
         e.preventDefault();
 
@@ -734,7 +724,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 alert("Job updated successfully! Redirecting to management view.");
             } else {
                 // Post new job
-                await fetchApi('employer/jobs', 'POST', jobData);
+                const data = await fetchApi('employer/jobs', 'POST', jobData);
+                
+                // Add new job to local store for demo purposes (job limit check)
+                const db = getDb();
+                db.jobs.push(data.job);
+                saveDb(db);
+
                 alert("Job posted successfully! Redirecting to management view.");
             }
             
@@ -756,8 +752,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const myJobs = await fetchApi('employer/jobs', 'GET');
             postedJobsList.innerHTML = ""; // Clear "Loading..."
 
-            // NOTE: The backend now returns the applicant count, which is ideal!
-            const totalSeekerCount = "N/A (Fetch from separate admin API)"; // Can't be reliably fetched here
+            // NOTE: The backend now returns the applicant count
+            const totalSeekerCount = "N/A (Fetch from separate admin API)"; 
             document.getElementById("seeker-count").textContent = totalSeekerCount; 
 
             if (myJobs.length === 0) {
@@ -865,6 +861,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         try {
             await fetchApi(`employer/jobs/${jobId}`, 'DELETE');
+            
+            // Sync local store for demo purposes
+            const db = getDb();
+            db.jobs = db.jobs.filter(job => job.id !== jobId);
+            saveDb(db);
+
             alert("Job successfully deleted.");
             loadPostedJobs(); // Reload the list
         } catch (error) {
@@ -879,7 +881,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         try {
             const data = await fetchApi(`employer/applicants/${jobId}`, 'GET');
-            const job = { title: "Job Title", screeningQuestions: data.screeningQuestions }; // Mock job for title
+            const job = { title: "Applicants for Job", screeningQuestions: data.screeningQuestions };
             const applicants = data.applicants;
             
             document.getElementById("applicants-job-title").textContent = job.title;
@@ -895,7 +897,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <td>${app.name}</td>
                         <td>${app.email}</td>
                         <td>${app.phone || 'N/A'}</td>
-                        <td>${app.skills.join(", ") || 'N/A'}</td>
+                        <td>${(app.skills || []).join(", ") || 'N/A'}</td>
                         <td>
                             ${app.cvFileName 
                                 ? `<a href="#" class="cv-link" data-filename="${app.cvFileName}">${app.cvFileName}</a>`
@@ -928,7 +930,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 listElement.querySelectorAll('.cv-link').forEach(link => {
                     link.onclick = (e) => {
                         e.preventDefault();
-                        // NOTE: Real download link would be fetched from Supabase Storage access API
                         alert(`Simulating secure CV download/view for: ${e.target.dataset.filename}.`);
                     };
                 });
@@ -1028,10 +1029,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // 8. ADMIN LOGIC (API)
     // ------------------------------------------------------------------
     function initAdmin() {
+        // NOTE: Admin stats would require dedicated secure API endpoints for production. 
+        // Keeping placeholder logic for demo structure.
         const db = getDb();
-        
-        // NOTE: Admin stats need dedicated API endpoints to fetch counts securely. 
-        // We will keep the local values for structure demonstration.
         
         document.getElementById("total-seekers").textContent = db.users.filter((u) => u.role === "seeker").length;
         document.getElementById("total-employers").textContent = db.users.filter((u) => u.role === "employer").length;
