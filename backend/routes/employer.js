@@ -54,7 +54,7 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
     // 1. Subscription Check and Enforcement
     const { data: user, error: userError } = await supabase
         .from('users')
-        // Must select the required fields using their defined casing
+        // Must select the required fields using their defined lowercase casing
         .select('subscriptionstatus, jobpostcount')
         .eq('id', employerId)
         .single();
@@ -63,7 +63,7 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
 
     const currentPlanKey = user.subscriptionstatus || 'buzz';
 
-    // 🔥 FINAL FIX: Calculate planLimit using standard check to avoid SyntaxError
+    // 🔥 FINAL FIX: Using standard conditional block to avoid SyntaxError
     let planLimit = 0;
     const plan = HIVE_PLANS[currentPlanKey];
     if (plan && plan.limit !== undefined) {
@@ -81,7 +81,8 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
 
     // 2. Insert Job Data
     const jobData = {
-        employerId,
+        // FIX: The database foreign key column expects 'employerid' (all lowercase)
+        employerid: employerId,
         title,
         category,
         location,
@@ -129,7 +130,8 @@ router.get('/jobs', auth, isEmployer, async(req, res) => {
             *, 
             applications(count)
         `)
-        .eq('employerId', employerId)
+        // FIX: Must query using the lowercase DB column name 'employerid'
+        .eq('employerid', employerId)
         .order('postedDate', { ascending: false });
 
     if (error) return res.status(400).json({ error: error.message });
@@ -146,7 +148,8 @@ router.put('/jobs/:jobId', auth, isEmployer, async(req, res) => {
         .from('jobs')
         .update(updateData)
         .eq('id', jobId)
-        .eq('employerId', employerId)
+        // FIX: Must query using the lowercase DB column name 'employerid'
+        .eq('employerid', employerId)
         .select()
         .single();
 
@@ -169,7 +172,8 @@ router.delete('/jobs/:jobId', auth, isEmployer, async(req, res) => {
         .from('jobs')
         .delete()
         .eq('id', jobId)
-        .eq('employerId', employerId);
+        // FIX: Must query using the lowercase DB column name 'employerid'
+        .eq('employerid', employerId);
 
     if (error) return res.status(400).json({ error: error.message });
     res.json({ message: 'Job deleted successfully and applications removed.' });
@@ -188,9 +192,11 @@ router.get('/applicants/:jobId', auth, isEmployer, async(req, res) => {
     // 1. Verify the job belongs to the current employer
     const { data: job, error: jobError } = await supabase
         .from('jobs')
-        .select('id, employerId, screeningQuestions, title')
+        // FIX: Select using lowercase column name 'employerid'
+        .select('id, employerid, screeningQuestions, title')
         .eq('id', jobId)
-        .eq('employerId', employerId)
+        // FIX: Query using lowercase column name 'employerid'
+        .eq('employerid', employerId)
         .single();
 
     if (jobError || !job) return res.status(403).json({ error: 'Access denied to job applicants.' });
@@ -200,6 +206,7 @@ router.get('/applicants/:jobId', auth, isEmployer, async(req, res) => {
         .from('applications')
         .select(`
             answers,
+            // Select ALL LOWERCASE column names for consistency
             seekers:seekerId (name, email, phone, skills, education, cvfilename) 
         `)
         .eq('jobId', jobId);
@@ -224,6 +231,7 @@ router.get('/seekers', auth, isEmployer, async(req, res) => {
 
     const { data: seekers, error } = await supabase
         .from('users')
+        // Select ALL LOWERCASE column names for consistency
         .select('id, name, email, phone, skills, education, cvfilename')
         .eq('role', 'seeker')
         .order('name', { ascending: true });
