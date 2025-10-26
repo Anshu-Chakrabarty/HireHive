@@ -26,9 +26,7 @@ router.post('/signup', async(req, res) => {
         skills: [],
         education: '',
 
-        // Ensure column names match your DB schema exactly (e.g., snake_case or camelCase)
-        // If your DB uses snake_case, these names (cvFileName, jobPostCount, subscriptionStatus) 
-        // must be exactly what the DB expects. They are set to camelCase here for consistency.
+        // Finalized column names that must match your Supabase table exactly
         cvFileName: '',
         jobPostCount: 0,
 
@@ -50,7 +48,6 @@ router.post('/signup', async(req, res) => {
         if (error.code === '23505') {
             return res.status(409).json({ error: 'User with this email already exists.' });
         }
-        // This is the error we are chasing. If it fails, check your Supabase schema column names.
         return res.status(400).json({ error: error.message });
     }
 

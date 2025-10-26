@@ -1,4 +1,4 @@
-// --- Backend: index.js (FINAL, HARDENED VERSION) ---
+// --- Backend: index.js (REPLACE ENTIRE FILE) ---
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -14,10 +14,10 @@ const app = express();
 // --- Middleware Setup ---
 // Define the allowed origins dynamically. 
 const allowedOrigins = [
-    'http://127.0.0.1:5500',
-    'http://localhost:3000',
-    process.env.CLIENT_ORIGIN,
-    'https://hirehive.in' // Explicitly allowed domain
+    'http://127.0.0.1:5500', // Local Dev
+    'http://localhost:3000', // Standard Dev port
+    process.env.CLIENT_ORIGIN, // Vercel Preview URL
+    'https://hirehive.in' // FIX: Explicitly allow custom domain
 ];
 
 app.use(cors({
@@ -27,6 +27,7 @@ app.use(cors({
         if (allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
+            // Allow dynamic Vercel/Render preview domains
             if (origin.endsWith('.onrender.com') || origin.endsWith('.vercel.app')) {
                 callback(null, true);
             } else {
@@ -40,20 +41,14 @@ app.use(cors({
 
 app.use(express.json());
 
-// --- Heartbeat Function (FIX: Add strict URL check) ---
+// --- Heartbeat Function (FIX: Prevents Render Cold Start) ---
 const RENDER_EXTERNAL_URL = process.env.RENDER_EXTERNAL_URL;
 
-// The Heartbeat should ONLY run if the external URL exists AND it's a secure URL
 if (RENDER_EXTERNAL_URL && RENDER_EXTERNAL_URL.startsWith('https://')) {
-    console.log(`[Heartbeat Setup] Starting keep-alive function for: ${RENDER_EXTERNAL_URL}`);
-
     const keepAlive = () => {
         https.get(RENDER_EXTERNAL_URL, (res) => {
-            // Check for success status codes
             if (res.statusCode >= 200 && res.statusCode < 400) {
-                console.log(`[Heartbeat] Pinged server, status: ${res.statusCode}`);
-            } else {
-                console.error(`[Heartbeat] Pinged server, but got status error: ${res.statusCode}`);
+                // Success log is suppressed to keep console clean, but ping happens
             }
         }).on('error', (err) => {
             console.error(`[Heartbeat] Ping error: ${err.message}. Server may be sleeping or restarting.`);
@@ -65,7 +60,7 @@ if (RENDER_EXTERNAL_URL && RENDER_EXTERNAL_URL.startsWith('https://')) {
 }
 // --- End Heartbeat ---
 
-// --- Status Check Endpoint (Used by the heartbeat) ---
+// --- Status Check Endpoint ---
 app.get('/', (req, res) => {
     res.send('HireHive API is alive!');
 });

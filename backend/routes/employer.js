@@ -46,7 +46,7 @@ const isEmployer = checkRole(['employer', 'admin']);
 // 2. EMPLOYER JOB MANAGEMENT (/api/employer/jobs)
 // ------------------------------------------------------------------
 
-// POST: Create a new job (Subscription Enforcement Added)
+// POST: Create a new job (Subscription Enforcement - HARDENED SYNTAX)
 router.post('/jobs', auth, isEmployer, async(req, res) => {
     const { title, category, location, experience, salary, ctc, requiredSkills, description, noticePeriod, screeningQuestions } = req.body;
     const employerId = req.user.id;
@@ -54,7 +54,6 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
     // 1. Subscription Check and Enforcement
     const { data: user, error: userError } = await supabase
         .from('users')
-        // Must select the camelCase fields used for job limits
         .select('subscriptionStatus, jobPostCount')
         .eq('id', employerId)
         .single();
@@ -62,7 +61,13 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
     if (userError || !user) return res.status(500).json({ error: 'Failed to retrieve user subscription status.' });
 
     const currentPlanKey = user.subscriptionStatus || 'buzz';
-    const planLimit = HIVE_PLANS[currentPlanKey] ? .limit || 0;
+
+    // FIX: Using traditional lookup to avoid optional chaining syntax errors (?. )
+    let planLimit = 0;
+    if (HIVE_PLANS[currentPlanKey] && HIVE_PLANS[currentPlanKey].limit !== undefined) {
+        planLimit = HIVE_PLANS[currentPlanKey].limit;
+    }
+
     const isUnlimited = planLimit === Infinity;
 
     if (!isUnlimited && user.jobPostCount >= planLimit) {
@@ -95,7 +100,7 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
 
     if (jobInsertError) return res.status(400).json({ error: jobInsertError.message });
 
-    // 3. Update Job Count for Basic Plans (only if job was successfully posted)
+    // 3. Update Job Count for Basic Plans
     if (!isUnlimited) {
         const { error: updateError } = await supabase
             .from('users')
@@ -104,7 +109,6 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
 
         if (updateError) {
             console.error("Failed to update job post count:", updateError);
-            // Note: We don't fail the job post, but log the count error.
         }
     }
 
@@ -119,7 +123,7 @@ router.get('/jobs', auth, isEmployer, async(req, res) => {
         .from('jobs')
         .select(`
             *, 
-            applications(count) // Count applications related to this job
+            applications(count)
         `)
         .eq('employerId', employerId)
         .order('postedDate', { ascending: false });
@@ -138,7 +142,7 @@ router.put('/jobs/:jobId', auth, isEmployer, async(req, res) => {
         .from('jobs')
         .update(updateData)
         .eq('id', jobId)
-        .eq('employerId', employerId) // Crucial security check: Only owner can update
+        .eq('employerId', employerId)
         .select()
         .single();
 
@@ -152,10 +156,6 @@ router.put('/jobs/:jobId', auth, isEmployer, async(req, res) => {
 router.delete('/jobs/:jobId', auth, isEmployer, async(req, res) => {
     const { jobId } = req.params;
     const employerId = req.user.id;
-
-    // NOTE: Job count decrement logic is NOT included here, as it requires complex
-    // logic to handle plan downgrades/upgrades. We rely on the monthly reset 
-    // or an Admin function for true count management.
 
     // 1. Delete related applications first
     await supabase.from('applications').delete().eq('jobId', jobId);
@@ -196,7 +196,6 @@ router.get('/applicants/:jobId', auth, isEmployer, async(req, res) => {
         .from('applications')
         .select(`
             answers,
-            // Select must use camelCase column names from the 'users' table 
             seekers:seekerId (name, email, phone, skills, education, cvFileName) 
         `)
         .eq('jobId', jobId);
@@ -205,7 +204,6 @@ router.get('/applicants/:jobId', auth, isEmployer, async(req, res) => {
 
     // Format the data to be easier for the frontend to consume
     const formattedApplicants = applications.map(app => ({
-        // Spread the seeker data
         ...app.seekers,
         applicationAnswers: app.answers,
     }));
@@ -222,7 +220,6 @@ router.get('/seekers', auth, isEmployer, async(req, res) => {
 
     const { data: seekers, error } = await supabase
         .from('users')
-        // Select must use camelCase column names from the 'users' table 
         .select('id, name, email, phone, skills, education, cvFileName')
         .eq('role', 'seeker')
         .order('name', { ascending: true });
