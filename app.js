@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // ------------------------------------------------------------------
             // 1. GLOBAL CONFIGURATION & TOKEN MANAGEMENT
             // ------------------------------------------------------------------
-            // IMPORTANT: REPLACE THIS with your LIVE Render domain URL (e.g., https://your-app.onrender.com/api)
+            // IMPORTANT: REPLACE THIS with your LIVE Render domain URL
             const BASE_URL = "https://hirehive-api.onrender.com/api";
 
             const getToken = () => localStorage.getItem("hirehiveToken");
@@ -102,14 +102,22 @@ document.addEventListener("DOMContentLoaded", () => {
             // ------------------------------------------------------------------
             // 3. SPA ROUTER / VIEW MANAGER & MOBILE MENU 
             // ------------------------------------------------------------------
+            const homeView = document.getElementById("home-view");
+            const dashboardView = document.getElementById("dashboard-view");
+            const adminView = document.getElementById("admin-view");
+            const aboutView = document.getElementById("about-view");
+            const contactView = document.getElementById("contact-view");
+            const careerGrowthView = document.getElementById("career-growth-view");
+
             const views = {
-                'home': document.getElementById("home-view"),
-                'dashboard': document.getElementById("dashboard-view"),
-                'admin': document.getElementById("admin-view"),
-                'about': document.getElementById("about-view"),
-                'contact': document.getElementById("contact-view"),
-                'career-growth': document.getElementById("career-growth-view"),
+                'home': homeView,
+                'dashboard': dashboardView,
+                'admin': adminView,
+                'about': aboutView,
+                'contact': contactView,
+                'career-growth': careerGrowthView,
             };
+
 
             const dashboardLink = document.getElementById("dashboardLink");
             const adminLink = document.getElementById("adminLink");
@@ -245,7 +253,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             // ------------------------------------------------------------------
-            // 4. AUTH & MODAL LOGIC 
+            // 4. AUTH & MODAL LOGIC (Fix: Listener attachment)
             // ------------------------------------------------------------------
             const modal = document.getElementById("authModal");
             const loginFormContainer = document.getElementById("login-form-container");
@@ -257,12 +265,18 @@ document.addEventListener("DOMContentLoaded", () => {
             const closeApplicantsModalBtn = document.getElementById("close-applicants-modal");
             const closeSubscriptionModalBtn = document.getElementById("close-subscription-modal");
 
+            // Find the switching links and buttons that were failing to attach
+            const switchToOtpLink = document.getElementById("switch-to-otp");
+            const switchFormLink = document.getElementById("switch-form-link");
+
+
             const showForm = (formToShow) => {
                 [loginFormContainer, signupFormContainer, otpFormContainer].forEach((f) => f.classList.add("hidden"));
                 formToShow.classList.remove("hidden");
                 modal.style.display = "block";
             };
 
+            // Attach listeners to public buttons and close buttons
             loginBtn.onclick = () => showForm(loginFormContainer);
             signupBtn.onclick = () => showForm(signupFormContainer);
             closeBtn.onclick = () => { modal.style.display = "none"; };
@@ -275,14 +289,24 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (event.target == subscriptionModal) subscriptionModal.style.display = "none";
             };
 
-            document.getElementById("switch-form-link").onclick = (e) => {
-                e.preventDefault();
-                showForm(signupFormContainer.classList.contains("hidden") ? signupFormContainer : loginFormContainer);
-            };
-            document.getElementById("switch-to-otp").onclick = (e) => {
-                e.preventDefault();
-                showForm(otpFormContainer);
-            };
+            // FIX: Ensure these links prevent default action and show the correct form
+            if (switchFormLink) {
+                switchFormLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    showForm(
+                        signupFormContainer.classList.contains("hidden") ?
+                        signupFormContainer :
+                        loginFormContainer
+                    );
+                });
+            }
+
+            if (switchToOtpLink) {
+                switchToOtpLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    showForm(otpFormContainer);
+                });
+            }
 
             // --- API SIGNUP ---
             document.getElementById("signupForm").addEventListener("submit", async(e) => {
@@ -310,7 +334,7 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("loginForm").addEventListener("submit", async(e) => {
                 e.preventDefault();
                 const email = document.getElementById("loginEmail").value;
-                const password = 'Password123'; // Simulated password
+                const password = 'Password123';
 
                 try {
                     const data = await fetchApi('auth/login', 'POST', { email, password });
@@ -385,14 +409,12 @@ document.addEventListener("DOMContentLoaded", () => {
                         const planKey = e.currentTarget.dataset.planKey;
                         const selectedPlan = HIVE_PLANS[planKey];
 
-                        // --- SIMULATED UPGRADE/DOWNGRADE ---
                         if (planKey === 'buzz') {
                             alert(`Selected ${selectedPlan.name}. Your job count has been reset to 0/${selectedPlan.limit} for the month.`);
                             subscriptionModal.style.display = "none";
                             updateHeaderUI();
                         } else {
                             alert(`Redirecting to Stripe for payment of ${selectedPlan.name} (${selectedPlan.price}).`);
-                            // In a real app, you would redirect to the Stripe Checkout Session URL here.
                         }
                     });
                 });

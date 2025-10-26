@@ -14,9 +14,9 @@ const app = express();
 // --- Middleware Setup ---
 // Define the allowed origins dynamically. 
 const allowedOrigins = [
-    'http://127.0.0.1:5500',
-    'http://localhost:3000',
-    process.env.CLIENT_ORIGIN
+    'http://127.0.0.1:5500', // Local Dev
+    'http://localhost:3000', // Standard Dev port
+    process.env.CLIENT_ORIGIN // Your live Vercel domain (e.g., https://hirehive-frontend.vercel.app)
 ];
 
 app.use(cors({
@@ -26,6 +26,7 @@ app.use(cors({
         if (allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
+            // Allow dynamic Vercel/Render preview domains
             if (origin.endsWith('.onrender.com') || origin.endsWith('.vercel.app')) {
                 callback(null, true);
             } else {
@@ -51,7 +52,8 @@ if (RENDER_EXTERNAL_URL) {
         });
     };
 
-    setInterval(keepAlive, 600000); // Ping every 10 minutes (600,000 ms)
+    // Ping every 10 minutes (600,000 milliseconds)
+    setInterval(keepAlive, 600000);
 }
 // --- End Heartbeat ---
 
