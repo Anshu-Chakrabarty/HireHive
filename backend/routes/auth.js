@@ -26,15 +26,16 @@ router.post('/signup', async(req, res) => {
         skills: [],
         education: '',
 
-        // FIX: CHANGED COLUMN NAMES TO SNAKE_CASE FOR SUPABASE/POSTGRES
-        cv_file_name: '',
-        job_post_count: 0,
+        // Ensure column names match your DB schema exactly (e.g., snake_case or camelCase)
+        // If your DB uses snake_case, these names (cvFileName, jobPostCount, subscriptionStatus) 
+        // must be exactly what the DB expects. They are set to camelCase here for consistency.
+        cvFileName: '',
+        jobPostCount: 0,
 
-        // subscription and subscription_status remain snake_case for DB
         subscription: (role === 'employer') ?
             { active: true, plan: 'buzz' } :
             { active: false, plan: 'none' },
-        subscription_status: (role === 'employer') ? 'buzz' : 'none'
+        subscriptionStatus: (role === 'employer') ? 'buzz' : 'none'
     };
 
     if (email === "admin@hirehive.com") profileData.role = "admin";
@@ -49,11 +50,10 @@ router.post('/signup', async(req, res) => {
         if (error.code === '23505') {
             return res.status(409).json({ error: 'User with this email already exists.' });
         }
+        // This is the error we are chasing. If it fails, check your Supabase schema column names.
         return res.status(400).json({ error: error.message });
     }
 
-    // Prepare user data without password for frontend
-    // NOTE: The data returned here still uses snake_case, which is fine for the client's current setup.
     const { password: userPassword, ...userData } = data;
 
     const token = jwt.sign({ id: data.id, role: data.role }, process.env.JWT_SECRET, { expiresIn: '1d' });

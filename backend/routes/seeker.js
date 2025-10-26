@@ -1,3 +1,4 @@
+// --- Backend: routes/seeker.js (REPLACE ENTIRE FILE) ---
 import express from 'express';
 import multer from 'multer';
 import { supabase } from '../db.js';
@@ -10,7 +11,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 // 1. MIDDLEWARE
 // ------------------------------------------------------------------
 
-// General Authentication Middleware (Copied from other files)
+// General Authentication Middleware
 const auth = (req, res, next) => {
     const token = req.headers['authorization'];
     if (!token) return res.status(401).json({ error: 'No token provided' });
@@ -34,27 +35,33 @@ const isSeeker = checkRole(['seeker', 'admin']);
 
 
 // ------------------------------------------------------------------
-// 2. PROFILE MANAGEMENT (Updates existing user row)
+// 2. PROFILE MANAGEMENT (PUT /api/seeker/profile)
 // ------------------------------------------------------------------
 
 // PUT: Update Seeker Profile Info and Optionally Upload CV
 router.put('/profile', auth, isSeeker, upload.single('cvFile'), async(req, res) => {
     const userId = req.user.id;
+    // Note: skills comes as a comma-separated string from frontend
     const { name, education, skills } = req.body;
 
-    let updateData = { name, education, skills: skills.split(',').map(s => s.trim()).filter(Boolean) };
-    let cvFileName = null;
+    // Convert skills string to array of trimmed strings for Supabase JSON column
+    let updateData = {
+        name,
+        education,
+        skills: skills.split(',').map(s => s.trim()).filter(Boolean)
+    };
 
     // 1. Handle CV Upload (if a file is included)
     if (req.file) {
         const file = req.file;
-        cvFileName = `${userId}_${Date.now()}_${file.originalname}`;
+        // CV Filename MUST match the camelCase used for the database column
+        const cvFileName = `${userId}_${Date.now()}_${file.originalname}`;
 
         const { error: uploadError } = await supabase.storage
             .from('cvs')
             .upload(cvFileName, file.buffer, {
                 contentType: file.mimetype,
-                upsert: true // Allows overwriting previous CV for this user
+                upsert: true // Allows overwriting previous CV
             });
 
         if (uploadError) {
@@ -62,13 +69,14 @@ router.put('/profile', auth, isSeeker, upload.single('cvFile'), async(req, res) 
             return res.status(500).json({ error: 'CV upload failed.' });
         }
 
-        // Save the CV filename/path to the user profile
+        // Use the camelCase name 'cvFileName' for the update payload
         updateData.cvFileName = cvFileName;
     }
 
     // 2. Update the user record
     const { data: updatedUser, error: updateError } = await supabase
         .from('users')
+        // Supabase expects camelCase names if that's what was used when defining the schema
         .update(updateData)
         .eq('id', userId)
         .select()
@@ -76,8 +84,9 @@ router.put('/profile', auth, isSeeker, upload.single('cvFile'), async(req, res) 
 
     if (updateError) return res.status(400).json({ error: updateError.message });
 
-    // NOTE: This updated user data should be used to update the frontend's current user state.
-    res.json({ message: 'Profile updated successfully', user: updatedUser });
+    // Send back the updated user data
+    const { password: userPassword, ...userData } = updatedUser;
+    res.json({ message: 'Profile updated successfully', user: userData });
 });
 
 
@@ -87,13 +96,11 @@ router.put('/profile', auth, isSeeker, upload.single('cvFile'), async(req, res) 
 
 // GET: Retrieve all available jobs (Job Board)
 router.get('/jobs', auth, isSeeker, async(req, res) => {
-    // NOTE: In a real scenario, this query would be filtered by skill and location.
-
     const { data: jobs, error } = await supabase
         .from('jobs')
         .select(`
             *,
-            employer:employerId (name) // Fetch employer name
+            employer:employerId (name) 
         `)
         .order('postedDate', { ascending: false });
 
@@ -105,10 +112,9 @@ router.get('/jobs', auth, isSeeker, async(req, res) => {
 // POST: Apply for a specific job
 router.post('/apply/:jobId', auth, isSeeker, async(req, res) => {
     const { jobId } = req.params;
-    const { answers } = req.body; // Array of answers to screening questions
+    const { answers } = req.body;
     const seekerId = req.user.id;
 
-    // 1. Check if the seeker has already applied
     const { data: existingApp, error: checkError } = await supabase
         .from('applications')
         .select('id')
@@ -120,11 +126,10 @@ router.post('/apply/:jobId', auth, isSeeker, async(req, res) => {
         return res.status(409).json({ error: 'You have already applied for this job.' });
     }
 
-    // 2. Submit the application
     const applicationData = {
         jobId: parseInt(jobId),
         seekerId,
-        status: 'applied', // Default status
+        status: 'applied',
         answers: answers || [],
     };
 
@@ -140,18 +145,10 @@ router.post('/apply/:jobId', auth, isSeeker, async(req, res) => {
 
 
 // ------------------------------------------------------------------
-// 4. ADMIN/DEPRECATED ROUTES (Modified or Removed)
+// 4. ADMIN/DEPRECATED ROUTES
 // ------------------------------------------------------------------
-
-// This route is deprecated/redundant as employer data fetching is now handled 
-// by the new GET /api/employer/seekers and GET /api/employer/applicants/:jobId routes.
 router.get('/', (req, res) => {
-    return res.status(404).json({ error: 'This endpoint is deprecated. Use /api/employer/seekers instead.' });
-});
-
-// The initial POST /submit route logic is now handled more cleanly by PUT /profile
-router.post('/submit', (req, res) => {
-    return res.status(405).json({ error: 'Endpoint moved. Please use PUT /api/seeker/profile for updates.' });
+    return res.status(404).json({ error: 'Endpoint deprecated.' });
 });
 
 export default router;

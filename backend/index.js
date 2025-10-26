@@ -14,11 +14,10 @@ const app = express();
 // --- Middleware Setup ---
 // Define the allowed origins dynamically. 
 const allowedOrigins = [
-    'http://127.0.0.1:5500',
-    'http://localhost:3000',
-    process.env.CLIENT_ORIGIN,
-    // FIX: Explicitly allow your custom domain
-    'https://hirehive.in'
+    'http://127.0.0.1:5500', // Local Dev
+    'http://localhost:3000', // Standard Dev port
+    process.env.CLIENT_ORIGIN, // Vercel Preview URL
+    'https://hirehive.in' // FIX: Explicitly allow custom domain
 ];
 
 app.use(cors({
@@ -42,7 +41,7 @@ app.use(cors({
 
 app.use(express.json());
 
-// --- Heartbeat Function ---
+// --- Heartbeat Function (FIX: Prevents Render Cold Start) ---
 const RENDER_EXTERNAL_URL = process.env.RENDER_EXTERNAL_URL;
 
 if (RENDER_EXTERNAL_URL) {
@@ -54,6 +53,7 @@ if (RENDER_EXTERNAL_URL) {
         });
     };
 
+    // Ping every 10 minutes (600,000 milliseconds)
     setInterval(keepAlive, 600000);
 }
 // --- End Heartbeat ---

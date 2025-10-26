@@ -1,8 +1,19 @@
+// --- Backend: routes/employer.js (REPLACE ENTIRE FILE) ---
 import express from 'express';
 import { supabase } from '../db.js';
 import jwt from 'jsonwebtoken';
 
 const router = express.Router();
+
+// --- Subscription Plan Limits (Mirroring Frontend) ---
+const HIVE_PLANS = {
+    'buzz': { limit: 2 },
+    'worker': { limit: 5 },
+    'colony': { limit: 15 },
+    'queen': { limit: 30 },
+    'hive_master': { limit: Infinity },
+};
+
 
 // ------------------------------------------------------------------
 // 1. MIDDLEWARE
@@ -35,13 +46,32 @@ const isEmployer = checkRole(['employer', 'admin']);
 // 2. EMPLOYER JOB MANAGEMENT (/api/employer/jobs)
 // ------------------------------------------------------------------
 
-// POST: Create a new job
+// POST: Create a new job (Subscription Enforcement Added)
 router.post('/jobs', auth, isEmployer, async(req, res) => {
     const { title, category, location, experience, salary, ctc, requiredSkills, description, noticePeriod, screeningQuestions } = req.body;
-
-    // The user ID comes from the JWT payload
     const employerId = req.user.id;
 
+    // 1. Subscription Check and Enforcement
+    const { data: user, error: userError } = await supabase
+        .from('users')
+        // Must select the camelCase fields used for job limits
+        .select('subscriptionStatus, jobPostCount')
+        .eq('id', employerId)
+        .single();
+
+    if (userError || !user) return res.status(500).json({ error: 'Failed to retrieve user subscription status.' });
+
+    const currentPlanKey = user.subscriptionStatus || 'buzz';
+    const planLimit = HIVE_PLANS[currentPlanKey] ? .limit || 0;
+    const isUnlimited = planLimit === Infinity;
+
+    if (!isUnlimited && user.jobPostCount >= planLimit) {
+        return res.status(403).json({
+            error: `Job posting limit (${planLimit}) reached for your current plan (${currentPlanKey}). Please upgrade.`
+        });
+    }
+
+    // 2. Insert Job Data
     const jobData = {
         employerId,
         title,
@@ -49,7 +79,7 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
         location,
         experience,
         salary,
-        ctc, // Current CTC from seeker is saved here for later matching
+        ctc,
         requiredSkills,
         description,
         noticePeriod,
@@ -57,14 +87,28 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
         postedDate: new Date().toISOString(),
     };
 
-    const { data, error } = await supabase
+    const { data: job, error: jobInsertError } = await supabase
         .from('jobs')
         .insert([jobData])
         .select()
         .single();
 
-    if (error) return res.status(400).json({ error: error.message });
-    res.json({ message: 'Job posted successfully', job: data });
+    if (jobInsertError) return res.status(400).json({ error: jobInsertError.message });
+
+    // 3. Update Job Count for Basic Plans (only if job was successfully posted)
+    if (!isUnlimited) {
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({ jobPostCount: user.jobPostCount + 1 })
+            .eq('id', employerId);
+
+        if (updateError) {
+            console.error("Failed to update job post count:", updateError);
+            // Note: We don't fail the job post, but log the count error.
+        }
+    }
+
+    res.json({ message: 'Job posted successfully', job: job });
 });
 
 // GET: Retrieve all jobs posted by the current employer
@@ -109,9 +153,11 @@ router.delete('/jobs/:jobId', auth, isEmployer, async(req, res) => {
     const { jobId } = req.params;
     const employerId = req.user.id;
 
-    // 1. (Optional but recommended for cleanup): Delete related applications first
-    // In a real database with cascade delete enabled, this step might be skipped.
-    // Assuming no cascade delete for safety:
+    // NOTE: Job count decrement logic is NOT included here, as it requires complex
+    // logic to handle plan downgrades/upgrades. We rely on the monthly reset 
+    // or an Admin function for true count management.
+
+    // 1. Delete related applications first
     await supabase.from('applications').delete().eq('jobId', jobId);
 
     // 2. Delete the job
@@ -119,7 +165,7 @@ router.delete('/jobs/:jobId', auth, isEmployer, async(req, res) => {
         .from('jobs')
         .delete()
         .eq('id', jobId)
-        .eq('employerId', employerId); // Crucial security check
+        .eq('employerId', employerId);
 
     if (error) return res.status(400).json({ error: error.message });
     res.json({ message: 'Job deleted successfully and applications removed.' });
@@ -138,7 +184,7 @@ router.get('/applicants/:jobId', auth, isEmployer, async(req, res) => {
     // 1. Verify the job belongs to the current employer
     const { data: job, error: jobError } = await supabase
         .from('jobs')
-        .select('id, employerId, screeningQuestions')
+        .select('id, employerId, screeningQuestions, title')
         .eq('id', jobId)
         .eq('employerId', employerId)
         .single();
@@ -150,7 +196,8 @@ router.get('/applicants/:jobId', auth, isEmployer, async(req, res) => {
         .from('applications')
         .select(`
             answers,
-            seekers:seekerId (name, email, phone, skills, education, cvFileName) // Join seeker profile data
+            // Select must use camelCase column names from the 'users' table 
+            seekers:seekerId (name, email, phone, skills, education, cvFileName) 
         `)
         .eq('jobId', jobId);
 
@@ -158,6 +205,7 @@ router.get('/applicants/:jobId', auth, isEmployer, async(req, res) => {
 
     // Format the data to be easier for the frontend to consume
     const formattedApplicants = applications.map(app => ({
+        // Spread the seeker data
         ...app.seekers,
         applicationAnswers: app.answers,
     }));
@@ -170,12 +218,11 @@ router.get('/applicants/:jobId', auth, isEmployer, async(req, res) => {
 });
 
 // GET: Retrieve the list of all seekers (Talent Pool view)
-// NOTE: This assumes 'seekers' is a profile table linked to 'users'
-// For now, we fetch from 'users' and filter by role on the backend.
 router.get('/seekers', auth, isEmployer, async(req, res) => {
 
     const { data: seekers, error } = await supabase
         .from('users')
+        // Select must use camelCase column names from the 'users' table 
         .select('id, name, email, phone, skills, education, cvFileName')
         .eq('role', 'seeker')
         .order('name', { ascending: true });
@@ -183,6 +230,5 @@ router.get('/seekers', auth, isEmployer, async(req, res) => {
     if (error) return res.status(400).json({ error: error.message });
     res.json(seekers);
 });
-
 
 export default router;

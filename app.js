@@ -118,6 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 'career-growth': careerGrowthView,
             };
 
+
             const dashboardLink = document.getElementById("dashboardLink");
             const adminLink = document.getElementById("adminLink");
             const loginBtn = document.getElementById("loginBtn");

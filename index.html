@@ -85,7 +85,7 @@
             <section class="info-section">
                 <h2 class="view-title">About HireHive: The Bridge Between Ambition and Achievement</h2>
 
-                <p>In today’s fast-paced and competitive world, finding the right talent — or the right job — isn’t easy. That’s where **Hire Hive** comes in. We are a modern recruitment company built to simplify the hiring process for both employers and
+                <p>In today’s fast-paced and competitive world, finding the right talent — or the right job — isn’s easy. That’s where **Hire Hive** comes in. We are a modern recruitment company built to simplify the hiring process for both employers and
                     job seekers.</p>
 
                 <p>At Hire Hive, we believe that great organizations are powered by **great people**. Our goal is to connect talented individuals with companies that truly value their skills. Whether you’re a startup, an MNC, or an IT firm, we help you find
@@ -138,6 +138,7 @@
                     on their skills, and apply for positions that help them **flourish professionally**.</p>
                 <p>Our pocket-friendly subscription plans make career development **accessible to everyone**. From entry-level roles to advanced positions, Hire Hive ensures that every job seeker gets a chance to grow, learn, and succeed in their chosen
                     field.</p>
+                <p>Our goal is to connect talented individuals with companies that truly value their skills. Whether you’re a startup, an MNC, or an IT firm, we help you find the perfect candidates to fill your key roles quickly and efficiently.</p>
 
                 <h3 class="view-title" style="margin-top: 2rem;">Why Choose Hire Hive for Career Growth?</h3>
 
@@ -167,9 +168,9 @@
                     <p><i class="fas fa-map-marker-alt"></i> **Registered Office:** Hive Tower, Bandra Kurla Complex, Mumbai, India</p>
                 </div>
                 <form class="contact-form">
-                    <input type="text" placeholder="Your Name" required>
-                    <input type="email" placeholder="Your Email" required>
-                    <textarea placeholder="Your Message" rows="4" required></textarea>
+                    <input type="text" name="contact-name" placeholder="Your Name" required>
+                    <input type="email" name="contact-email" placeholder="Your Email" required>
+                    <textarea name="contact-message" placeholder="Your Message" rows="4" required></textarea>
                     <button type="submit" class="btn btn-primary">Send Message</button>
                 </form>
                 <div class="return-home-container">
@@ -220,15 +221,15 @@
                         <h3>Edit My Profile</h3>
                         <form id="profile-form">
                             <label for="seeker-name">Name</label>
-                            <input type="text" id="seeker-name" required>
+                            <input type="text" id="seeker-name" name="seeker-name" required>
                             <label for="seeker-email">Email</label>
-                            <input type="email" id="seeker-email" disabled>
+                            <input type="email" id="seeker-email" name="seeker-email" disabled>
                             <label for="seeker-skills">Skills (comma-separated)</label>
-                            <input type="text" id="seeker-skills" placeholder="e.g., HTML, CSS, JavaScript, React">
+                            <input type="text" id="seeker-skills" name="seeker-skills" placeholder="e.g., HTML, CSS, JavaScript, React">
                             <label for="seeker-education">Education</label>
-                            <input type="text" id="seeker-education" placeholder="e.g., B.Tech in Computer Science">
+                            <input type="text" id="seeker-education" name="seeker-education" placeholder="e.g., B.Tech in Computer Science">
                             <label for="cv-upload">Upload CV</label>
-                            <input type="file" id="cv-upload" accept=".pdf,.doc,.docx">
+                            <input type="file" id="cv-upload" name="cv-upload" accept=".pdf,.doc,.docx">
                             <p id="cv-filename" class="cv-status"></p>
                             <button type="submit" class="btn btn-primary">Save Profile</button>
                         </form>
@@ -255,8 +256,8 @@
                         <div id="multi-step-job-form-container">
                             <form id="jobStep1Form" class="job-step-form">
                                 <h4>Step 1: Basic Information</h4>
-                                <input type="text" id="job-title" placeholder="Job Title" required>
-                                <select id="job-category" required>
+                                <input type="text" id="job-title" name="job-title" placeholder="Job Title" required>
+                                <select id="job-category" name="job-category" required>
                                     <option value="" disabled selected>Select Job Branch/Category</option>
                                     <option value="IT & Tech">IT & Tech</option>
                                     <option value="Marketing & Finance">Marketing & Finance</option>
@@ -265,16 +266,16 @@
                                     <option value="Sales">Sales</option>
                                     <option value="Management">Management</option>
                                 </select>
-                                <input type="text" id="job-location" placeholder="Location (e.g., Mumbai, India)" required>
+                                <input type="text" id="job-location" name="job-location" placeholder="Location (e.g., Mumbai, India)" required>
                                 <button type="button" class="btn btn-primary next-step-btn" data-step="1">Next (Requirements)</button>
                             </form>
 
                             <form id="jobStep2Form" class="job-step-form hidden">
                                 <h4>Step 2: Requirements & Pay</h4>
-                                <input type="text" id="job-experience" placeholder="Experience Required (e.g., 2-4 years)" required>
-                                <input type="text" id="job-salary" placeholder="Expected Salary (e.g., ₹8-12 LPA)" required>
-                                <input type="text" id="job-current-ctc" placeholder="Current CTC (Optional, e.g., ₹5 LPA)">
-                                <input type="text" id="job-skills" placeholder="Required Skills (comma-separated)" required>
+                                <input type="text" id="job-experience" name="job-experience" placeholder="Experience Required (e.g., 2-4 years)" required>
+                                <input type="text" id="job-salary" name="job-salary" placeholder="Expected Salary (e.g., ₹8-12 LPA)" required>
+                                <input type="text" id="job-current-ctc" name="job-current-ctc" placeholder="Current CTC (Optional, e.g., ₹5 LPA)">
+                                <input type="text" id="job-skills" name="job-skills" placeholder="Required Skills (comma-separated)" required>
                                 <div class="form-actions">
                                     <button type="button" class="btn prev-step-btn" data-step="2">Back</button>
                                     <button type="button" class="btn btn-primary next-step-btn" data-step="2">Next (Description)</button>
@@ -283,12 +284,12 @@
 
                             <form id="jobStep3Form" class="job-step-form hidden">
                                 <h4>Step 3: Final Details & Screening</h4>
-                                <textarea id="job-description" placeholder="Full Job Description" required></textarea>
-                                <input type="text" id="job-notice-period" placeholder="Notice Period (e.g., 30 days)">
+                                <textarea id="job-description" name="job-description" placeholder="Full Job Description" required></textarea>
+                                <input type="text" id="job-notice-period" name="job-notice-period" placeholder="Notice Period (e.g., 30 days)">
 
                                 <div style="margin-top: 1.5rem;">
                                     <label for="add-screening-questions">Want to add screening questions?</label>
-                                    <select id="add-screening-questions">
+                                    <select id="add-screening-questions" name="add-screening-questions">
                                         <option value="no">No</option>
                                         <option value="yes">Yes</option>
                                     </select>
@@ -296,9 +297,9 @@
 
                                 <div id="screening-questions-container" class="hidden">
                                     <h5 style="margin-top: 1rem; color: var(--secondary-color);">Add up to 3 Mandatory Questions (Q1 & Q2 are mandatory):</h5>
-                                    <input type="text" id="sq1" placeholder="Question 1 (e.g., Min 2 years React experience?)">
-                                    <input type="text" id="sq2" placeholder="Question 2 (e.g., Notice Period less than 30 days?)">
-                                    <input type="text" id="sq3" placeholder="Question 3 (Optional)">
+                                    <input type="text" id="sq1" name="sq1" placeholder="Question 1 (e.g., Min 2 years React experience?)">
+                                    <input type="text" id="sq2" name="sq2" placeholder="Question 2 (e.g., Notice Period less than 30 days?)">
+                                    <input type="text" id="sq3" name="sq3" placeholder="Question 3 (Optional)">
                                 </div>
 
                                 <div class="form-actions">
@@ -331,7 +332,7 @@
                     <h2 style="margin-bottom: 1rem;">Talent Pool (Job Seeker CVs)</h2>
 
                     <div class="seeker-filter-options">
-                        <select id="seeker-filter-category">
+                        <select id="seeker-filter-category" name="seeker-filter-category">
                             <option value="all">Filter by Domain (All)</option>
                             <option value="IT & Tech">IT & Tech</option>
                             <option value="Marketing & Finance">Marketing & Finance</option>
@@ -340,7 +341,7 @@
                             <option value="Sales">Sales</option>
                             <option value="Management">Management</option>
                         </select>
-                        <input type="text" id="seeker-filter-skill" placeholder="Filter by Specific Skill (e.g., Python, React)">
+                        <input type="text" id="seeker-filter-skill" name="seeker-filter-skill" placeholder="Filter by Specific Skill (e.g., Python, React)">
                     </div>
 
                     <div id="seeker-cv-list">
@@ -433,7 +434,7 @@
             <div id="login-form-container">
                 <h3>Login to HireHive</h3>
                 <form id="loginForm">
-                    <input type="email" id="loginEmail" placeholder="Email" required />
+                    <input type="email" id="loginEmail" name="loginEmail" placeholder="Email" required />
                     <button type="submit" class="btn btn-primary">Login</button>
                 </form>
                 <p><a href="#" class="switch-link" id="switch-to-otp">Login with OTP instead</a></p>
@@ -441,10 +442,10 @@
             <div id="signup-form-container" class="hidden">
                 <h3>Join the Hive</h3>
                 <form id="signupForm">
-                    <input type="text" id="signupName" placeholder="Full Name" required/>
-                    <input type="email" id="signupEmail" placeholder="Email" required />
-                    <input type="tel" id="signupPhone" placeholder="Phone Number (10 digits)" pattern="[0-9]{10}" maxlength="10" required/>
-                    <select id="userType" required>
+                    <input type="text" id="signupName" name="signupName" placeholder="Full Name" required/>
+                    <input type="email" id="signupEmail" name="signupEmail" placeholder="Email" required />
+                    <input type="tel" id="signupPhone" name="signupPhone" placeholder="Phone Number (10 digits)" pattern="[0-9]{10}" maxlength="10" required/>
+                    <select id="userType" name="userType" required>
                         <option value="seeker">I'm a Job Seeker</option>
                         <option value="employer">I'm an Employer</option>
                     </select>
@@ -454,7 +455,7 @@
             <div id="otp-form-container" class="hidden">
                 <h3>Login with OTP</h3>
                 <form id="otpForm">
-                    <input type="tel" id="otpPhone" placeholder="Enter your Phone Number (10 digits)" pattern="[0-9]{10}" maxlength="10" required/>
+                    <input type="tel" id="otpPhone" name="otpPhone" placeholder="Enter your Phone Number (10 digits)" pattern="[0-9]{10}" maxlength="10" required/>
                     <button type="submit" class="btn btn-primary">Send OTP</button>
                 </form>
             </div>
