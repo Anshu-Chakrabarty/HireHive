@@ -2,7 +2,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-// Removed: import https from 'https'; (Heartbeat logic removed for startup stability)
+import https from 'https';
 import authRoutes from './routes/auth.js';
 import seekerRoutes from './routes/seeker.js';
 import employerRoutes from './routes/employer.js';
@@ -16,8 +16,9 @@ const app = express();
 const allowedOrigins = [
     'http://127.0.0.1:5500', // Local Dev
     'http://localhost:3000', // Standard Dev port
-    process.env.CLIENT_ORIGIN, // Vercel Preview URL
-    'https://hirehive.in' // Explicitly allowed custom domain
+    process.env.CLIENT_ORIGIN, // Vercel Preview URL (If set)
+    'https://hirehive.in', // Working domain
+    'https://www.hirehive.in' // FIX: Explicitly allow www subdomain
 ];
 
 app.use(cors({
