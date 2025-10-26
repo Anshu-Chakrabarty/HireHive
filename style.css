@@ -1,3 +1,13 @@
+/* --- Frontend: style.css (REPLACE ENTIRE FILE) --- */
+
+html,
+body {
+    /* FIX 4: Prevents double-tap zooming on mobile */
+    touch-action: manipulation;
+    user-select: none;
+}
+
+
 /* General Styling */
 
 :root {
@@ -534,21 +544,23 @@ form select {
 
 .subscription-card {
     text-align: center;
-    background: #fff3cd;
-    border: 1px solid var(--primary-color);
-    padding: 2rem;
+    background: var(--white-color);
+    /* Changed to white for better display of multiple plans */
+    border: 1px solid #ddd;
+    padding: 1.5rem;
     margin-bottom: 0;
     border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .subscription-card h3 {
-    font-size: 1.8rem;
+    font-size: 1.5rem;
     color: var(--secondary-color);
     margin-bottom: 0.5rem;
 }
 
 .subscription-card p {
-    font-size: 1.1rem;
+    font-size: 1rem;
     margin-bottom: 1rem;
     font-weight: 500;
 }
@@ -791,8 +803,9 @@ form select {
 /* Modal adjustment for the new dedicated Subscription Modal */
 
 #subscriptionModal .modal-content {
-    max-width: 500px;
-    margin: 10% auto;
+    max-width: 900px;
+    /* Increased max-width for 5 plans */
+    margin: 5% auto;
 }
 
 #employer-subscription-details {
@@ -1015,6 +1028,14 @@ footer {
     .seeker-filter-options select,
     .seeker-filter-options input {
         width: 100%;
+    }
+    #subscriptionModal .modal-content {
+        max-width: 90%;
+        /* Adjust modal width for small screens */
+    }
+    .plans-container {
+        grid-template-columns: 1fr !important;
+        /* Stack plans on mobile */
     }
 }
 

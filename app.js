@@ -1,3 +1,4 @@
+// --- Frontend: app.js (REPLACE ENTIRE FILE) ---
 document.addEventListener("DOMContentLoaded", () => {
             // ------------------------------------------------------------------
             // 1. GLOBAL CONFIGURATION & TOKEN MANAGEMENT
@@ -8,6 +9,16 @@ document.addEventListener("DOMContentLoaded", () => {
             const getToken = () => localStorage.getItem("hirehiveToken");
             const setToken = (token) => localStorage.setItem("hirehiveToken", token);
             const removeToken = () => localStorage.removeItem("hirehiveToken");
+
+            // --- SUBSCRIPTION PLAN DATA ---
+            const HIVE_PLANS = {
+                'buzz': { name: "Buzz Plan", price: "Free", limit: 2, icon: "fas fa-bug", color: "#28a745", description: "Post 2 free job listing. Access to limited candidate applications (up to 30 resumes). Standard listing visibility for 7 days." },
+                'worker': { name: "Worker Plan", price: "₹1,999 / month", limit: 5, icon: "fas fa-user-tie", color: "#007bff", description: "Post up to 5 active jobs. Access to 50 candidate resumes. Basic resume search filters." },
+                'colony': { name: "Colony Plan", price: "₹4,999 / month", limit: 15, icon: "fas fa-industry", color: "#fd7e14", description: "Post up to 15 active jobs. Access to unlimited resume downloads. Advanced candidate filtering." },
+                'queen': { name: "Queen Plan", price: "₹8,999 / month", limit: 30, icon: "fas fa-crown", color: "#6f42c1", description: "Post up to 30 active jobs. Access to premium candidate database. AI-powered candidate recommendations." },
+                'hive_master': { name: "Hive Master Plan", price: "₹14,999 / month", limit: Infinity, icon: "fas fa-trophy", color: "#dc3545", description: "Unlimited job postings. Full candidate database access with export/download. AI-based shortlisting." },
+            };
+
 
             // --- API Fetch Helper (Handles Authentication) ---
             async function fetchApi(endpoint, method = 'GET', data = null, isFormData = false) {
@@ -23,11 +34,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (data) {
                     if (isFormData) {
-                        // For file uploads (POST, PUT), let the browser set the Content-Type
                         config.body = data;
                         delete config.headers['Content-Type'];
                     } else {
-                        // For JSON data (default)
                         headers['Content-Type'] = 'application/json';
                         config.body = JSON.stringify(data);
                     }
@@ -52,10 +61,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             // ------------------------------------------------------------------
-            // 2. BACKEND SIMULATION HELPERS (Kept for initial local state consistency)
+            // 2. BACKEND SIMULATION HELPERS 
             // ------------------------------------------------------------------
-            // Local storage helpers are kept only to maintain the currentUser object,
-            // which should ideally come entirely from the decoded JWT payload or a profile API call.
             if (!localStorage.getItem("hirehiveDB")) {
                 const db = {
                     users: [],
@@ -69,7 +76,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const getDb = () => JSON.parse(localStorage.getItem("hirehiveDB"));
             const saveDb = (db) => localStorage.setItem("hirehiveDB", JSON.stringify(db));
 
-            // Simulates fetching user data from JWT or a stored user object
             const getLocalUser = () => getDb().currentUser;
             const setLocalUser = (user) => {
                 const db = getDb();
@@ -77,14 +83,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 saveDb(db);
             };
 
-            // Helper to simulate current month's job count (Local-only, since API doesn't provide this count)
             const getCurrentMonthJobCount = () => {
                 const db = getDb();
                 const currentUser = getLocalUser();
                 if (!currentUser || currentUser.role !== 'employer') return 0;
 
-                // This relies on the local 'jobs' list still being synced/updated, which is unreliable. 
-                // In a real app, this MUST be an API call.
                 const startOfMonth = new Date();
                 startOfMonth.setDate(1);
                 startOfMonth.setHours(0, 0, 0, 0);
@@ -97,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             // ------------------------------------------------------------------
-            // 3. SPA ROUTER / VIEW MANAGER
+            // 3. SPA ROUTER / VIEW MANAGER & MOBILE MENU 
             // ------------------------------------------------------------------
             const views = {
                 'home': document.getElementById("home-view"),
@@ -105,6 +108,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 'admin': document.getElementById("admin-view"),
                 'about': document.getElementById("about-view"),
                 'contact': document.getElementById("contact-view"),
+                'career-growth': document.getElementById("career-growth-view"), // NEW VIEW REGISTERED
             };
 
             const dashboardLink = document.getElementById("dashboardLink");
@@ -128,7 +132,23 @@ document.addEventListener("DOMContentLoaded", () => {
             const jobFilterBtns = document.querySelectorAll(".job-filter-btn");
             const jobViewSections = document.querySelectorAll(".job-view-section");
 
-            // Load initial view and UI state based on token
+            // --- MOBILE MENU TOGGLE LOGIC ---
+            const menuToggle = document.getElementById('menuToggle');
+            const navLinks = document.getElementById('navLinks');
+
+            if (menuToggle && navLinks) {
+                menuToggle.addEventListener('click', () => {
+                    navLinks.classList.toggle('active');
+                });
+                navLinks.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        if (navLinks.classList.contains('active')) {
+                            navLinks.classList.remove('active');
+                        }
+                    });
+                });
+            }
+
             function updateHeaderUI() {
                 const user = getLocalUser();
                 const token = getToken();
@@ -148,7 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 } else {
                     loginBtn.classList.remove("hidden");
                     signupBtn.classList.remove("hidden");
-                    setLocalUser(null); // Clear user if token is missing/expired
+                    setLocalUser(null);
                 }
 
                 const hash = window.location.hash.replace('#', '');
@@ -213,7 +233,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             updateHeaderUI();
 
-            // --- OPPORTUNITY CLICK (LOGIN GATE) ---
             document.querySelectorAll(".opportunity-link").forEach((link) => {
                 link.addEventListener("click", (e) => {
                     e.preventDefault();
@@ -226,7 +245,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             // ------------------------------------------------------------------
-            // 4. AUTH & MODAL LOGIC (MIGRATED TO API)
+            // 4. AUTH & MODAL LOGIC 
             // ------------------------------------------------------------------
             const modal = document.getElementById("authModal");
             const loginFormContainer = document.getElementById("login-form-container");
@@ -237,7 +256,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const subscriptionModal = document.getElementById("subscriptionModal");
             const closeApplicantsModalBtn = document.getElementById("close-applicants-modal");
             const closeSubscriptionModalBtn = document.getElementById("close-subscription-modal");
-
 
             const showForm = (formToShow) => {
                 [loginFormContainer, signupFormContainer, otpFormContainer].forEach((f) => f.classList.add("hidden"));
@@ -270,7 +288,7 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("signupForm").addEventListener("submit", async(e) => {
                 e.preventDefault();
                 const email = document.getElementById("signupEmail").value;
-                const password = 'Password123'; // Simplified password for demo, would require a password field
+                const password = 'Password123';
                 const role = document.getElementById("userType").value;
                 const name = document.getElementById("signupName").value;
                 const phone = document.getElementById("signupPhone").value;
@@ -280,7 +298,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     setToken(data.token);
                     setLocalUser(data.user);
-                    alert("Signup successful! Redirecting to dashboard...");
+
                     modal.style.display = "none";
                     updateHeaderUI();
                 } catch (error) {
@@ -292,14 +310,14 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("loginForm").addEventListener("submit", async(e) => {
                 e.preventDefault();
                 const email = document.getElementById("loginEmail").value;
-                const password = 'Password123'; // Simplified password for demo
+                const password = 'Password123'; // Simulated password
 
                 try {
                     const data = await fetchApi('auth/login', 'POST', { email, password });
 
                     setToken(data.token);
                     setLocalUser(data.user);
-                    alert("Login successful! Redirecting to dashboard...");
+
                     modal.style.display = "none";
                     updateHeaderUI();
                 } catch (error) {
@@ -311,19 +329,15 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("otpForm").addEventListener("submit", async(e) => {
                 e.preventDefault();
                 const phone = document.getElementById("otpPhone").value;
-                // In a real app, this would be a sequence of two API calls (send OTP, verify OTP)
 
                 const db = getDb();
-                const user = db.users.find((u) => u.phone === phone); // Fall back to local check for demo
+                const user = db.users.find((u) => u.phone === phone);
 
                 if (user) {
                     const fakeOtp = prompt("We've 'sent' an OTP to your number. (Hint: It's 123456)");
                     if (fakeOtp === "123456") {
-                        // Simulating a successful login and token generation
-                        // In a real app, the API would return the token and user data here.
                         setToken('fake-otp-token');
                         setLocalUser(user);
-                        alert("Login successful!");
                         modal.style.display = "none";
                         updateHeaderUI();
                     } else {
@@ -334,50 +348,57 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
 
-            // --- SUBSCRIPTION LOGIC (Placeholder for API Upgrade) ---
+            // --- SUBSCRIPTION LOGIC UPDATE (5-Tier Plans UI) ---
             const showSubscriptionModal = () => {
                 const user = getLocalUser();
                 if (!user || user.role !== "employer") return;
 
-                // NOTE: Job count and plan status still rely on local storage for this demo
-                const isPremium = user.subscription.active;
-                const currentJobs = getCurrentMonthJobCount();
-                const jobLimit = 5;
+                const modalContent = document.querySelector("#subscriptionModal .modal-content");
 
-                document.getElementById("modal-plan-status").innerHTML = isPremium ?
-                    `<h3 style="color:var(--success-color)">Premium Employer Plan Active</h3>` :
-                    `<h3 style="color:var(--secondary-color)">Basic Employer Plan Active</h3>`;
+                let planCardsHTML = `<span class="close-btn" id="close-subscription-modal">&times;</span><h2 style="margin-bottom: 1rem;">Choose Your Hive Plan</h2><div class="plans-container" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 1.5rem;">`;
 
-                document.getElementById("modal-plan-limit").textContent = isPremium ?
-                    `Unlimited job posts per month.` :
-                    `You have posted ${currentJobs} of ${jobLimit} jobs this month.`;
+                for (const [key, plan] of Object.entries(HIVE_PLANS)) {
+                    const isCurrent = user.subscription_status === key;
+                    const priceText = plan.price === 'Free' ? 'Free' : `${plan.price}`;
+                    const buttonClass = isCurrent ? 'btn-secondary disabled' : 'btn-primary';
+                    const buttonText = isCurrent ? 'Current Plan' : `Select ${plan.price === 'Free' ? 'Free' : 'Upgrade'}`;
+                    const priceColor = plan.price === 'Free' ? plan.color : '#333';
 
-                const upgradeBtn = document.getElementById("modalUpgradeToPremiumBtn");
-                if (isPremium) {
-                    upgradeBtn.classList.add("hidden");
-                } else {
-                    upgradeBtn.classList.remove("hidden");
+                    planCardsHTML += `
+                <div class="subscription-card" style="border: 2px solid ${isCurrent ? plan.color : '#ccc'};">
+                    <h3 style="color:${plan.color}; font-size:1.3rem;"><i class="${plan.icon}"></i> ${plan.name}</h3>
+                    <p style="font-weight: bold; font-size: 1.1rem; margin-bottom: 0.5rem; color: ${priceColor};">${priceText}</p>
+                    <p style="font-size: 0.8rem; margin-bottom: 1rem; height: 3rem; overflow: hidden; color: #666;">${plan.description}</p>
+                    <button class="btn ${buttonClass} select-plan-btn" data-plan-key="${key}" ${isCurrent ? 'disabled' : ''}>
+                        ${buttonText}
+                    </button>
+                </div>
+            `;
                 }
+                planCardsHTML += `</div>`;
+                modalContent.innerHTML = planCardsHTML;
+
+                document.getElementById("close-subscription-modal").onclick = () => { subscriptionModal.style.display = "none"; };
+
+                modalContent.querySelectorAll('.select-plan-btn').forEach(btn => {
+                    btn.addEventListener('click', async(e) => {
+                        const planKey = e.currentTarget.dataset.planKey;
+                        const selectedPlan = HIVE_PLANS[planKey];
+
+                        // --- SIMULATED UPGRADE/DOWNGRADE ---
+                        if (planKey === 'buzz') {
+                            // Downgrade logic simulation
+                            alert(`Selected ${selectedPlan.name}. Your job count has been reset to 0/${selectedPlan.limit} for the month.`);
+                            subscriptionModal.style.display = "none";
+                            updateHeaderUI();
+                        } else {
+                            alert(`Redirecting to Stripe for payment of ${selectedPlan.name} (${selectedPlan.price}).`);
+                            // In a real app, you would redirect to the Stripe Checkout Session URL here.
+                        }
+                    });
+                });
 
                 subscriptionModal.style.display = "block";
-            };
-
-            document.getElementById("modalUpgradeToPremiumBtn").onclick = () => {
-                // --- API UPGRADE SIMULATION ---
-                setTimeout(() => {
-                    alert("Payment simulated! Your Premium Employer subscription is now active.");
-
-                    // NOTE: This would be a real API call to PUT /api/employer/profile with { subscription: {active: true, plan: 'premium'} }
-                    const db = getDb();
-                    const userIndex = db.users.findIndex((u) => u.id === getLocalUser().id);
-                    db.users[userIndex].subscription = { active: true, plan: "premium" };
-                    setLocalUser(db.users[userIndex]);
-
-                    subscriptionModal.style.display = "none";
-                    if (!employerPostView.classList.contains("hidden")) {
-                        loadEmployerPostForm();
-                    }
-                }, 500);
             };
 
             window.showSubscriptionModal = showSubscriptionModal;
@@ -404,7 +425,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     });
 
                     document.getElementById("postNewJobBtn").onclick = () => switchEmployerView("employer-post-view");
-                    switchEmployerView("employer-management-view"); // Default to management view
+                    switchEmployerView("employer-management-view");
                 }
             }
 
@@ -459,15 +480,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     const formData = new FormData();
                     formData.append('name', name);
                     formData.append('education', education);
-                    formData.append('skills', skills); // Send as comma-separated string
+                    formData.append('skills', skills);
                     if (cvFile) {
-                        formData.append('cvFile', cvFile); // Key matches backend Multer field
+                        formData.append('cvFile', cvFile);
                     }
 
                     try {
                         const data = await fetchApi('seeker/profile', 'PUT', formData, true);
 
-                        // Update local user state from API response
                         setLocalUser(data.user);
                         alert("Profile updated!");
                         showSeekerJobView();
@@ -489,8 +509,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 try {
                     const jobs = await fetchApi('seeker/jobs', 'GET');
 
-                    // In a real app, you would fetch applications separately or join them in the query
-                    // Falling back to local applications data for filtering logic demo
                     const db = getDb();
                     const seekerApplications = db.applications.filter(app => app.seekerId === currentUser.id);
 
@@ -523,7 +541,6 @@ document.addEventListener("DOMContentLoaded", () => {
             if (shortlistedJobsList.innerHTML === "") shortlistedJobsList.innerHTML = "<p>No jobs match your profile yet.</p>";
             if (appliedJobsList.innerHTML === "") appliedJobsList.innerHTML = "<p>You have not applied to any jobs yet.</p>";
 
-            // Re-attach apply listeners (Now calling API)
             document.querySelectorAll(".apply-btn:not([disabled])").forEach((button) => {
                 button.onclick = async (e) => {
                     const jobId = parseInt(e.target.dataset.jobId);
@@ -545,12 +562,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     try {
                         await fetchApi(`seeker/apply/${jobId}`, 'POST', { answers });
                         
-                        // Update local applications table for demo purpose
+                        const db = getDb();
                         db.applications.push({jobId, seekerId: currentUser.id, status: "applied", answers: answers});
                         saveDb(db); 
                         
                         alert("Application submitted!");
-                        loadJobs(); // Reload UI to update 'Applied' status
+                        loadJobs();
                     } catch (error) {
                         // Error handled by fetchApi
                     }
@@ -597,23 +614,28 @@ document.addEventListener("DOMContentLoaded", () => {
     function loadEmployerPostForm() {
         const user = getLocalUser();
         
-        // NOTE: Job limit checks still rely on local count for demo
-        const isPremium = user.subscription.active;
-        const currentJobs = getCurrentMonthJobCount();
-        const jobLimit = 5;
+        // Use user's actual subscription status for plan lookup
+        const currentPlanKey = user.subscription_status || 'buzz';
+        const currentPlan = HIVE_PLANS[currentPlanKey];
+        
+        const isUnlimited = currentPlan.limit === Infinity;
+        const currentJobs = getCurrentMonthJobCount(); 
+        const jobLimit = currentPlan.limit;
 
         const statusEl = document.getElementById("employer-subscription-status-small");
-        statusEl.innerHTML = isPremium
-            ? `<a href="#" onclick="event.preventDefault(); showSubscriptionModal();" class="premium">Premium: Unlimited Posts</a>`
-            : `<a href="#" onclick="event.preventDefault(); showSubscriptionModal();">Basic: ${currentJobs}/${jobLimit} Posts</a>`;
+        
+        // Update UI based on new tiers 
+        statusEl.innerHTML = isUnlimited
+            ? `<a href="#" onclick="event.preventDefault(); showSubscriptionModal();" style="color: ${currentPlan.color}">Unlimited Posts (${currentPlan.name})</a>`
+            : `<a href="#" onclick="event.preventDefault(); showSubscriptionModal();" style="color: ${currentPlan.color}">${currentPlan.name}: ${currentJobs}/${jobLimit} Posts</a>`;
 
-        const canPost = currentJobs < jobLimit || isPremium;
+
+        const canPost = isUnlimited || currentJobs < jobLimit;
 
         const postJobSubmitBtn = document.getElementById("postJobSubmitBtn");
         postJobSubmitBtn.disabled = !canPost;
         postJobSubmitBtn.textContent = canPost ? "Review & Post Job" : "Limit Reached";
         
-        // Reset form to post logic
         postJobSubmitBtn.onclick = (e) => {
             e.preventDefault();
             const form = document.getElementById("jobStep3Form");
@@ -624,7 +646,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         };
 
-        // Screening Questions Toggle Logic
         const screeningSelect = document.getElementById("add-screening-questions");
         const screeningContainer = document.getElementById("screening-questions-container");
 
@@ -642,7 +663,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         };
         
-        // --- Multi-Step Form Navigation --- (Logic remains purely frontend)
         const jobForms = {
             1: document.getElementById("jobStep1Form"),
             2: document.getElementById("jobStep2Form"),
@@ -656,7 +676,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelectorAll(".next-step-btn").forEach((button) => {
             button.onclick = () => {
                 if (!canPost) {
-                    alert("Your job posting limit has been reached. Please upgrade to the Premium Plan.");
+                    alert(`Your ${currentPlan.name} limit has been reached. Please upgrade to post more jobs.`);
                     showSubscriptionModal();
                     return;
                 }
@@ -719,14 +739,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         try {
             if (jobId) {
-                // Update existing job
                 await fetchApi(`employer/jobs/${jobId}`, 'PUT', jobData);
                 alert("Job updated successfully! Redirecting to management view.");
             } else {
-                // Post new job
                 const data = await fetchApi('employer/jobs', 'POST', jobData);
                 
-                // Add new job to local store for demo purposes (job limit check)
                 const db = getDb();
                 db.jobs.push(data.job);
                 saveDb(db);
@@ -735,7 +752,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             
             document.getElementById("jobStep3Form").reset();
-            loadEmployerPostForm(); // Reset form state
+            loadEmployerPostForm();
             switchEmployerView("employer-management-view");
         } catch (error) {
             // Error handled by fetchApi
@@ -750,9 +767,8 @@ document.addEventListener("DOMContentLoaded", () => {
         
         try {
             const myJobs = await fetchApi('employer/jobs', 'GET');
-            postedJobsList.innerHTML = ""; // Clear "Loading..."
+            postedJobsList.innerHTML = "";
 
-            // NOTE: The backend now returns the applicant count
             const totalSeekerCount = "N/A (Fetch from separate admin API)"; 
             document.getElementById("seeker-count").textContent = totalSeekerCount; 
 
@@ -762,7 +778,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             myJobs.forEach((job) => {
-                const applicantCount = job.applications[0].count; // Access count from backend
+                const applicantCount = job.applications[0].count;
                 
                 postedJobsList.innerHTML += `
                     <div class="job-card" data-job-id="${job.id}">
@@ -784,7 +800,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 `;
             });
 
-            // Re-attach listeners
             document.querySelectorAll(".view-applicants-btn").forEach((button) => {
                 button.onclick = (e) => {
                     e.preventDefault();
@@ -862,13 +877,12 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             await fetchApi(`employer/jobs/${jobId}`, 'DELETE');
             
-            // Sync local store for demo purposes
             const db = getDb();
             db.jobs = db.jobs.filter(job => job.id !== jobId);
             saveDb(db);
 
             alert("Job successfully deleted.");
-            loadPostedJobs(); // Reload the list
+            loadPostedJobs();
         } catch (error) {
             // Error handled by fetchApi
         }
@@ -900,7 +914,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <td>${(app.skills || []).join(", ") || 'N/A'}</td>
                         <td>
                             ${app.cvFileName 
-                                ? `<a href="#" class="cv-link" data-filename="${app.cvFileName}">${app.cvFileName}</a>`
+                                ? `<a href="#" class="cv-link" data-filename="${app.cvFileName}">View/Download</a>`
                                 : 'N/A'}
                         </td>
                         ${screeningCells(app)}
@@ -1029,8 +1043,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // 8. ADMIN LOGIC (API)
     // ------------------------------------------------------------------
     function initAdmin() {
-        // NOTE: Admin stats would require dedicated secure API endpoints for production. 
-        // Keeping placeholder logic for demo structure.
         const db = getDb();
         
         document.getElementById("total-seekers").textContent = db.users.filter((u) => u.role === "seeker").length;
@@ -1038,7 +1050,6 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("total-jobs").textContent = db.jobs.length;
         document.getElementById("total-subscriptions").textContent = db.users.filter((u) => u.subscription.active).length;
 
-        // Load Seekers List
         const seekersListContainer = document.getElementById("job-seekers-list");
         const seekers = db.users.filter((u) => u.role === "seeker");
         if (seekers.length > 0) {
@@ -1049,7 +1060,6 @@ document.addEventListener("DOMContentLoaded", () => {
             seekersListContainer.innerHTML = "<p>No job seekers have registered yet.</p>";
         }
 
-        // Load Employers List
         const employersListContainer = document.getElementById("employer-profiles-list");
         const employers = db.users.filter((u) => u.role === "employer");
         if (employers.length > 0) {

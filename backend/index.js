@@ -1,12 +1,11 @@
+// --- Backend: index.js (REPLACE ENTIRE FILE) ---
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-// Import your modular routes
 import authRoutes from './routes/auth.js';
 import seekerRoutes from './routes/seeker.js';
 import employerRoutes from './routes/employer.js';
 
-// Load environment variables from .env file
 dotenv.config();
 
 const app = express();
@@ -21,14 +20,11 @@ const allowedOrigins = [
 
 app.use(cors({
     origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
 
-        // Allow if the origin is in our allowed list
         if (allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
-            // Allow dynamic preview URLs from Vercel/Render
             if (origin.endsWith('.onrender.com') || origin.endsWith('.vercel.app')) {
                 callback(null, true);
             } else {
@@ -40,7 +36,6 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Enable body parser for application/json requests
 app.use(express.json());
 
 // --- Status Check Endpoint ---
