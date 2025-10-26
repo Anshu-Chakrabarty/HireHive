@@ -3,7 +3,6 @@ document.addEventListener("DOMContentLoaded", () => {
             // ------------------------------------------------------------------
             // 1. GLOBAL CONFIGURATION & TOKEN MANAGEMENT
             // ------------------------------------------------------------------
-            // IMPORTANT: REPLACE THIS with your LIVE Render domain URL
             const BASE_URL = "https://hirehive-api.onrender.com/api";
 
             const getToken = () => localStorage.getItem("hirehiveToken");
@@ -253,7 +252,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             // ------------------------------------------------------------------
-            // 4. AUTH & MODAL LOGIC (Fix: Listener safety checks)
+            // 4. AUTH & MODAL LOGIC 
             // ------------------------------------------------------------------
             const modal = document.getElementById("authModal");
             const loginFormContainer = document.getElementById("login-form-container");
@@ -489,8 +488,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 document.getElementById("seeker-education").value = currentUser.education || "";
 
                 const cvFilenameEl = document.getElementById("cv-filename");
-                if (currentUser.cvFileName) {
-                    cvFilenameEl.innerHTML = `Uploaded: ${currentUser.cvFileName} (<a href="#" class="cv-link" data-filename="${currentUser.cvFileName}">View/Download</a>)`;
+                // FIX: Check for lowercase 'cvfilename' in returned user object
+                if (currentUser.cvfilename) {
+                    cvFilenameEl.innerHTML = `Uploaded: ${currentUser.cvfilename} (<a href="#" class="cv-link" data-filename="${currentUser.cvfilename}">View/Download</a>)`;
                 } else {
                     cvFilenameEl.textContent = "No CV uploaded.";
                 }
@@ -791,7 +791,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-
     // --- POSTED JOBS LOAD (API) ---
     async function loadPostedJobs() {
         const postedJobsList = document.getElementById("posted-jobs-list");
@@ -945,9 +944,12 @@ document.addEventListener("DOMContentLoaded", () => {
                         <td>${app.phone || 'N/A'}</td>
                         <td>${(app.skills || []).join(", ") || 'N/A'}</td>
                         <td>
-                            ${app.cvFileName 
-                                ? `<a href="#" class="cv-link" data-filename="${app.cvFileName}">View/Download</a>`
-                                : 'N/A'}
+                            ${
+                                // FIX: Use lowercase cvfilename from DB/API response
+                                app.cvfilename 
+                                ? `<a href="#" class="cv-link" data-filename="${app.cvfilename}">View/Download</a>`
+                                : 'N/A'
+                            }
                         </td>
                         ${screeningCells(app)}
                     </tr>
@@ -1007,7 +1009,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <div class="seeker-cv-card" data-seeker-id="${seeker.id}">
                         <h4>${seeker.name}</h4>
                         <p><strong>Education:</strong> ${seeker.education || 'N/A'}</p>
-                        <div class="skills">${(seeker.skills || []).map(s => `<span>${s}</span>`).join('')}</div>
+                        <div class="skills">${(seeker.skills || []).join(", ") || 'N/A'}</div>
                         <a href="#" class="btn btn-primary view-cv-details" data-userid="${seeker.id}">View Details & CV</a>
                     </div>
                 `).join('');
@@ -1025,7 +1027,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             `Phone: ${seeker.phone || 'N/A'}\n` +
                             `Skills: ${seeker.skills.join(", ") || 'N/A'}\n` +
                             `Education: ${seeker.education || 'N/A'}\n` +
-                            `CV: ${seeker.cvFileName || 'Not Uploaded'}\n\n`
+                            `CV: ${seeker.cvfilename || 'Not Uploaded'}\n\n` // FIX: Use lowercase cvfilename
                         );
                     };
                 });

@@ -14,10 +14,10 @@ const app = express();
 // --- Middleware Setup ---
 // Define the allowed origins dynamically. 
 const allowedOrigins = [
-    'http://127.0.0.1:5500', // Local Dev
-    'http://localhost:3000', // Standard Dev port
-    process.env.CLIENT_ORIGIN, // Vercel Preview URL
-    'https://hirehive.in' // FIX: Explicitly allow custom domain
+    'http://127.0.0.1:5500',
+    'http://localhost:3000',
+    process.env.CLIENT_ORIGIN,
+    'https://hirehive.in'
 ];
 
 app.use(cors({
@@ -27,7 +27,6 @@ app.use(cors({
         if (allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
-            // Allow dynamic Vercel/Render preview domains
             if (origin.endsWith('.onrender.com') || origin.endsWith('.vercel.app')) {
                 callback(null, true);
             } else {
@@ -48,14 +47,13 @@ if (RENDER_EXTERNAL_URL && RENDER_EXTERNAL_URL.startsWith('https://')) {
     const keepAlive = () => {
         https.get(RENDER_EXTERNAL_URL, (res) => {
             if (res.statusCode >= 200 && res.statusCode < 400) {
-                // Success log is suppressed to keep console clean, but ping happens
+                // Log success
             }
         }).on('error', (err) => {
             console.error(`[Heartbeat] Ping error: ${err.message}. Server may be sleeping or restarting.`);
         });
     };
 
-    // Ping every 10 minutes (600,000 milliseconds)
     setInterval(keepAlive, 600000);
 }
 // --- End Heartbeat ---

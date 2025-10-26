@@ -41,10 +41,8 @@ const isSeeker = checkRole(['seeker', 'admin']);
 // PUT: Update Seeker Profile Info and Optionally Upload CV
 router.put('/profile', auth, isSeeker, upload.single('cvFile'), async(req, res) => {
     const userId = req.user.id;
-    // Note: skills comes as a comma-separated string from frontend
     const { name, education, skills } = req.body;
 
-    // Convert skills string to array of trimmed strings for Supabase JSON column
     let updateData = {
         name,
         education,
@@ -54,14 +52,14 @@ router.put('/profile', auth, isSeeker, upload.single('cvFile'), async(req, res) 
     // 1. Handle CV Upload (if a file is included)
     if (req.file) {
         const file = req.file;
-        // CV Filename MUST match the camelCase used for the database column
-        const cvFileName = `${userId}_${Date.now()}_${file.originalname}`;
+        // FIX: Use lowercase name for DB column (PostgreSQL-safe)
+        const cvfilename = `${userId}_${Date.now()}_${file.originalname}`;
 
         const { error: uploadError } = await supabase.storage
             .from('cvs')
-            .upload(cvFileName, file.buffer, {
+            .upload(cvfilename, file.buffer, {
                 contentType: file.mimetype,
-                upsert: true // Allows overwriting previous CV
+                upsert: true
             });
 
         if (uploadError) {
@@ -69,14 +67,13 @@ router.put('/profile', auth, isSeeker, upload.single('cvFile'), async(req, res) 
             return res.status(500).json({ error: 'CV upload failed.' });
         }
 
-        // Use the camelCase name 'cvFileName' for the update payload
-        updateData.cvFileName = cvFileName;
+        // Use the final lowercase column name in the update payload
+        updateData.cvfilename = cvfilename;
     }
 
     // 2. Update the user record
     const { data: updatedUser, error: updateError } = await supabase
         .from('users')
-        // Supabase expects camelCase names if that's what was used when defining the schema
         .update(updateData)
         .eq('id', userId)
         .select()
@@ -84,7 +81,6 @@ router.put('/profile', auth, isSeeker, upload.single('cvFile'), async(req, res) 
 
     if (updateError) return res.status(400).json({ error: updateError.message });
 
-    // Send back the updated user data
     const { password: userPassword, ...userData } = updatedUser;
     res.json({ message: 'Profile updated successfully', user: userData });
 });

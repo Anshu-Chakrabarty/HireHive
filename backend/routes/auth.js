@@ -26,14 +26,14 @@ router.post('/signup', async(req, res) => {
         skills: [],
         education: '',
 
-        // Finalized column names that must match your Supabase table exactly
-        cvFileName: '',
-        jobPostCount: 0,
+        // FIX: Using ALL LOWERCASE column names for PostgreSQL stability
+        cvfilename: '',
+        jobpostcount: 0,
 
         subscription: (role === 'employer') ?
             { active: true, plan: 'buzz' } :
             { active: false, plan: 'none' },
-        subscriptionStatus: (role === 'employer') ? 'buzz' : 'none'
+        subscriptionstatus: (role === 'employer') ? 'buzz' : 'none' // Use lowercase for consistency
     };
 
     if (email === "admin@hirehive.com") profileData.role = "admin";
