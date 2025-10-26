@@ -16,7 +16,7 @@ const app = express();
 const allowedOrigins = [
     'http://127.0.0.1:5500', // Local Dev
     'http://localhost:3000', // Standard Dev port
-    process.env.CLIENT_ORIGIN // Your live Vercel domain (e.g., https://hirehive-frontend.vercel.app)
+    process.env.CLIENT_ORIGIN // Your live Vercel domain (must be set in Render environment variables)
 ];
 
 app.use(cors({

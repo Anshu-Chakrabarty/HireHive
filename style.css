@@ -2,7 +2,7 @@
 
 html,
 body {
-    /* FIX 4: Prevents double-tap zooming on mobile */
+    /* FIX: Prevents double-tap zooming on mobile */
     touch-action: manipulation;
     user-select: none;
 }

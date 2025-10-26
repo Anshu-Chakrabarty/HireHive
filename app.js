@@ -118,7 +118,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 'career-growth': careerGrowthView,
             };
 
-
             const dashboardLink = document.getElementById("dashboardLink");
             const adminLink = document.getElementById("adminLink");
             const loginBtn = document.getElementById("loginBtn");
@@ -253,7 +252,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             // ------------------------------------------------------------------
-            // 4. AUTH & MODAL LOGIC (Fix: Listener attachment)
+            // 4. AUTH & MODAL LOGIC (Fix: Listener safety checks)
             // ------------------------------------------------------------------
             const modal = document.getElementById("authModal");
             const loginFormContainer = document.getElementById("login-form-container");
@@ -276,12 +275,23 @@ document.addEventListener("DOMContentLoaded", () => {
                 modal.style.display = "block";
             };
 
-            // Attach listeners to public buttons and close buttons
-            loginBtn.onclick = () => showForm(loginFormContainer);
-            signupBtn.onclick = () => showForm(signupFormContainer);
-            closeBtn.onclick = () => { modal.style.display = "none"; };
-            closeApplicantsModalBtn.onclick = () => { applicantsModal.style.display = "none"; };
-            closeSubscriptionModalBtn.onclick = () => { subscriptionModal.style.display = "none"; };
+            // FIX: Use safety checks for all button/link attachments to prevent null errors
+            if (loginBtn) {
+                loginBtn.onclick = () => showForm(loginFormContainer);
+            }
+            if (signupBtn) {
+                signupBtn.onclick = () => showForm(signupFormContainer);
+            }
+            if (closeBtn) {
+                closeBtn.onclick = () => { modal.style.display = "none"; };
+            }
+            if (closeApplicantsModalBtn) {
+                closeApplicantsModalBtn.onclick = () => { applicantsModal.style.display = "none"; };
+            }
+            if (closeSubscriptionModalBtn) {
+                closeSubscriptionModalBtn.onclick = () => { subscriptionModal.style.display = "none"; };
+            }
+            // End fixes for direct element attachments
 
             window.onclick = (event) => {
                 if (event.target == modal) modal.style.display = "none";
