@@ -54,6 +54,7 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
     // 1. Subscription Check and Enforcement
     const { data: user, error: userError } = await supabase
         .from('users')
+        // Select ALL LOWERCASE column names for enforcement
         .select('subscriptionstatus, jobpostcount')
         .eq('id', employerId)
         .single();
@@ -62,7 +63,7 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
 
     const currentPlanKey = user.subscriptionstatus || 'buzz';
 
-    // FINAL FIX for SyntaxError: Using standard conditional block 
+    // FIX for SyntaxError: Using standard conditional block 
     let planLimit = 0;
     const plan = HIVE_PLANS[currentPlanKey];
     if (plan && plan.limit !== undefined) {
@@ -80,7 +81,6 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
 
     // 2. Insert Job Data
     const jobData = {
-        // FIX: The database foreign key column expects 'employerid' (all lowercase)
         employerid: employerId,
         title,
         category,
@@ -92,7 +92,7 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
         description,
         noticePeriod,
         screeningQuestions,
-        postedDate: new Date().toISOString(),
+        // The DB handles the 'postedDate' column, so we don't send it here (it's DEFAULT now() in SQL)
     };
 
     const { data: job, error: jobInsertError } = await supabase
@@ -107,7 +107,6 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
     if (!isUnlimited) {
         const { error: updateError } = await supabase
             .from('users')
-            // FIX: Use ALL LOWERCASE column name for updating
             .update({ jobpostcount: user.jobpostcount + 1 })
             .eq('id', employerId);
 
@@ -131,7 +130,8 @@ router.get('/jobs', auth, isEmployer, async(req, res) => {
         `)
         // FIX: Must query using the lowercase DB column name 'employerid'
         .eq('employerid', employerId)
-        .order('postedDate', { ascending: false });
+        // FIX: Must order by the lowercase DB column name 'posteddate'
+        .order('posteddate', { ascending: false });
 
     if (error) return res.status(400).json({ error: error.message });
     res.json(jobs);
@@ -205,7 +205,6 @@ router.get('/applicants/:jobId', auth, isEmployer, async(req, res) => {
         .from('applications')
         .select(`
             answers,
-            // Select ALL LOWERCASE column names for consistency
             seekers:seekerId (name, email, phone, skills, education, cvfilename) 
         `)
         .eq('jobId', jobId);
@@ -230,7 +229,6 @@ router.get('/seekers', auth, isEmployer, async(req, res) => {
 
     const { data: seekers, error } = await supabase
         .from('users')
-        // Select ALL LOWERCASE column names for consistency
         .select('id, name, email, phone, skills, education, cvfilename')
         .eq('role', 'seeker')
         .order('name', { ascending: true });
