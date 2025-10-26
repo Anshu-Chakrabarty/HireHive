@@ -2,7 +2,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import https from 'https';
+// Removed: import https from 'https'; (Heartbeat logic removed for startup stability)
 import authRoutes from './routes/auth.js';
 import seekerRoutes from './routes/seeker.js';
 import employerRoutes from './routes/employer.js';
@@ -17,7 +17,7 @@ const allowedOrigins = [
     'http://127.0.0.1:5500', // Local Dev
     'http://localhost:3000', // Standard Dev port
     process.env.CLIENT_ORIGIN, // Vercel Preview URL
-    'https://hirehive.in' // FIX: Explicitly allow custom domain
+    'https://hirehive.in' // Explicitly allowed custom domain
 ];
 
 app.use(cors({
@@ -27,6 +27,7 @@ app.use(cors({
         if (allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
+            // Allow dynamic Vercel/Render preview domains
             if (origin.endsWith('.onrender.com') || origin.endsWith('.vercel.app')) {
                 callback(null, true);
             } else {
@@ -39,24 +40,6 @@ app.use(cors({
 }));
 
 app.use(express.json());
-
-// --- Heartbeat Function (FIX: Prevents Render Cold Start) ---
-const RENDER_EXTERNAL_URL = process.env.RENDER_EXTERNAL_URL;
-
-if (RENDER_EXTERNAL_URL && RENDER_EXTERNAL_URL.startsWith('https://')) {
-    const keepAlive = () => {
-        https.get(RENDER_EXTERNAL_URL, (res) => {
-            if (res.statusCode >= 200 && res.statusCode < 400) {
-                // Success log is suppressed to keep console clean, but ping happens
-            }
-        }).on('error', (err) => {
-            console.error(`[Heartbeat] Ping error: ${err.message}. Server may be sleeping or restarting.`);
-        });
-    };
-
-    setInterval(keepAlive, 600000); // Ping every 10 minutes (600,000 ms)
-}
-// --- End Heartbeat ---
 
 // --- Status Check Endpoint ---
 app.get('/', (req, res) => {

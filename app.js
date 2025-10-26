@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // ------------------------------------------------------------------
             // 1. GLOBAL CONFIGURATION & TOKEN MANAGEMENT
             // ------------------------------------------------------------------
+            // IMPORTANT: REPLACE THIS with your LIVE Render domain URL
             const BASE_URL = "https://hirehive-api.onrender.com/api";
 
             const getToken = () => localStorage.getItem("hirehiveToken");
@@ -252,7 +253,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             // ------------------------------------------------------------------
-            // 4. AUTH & MODAL LOGIC 
+            // 4. AUTH & MODAL LOGIC (Fix: Listener safety checks)
             // ------------------------------------------------------------------
             const modal = document.getElementById("authModal");
             const loginFormContainer = document.getElementById("login-form-container");
@@ -488,7 +489,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 document.getElementById("seeker-education").value = currentUser.education || "";
 
                 const cvFilenameEl = document.getElementById("cv-filename");
-                // FIX: Check for lowercase 'cvfilename' in returned user object
+                // FIX: Use ALL LOWERCASE 'cvfilename'
                 if (currentUser.cvfilename) {
                     cvFilenameEl.innerHTML = `Uploaded: ${currentUser.cvfilename} (<a href="#" class="cv-link" data-filename="${currentUser.cvfilename}">View/Download</a>)`;
                 } else {
@@ -945,7 +946,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <td>${(app.skills || []).join(", ") || 'N/A'}</td>
                         <td>
                             ${
-                                // FIX: Use lowercase cvfilename from DB/API response
+                                // FIX: Use ALL LOWERCASE 'cvfilename'
                                 app.cvfilename 
                                 ? `<a href="#" class="cv-link" data-filename="${app.cvfilename}">View/Download</a>`
                                 : 'N/A'
@@ -1027,7 +1028,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             `Phone: ${seeker.phone || 'N/A'}\n` +
                             `Skills: ${seeker.skills.join(", ") || 'N/A'}\n` +
                             `Education: ${seeker.education || 'N/A'}\n` +
-                            `CV: ${seeker.cvfilename || 'Not Uploaded'}\n\n` // FIX: Use lowercase cvfilename
+                            `CV: ${seeker.cvfilename || 'Not Uploaded'}\n\n` // FIX: Use ALL LOWERCASE 'cvfilename'
                         );
                     };
                 });
