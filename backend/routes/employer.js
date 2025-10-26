@@ -46,7 +46,7 @@ const isEmployer = checkRole(['employer', 'admin']);
 // 2. EMPLOYER JOB MANAGEMENT (/api/employer/jobs)
 // ------------------------------------------------------------------
 
-// POST: Create a new job (Subscription Enforcement Added)
+// POST: Create a new job (Subscription Enforcement - HARDENED SYNTAX)
 router.post('/jobs', auth, isEmployer, async(req, res) => {
     const { title, category, location, experience, salary, ctc, requiredSkills, description, noticePeriod, screeningQuestions } = req.body;
     const employerId = req.user.id;
@@ -54,7 +54,7 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
     // 1. Subscription Check and Enforcement
     const { data: user, error: userError } = await supabase
         .from('users')
-        // FIX: Select ALL LOWERCASE column names for enforcement
+        // Must select the required fields using their defined casing
         .select('subscriptionstatus, jobpostcount')
         .eq('id', employerId)
         .single();
@@ -62,9 +62,17 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
     if (userError || !user) return res.status(500).json({ error: 'Failed to retrieve user subscription status.' });
 
     const currentPlanKey = user.subscriptionstatus || 'buzz';
-    const planLimit = HIVE_PLANS[currentPlanKey] ? .limit || 0;
+
+    // 🔥 FINAL FIX: Calculate planLimit using standard check to avoid SyntaxError
+    let planLimit = 0;
+    const plan = HIVE_PLANS[currentPlanKey];
+    if (plan && plan.limit !== undefined) {
+        planLimit = plan.limit;
+    }
+
     const isUnlimited = planLimit === Infinity;
 
+    // FIX: Use ALL LOWERCASE column name for checking count
     if (!isUnlimited && user.jobpostcount >= planLimit) {
         return res.status(403).json({
             error: `Job posting limit (${planLimit}) reached for your current plan (${currentPlanKey}). Please upgrade.`
@@ -95,7 +103,7 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
 
     if (jobInsertError) return res.status(400).json({ error: jobInsertError.message });
 
-    // 3. Update Job Count for Basic Plans (only if job was successfully posted)
+    // 3. Update Job Count for Basic Plans
     if (!isUnlimited) {
         const { error: updateError } = await supabase
             .from('users')
