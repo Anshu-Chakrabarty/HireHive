@@ -25,8 +25,12 @@ router.post('/signup', async(req, res) => {
         role,
         skills: [],
         education: '',
-        cvFileName: '',
+
+        // FIX: CHANGED COLUMN NAMES TO SNAKE_CASE FOR SUPABASE/POSTGRES
+        cv_file_name: '',
         job_post_count: 0,
+
+        // subscription and subscription_status remain snake_case for DB
         subscription: (role === 'employer') ?
             { active: true, plan: 'buzz' } :
             { active: false, plan: 'none' },
@@ -48,6 +52,8 @@ router.post('/signup', async(req, res) => {
         return res.status(400).json({ error: error.message });
     }
 
+    // Prepare user data without password for frontend
+    // NOTE: The data returned here still uses snake_case, which is fine for the client's current setup.
     const { password: userPassword, ...userData } = data;
 
     const token = jwt.sign({ id: data.id, role: data.role }, process.env.JWT_SECRET, { expiresIn: '1d' });
