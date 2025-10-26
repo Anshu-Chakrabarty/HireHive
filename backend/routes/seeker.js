@@ -43,6 +43,7 @@ router.put('/profile', auth, isSeeker, upload.single('cvFile'), async(req, res) 
     const userId = req.user.id;
     const { name, education, skills } = req.body;
 
+    // Convert skills string to array of trimmed strings for Supabase JSON column
     let updateData = {
         name,
         education,
@@ -98,7 +99,8 @@ router.get('/jobs', auth, isSeeker, async(req, res) => {
             *,
             employer:employerid (name) 
         `)
-        .order('postedDate', { ascending: false });
+        // FIX: Must order by the lowercase DB column name 'posteddate'
+        .order('posteddate', { ascending: false });
 
     if (error) return res.status(400).json({ error: error.message });
     res.json(jobs);
