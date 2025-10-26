@@ -54,7 +54,6 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
     // 1. Subscription Check and Enforcement
     const { data: user, error: userError } = await supabase
         .from('users')
-        // Must select the required fields using their defined lowercase casing
         .select('subscriptionstatus, jobpostcount')
         .eq('id', employerId)
         .single();
@@ -63,7 +62,7 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
 
     const currentPlanKey = user.subscriptionstatus || 'buzz';
 
-    // 🔥 FINAL FIX: Using standard conditional block to avoid SyntaxError
+    // FINAL FIX for SyntaxError: Using standard conditional block 
     let planLimit = 0;
     const plan = HIVE_PLANS[currentPlanKey];
     if (plan && plan.limit !== undefined) {

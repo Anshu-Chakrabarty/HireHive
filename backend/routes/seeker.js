@@ -52,7 +52,7 @@ router.put('/profile', auth, isSeeker, upload.single('cvFile'), async(req, res) 
     // 1. Handle CV Upload (if a file is included)
     if (req.file) {
         const file = req.file;
-        // FIX: Use lowercase name for DB column (PostgreSQL-safe)
+        // FINAL NAME ALIGNMENT: Use all lowercase name for DB column
         const cvfilename = `${userId}_${Date.now()}_${file.originalname}`;
 
         const { error: uploadError } = await supabase.storage
@@ -96,7 +96,7 @@ router.get('/jobs', auth, isSeeker, async(req, res) => {
         .from('jobs')
         .select(`
             *,
-            employer:employerId (name) 
+            employer:employerid (name) 
         `)
         .order('postedDate', { ascending: false });
 

@@ -26,14 +26,14 @@ router.post('/signup', async(req, res) => {
         skills: [],
         education: '',
 
-        // FIX: Using ALL LOWERCASE column names for PostgreSQL stability
+        // FINAL FIX: Use ALL LOWERCASE names for PostgreSQL stability
         cvfilename: '',
         jobpostcount: 0,
 
         subscription: (role === 'employer') ?
             { active: true, plan: 'buzz' } :
             { active: false, plan: 'none' },
-        subscriptionstatus: (role === 'employer') ? 'buzz' : 'none' // Use lowercase for consistency
+        subscriptionstatus: (role === 'employer') ? 'buzz' : 'none'
     };
 
     if (email === "admin@hirehive.com") profileData.role = "admin";
