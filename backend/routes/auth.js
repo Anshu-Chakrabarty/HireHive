@@ -11,6 +11,10 @@ const saltRounds = 10;
 router.post('/signup', async(req, res) => {
     const { name, email, password, role, phone } = req.body;
 
+    if (!password) {
+        return res.status(400).json({ error: 'Password is required for signup.' });
+    }
+
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     let profileData = {
@@ -24,10 +28,9 @@ router.post('/signup', async(req, res) => {
         cvFileName: '',
         job_post_count: 0,
         subscription: (role === 'employer') ?
-            { active: true, plan: 'buzz' } // Default to active 'buzz' plan
-            :
+            { active: true, plan: 'buzz' } :
             { active: false, plan: 'none' },
-        subscription_status: (role === 'employer') ? 'buzz' : 'none' // Use the key for lookup
+        subscription_status: (role === 'employer') ? 'buzz' : 'none'
     };
 
     if (email === "admin@hirehive.com") profileData.role = "admin";

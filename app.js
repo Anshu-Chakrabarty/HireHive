@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // ------------------------------------------------------------------
             // 1. GLOBAL CONFIGURATION & TOKEN MANAGEMENT
             // ------------------------------------------------------------------
-            // IMPORTANT: REPLACE THIS with your LIVE Render domain URL
+            // IMPORTANT: REPLACE THIS with your LIVE Render domain URL (e.g., https://your-app.onrender.com/api)
             const BASE_URL = "https://hirehive-api.onrender.com/api";
 
             const getToken = () => localStorage.getItem("hirehiveToken");
@@ -108,7 +108,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 'admin': document.getElementById("admin-view"),
                 'about': document.getElementById("about-view"),
                 'contact': document.getElementById("contact-view"),
-                'career-growth': document.getElementById("career-growth-view"), // NEW VIEW REGISTERED
+                'career-growth': document.getElementById("career-growth-view"),
             };
 
             const dashboardLink = document.getElementById("dashboardLink");
@@ -387,7 +387,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
                         // --- SIMULATED UPGRADE/DOWNGRADE ---
                         if (planKey === 'buzz') {
-                            // Downgrade logic simulation
                             alert(`Selected ${selectedPlan.name}. Your job count has been reset to 0/${selectedPlan.limit} for the month.`);
                             subscriptionModal.style.display = "none";
                             updateHeaderUI();

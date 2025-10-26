@@ -2,6 +2,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import https from 'https';
 import authRoutes from './routes/auth.js';
 import seekerRoutes from './routes/seeker.js';
 import employerRoutes from './routes/employer.js';
@@ -13,9 +14,9 @@ const app = express();
 // --- Middleware Setup ---
 // Define the allowed origins dynamically. 
 const allowedOrigins = [
-    'http://127.0.0.1:5500', // Local Dev (Live Server)
-    'http://localhost:3000', // Standard Dev port
-    process.env.CLIENT_ORIGIN // Your live Vercel domain (must be set in Render environment variables)
+    'http://127.0.0.1:5500',
+    'http://localhost:3000',
+    process.env.CLIENT_ORIGIN
 ];
 
 app.use(cors({
@@ -38,7 +39,26 @@ app.use(cors({
 
 app.use(express.json());
 
-// --- Status Check Endpoint ---
+// --- Heartbeat Function (FIX: Prevents Render Cold Start) ---
+const RENDER_EXTERNAL_URL = process.env.RENDER_EXTERNAL_URL;
+
+if (RENDER_EXTERNAL_URL) {
+    const keepAlive = () => {
+        https.get(RENDER_EXTERNAL_URL, (res) => {
+            console.log(`[Heartbeat] Pinged server, status: ${res.statusCode}`);
+        }).on('error', (err) => {
+            console.error(`[Heartbeat] Ping error: ${err.message}`);
+        });
+    };
+
+    setInterval(keepAlive, 600000); // Ping every 10 minutes (600,000 ms)
+}
+// --- End Heartbeat ---
+
+// --- Status Check Endpoint (Used by the heartbeat) ---
+app.get('/', (req, res) => {
+    res.send('HireHive API is alive!');
+});
 app.get('/api/status', (req, res) => {
     res.json({
         message: 'HireHive API is running!',
