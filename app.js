@@ -19,6 +19,20 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             };
 
+            // Helper function for showing status messages
+            const showStatusMessage = (title, body, isError = false) => {
+                const modal = document.getElementById("statusMessageModal");
+                document.getElementById("statusMessageTitle").textContent = title;
+                document.getElementById("statusMessageBody").textContent = body;
+
+                if (isError) {
+                    document.getElementById("statusMessageTitle").style.color = 'red';
+                } else {
+                    document.getElementById("statusMessageTitle").style.color = '#343a40'; // Secondary color
+                }
+                modal.style.display = 'block';
+            };
+
             // --- SUBSCRIPTION PLAN DATA ---
             const HIVE_PLANS = {
                 'buzz': { name: "Buzz Plan", price: "Free", limit: 2, icon: "fas fa-bug", color: "#28a745", description: "Post 2 free job listing. Access to limited candidate applications (up to 30 resumes). Standard listing visibility for 7 days." },
@@ -93,8 +107,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const welcomeMessage = document.getElementById("welcome-message");
             const menuToggle = document.getElementById('menuToggle');
             const navLinks = document.getElementById('navLinks');
-
             const employerDashboard = document.getElementById("employer-dashboard");
+
+            // ... [Other dashboard elements] ...
 
             if (menuToggle && navLinks) {
                 menuToggle.addEventListener('click', () => {
@@ -211,7 +226,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             // ------------------------------------------------------------------
-            // 3. AUTH & MODAL LOGIC (FIXED PASSWORD SUBMISSION)
+            // 3. AUTH & MODAL LOGIC (FIXED PASSWORD SUBMISSION & UI FEEDBACK)
             // ------------------------------------------------------------------
             const modal = document.getElementById("authModal");
             const loginFormContainer = document.getElementById("login-form-container");
@@ -221,6 +236,12 @@ document.addEventListener("DOMContentLoaded", () => {
             const applicantsModal = document.getElementById("applicantsModal");
             const subscriptionModal = document.getElementById("subscriptionModal");
             const closeApplicantsModalBtn = document.getElementById("close-applicants-modal");
+            const statusMessageModal = document.getElementById("statusMessageModal");
+
+            // Close listener for status message modal
+            document.querySelectorAll('.status-close-btn').forEach(btn => {
+                btn.onclick = () => { statusMessageModal.style.display = 'none'; };
+            });
 
             const switchToOtpLink = document.getElementById("switch-to-otp");
             const switchFormLink = document.getElementById("switch-form-link");
@@ -230,7 +251,31 @@ document.addEventListener("DOMContentLoaded", () => {
                 [loginFormContainer, signupFormContainer, otpFormContainer].forEach((f) => f.classList.add("hidden"));
                 formToShow.classList.remove("hidden");
                 modal.style.display = "block";
+
+                // FIX: Update switch link text dynamically for better UX
+                const isLogin = formToShow === loginFormContainer;
+                if (switchFormLink) {
+                    switchFormLink.textContent = isLogin ?
+                        "Need an account? Sign Up" :
+                        "Already have an account? Log In";
+                }
             };
+
+            // --- Loading State Helper ---
+            const setLoading = (buttonId, isLoading, defaultText = 'Submit') => {
+                const btn = document.getElementById(buttonId);
+                if (!btn) return;
+
+                if (isLoading) {
+                    btn.disabled = true;
+                    // Use Font Awesome Honeybee icon for surfing symbol
+                    btn.innerHTML = '<i class="fas fa-hive fa-spin"></i> Surfing...';
+                } else {
+                    btn.disabled = false;
+                    btn.textContent = defaultText;
+                }
+            };
+
 
             if (loginBtn) {
                 loginBtn.onclick = () => showForm(loginFormContainer);
@@ -254,16 +299,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (event.target == modal) modal.style.display = "none";
                 if (event.target == applicantsModal) applicantsModal.style.display = "none";
                 if (event.target == subscriptionModal) subscriptionModal.style.display = "none";
+                if (event.target == statusMessageModal) statusMessageModal.style.display = "none";
             };
 
             if (switchFormLink) {
                 switchFormLink.addEventListener('click', (e) => {
                     e.preventDefault();
-                    showForm(
-                        signupFormContainer.classList.contains("hidden") ?
-                        signupFormContainer :
-                        loginFormContainer
-                    );
+                    const formContainer = signupFormContainer.classList.contains("hidden") ? signupFormContainer : loginFormContainer;
+                    showForm(formContainer);
                 });
             }
 
@@ -277,6 +320,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // --- API SIGNUP (FIXED) ---
             document.getElementById("signupForm").addEventListener("submit", async(e) => {
                 e.preventDefault();
+                setLoading('submitSignupBtn', true, 'Sign Up');
 
                 const name = document.getElementById("signupName").value;
                 const email = document.getElementById("signupEmail").value;
@@ -287,20 +331,37 @@ document.addEventListener("DOMContentLoaded", () => {
                 try {
                     const data = await fetchApi('auth/signup', 'POST', { name, email, password, role, phone });
 
-                    // --- ONLY EXECUTE ON SUCCESS ---
+                    // --- ON SUCCESS ---
                     setToken(data.token);
                     setLocalUser(data.user);
                     document.getElementById("authModal").style.display = "none";
                     updateHeaderUI();
                     console.log("Signup successful!");
+                    showStatusMessage("Welcome to the Hive!", "Your account has been successfully created.", false);
+
                 } catch (error) {
                     console.error("Signup failed:", error.message);
+                    // Check for 409 error (User already exists)
+                    if (error.message.includes('exists')) {
+                        showStatusMessage(
+                            "Account Exists",
+                            "It looks like you already have an account. Please proceed to the Login screen.",
+                            true
+                        );
+                        showForm(loginFormContainer); // Redirect to login form inside modal
+                    } else {
+                        showStatusMessage("Registration Failed", error.message, true);
+                    }
+                } finally {
+                    setLoading('submitSignupBtn', false, 'Sign Up');
                 }
             });
 
             // --- API LOGIN (FIXED) ---
             document.getElementById("loginForm").addEventListener("submit", async(e) => {
                 e.preventDefault();
+                setLoading('submitLoginBtn', true, 'Login');
+
                 const email = document.getElementById("loginEmail").value;
                 const password = document.getElementById("loginPassword").value;
 
@@ -313,12 +374,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     console.log("Login successful!");
                 } catch (error) {
                     console.error("Login failed:", error.message);
+                    showStatusMessage("Login Failed", "Invalid email or password. Please try again.", true);
+                } finally {
+                    setLoading('submitLoginBtn', false, 'Login');
                 }
             });
 
             // --- API OTP LOGIN (Simulated) ---
             document.getElementById("otpForm").addEventListener("submit", async(e) => {
                 e.preventDefault();
+                setLoading('submitOtpBtn', true, 'Send OTP');
+
                 const phone = document.getElementById("otpPhone").value;
 
                 console.log(`Simulating OTP request for phone: ${phone}.`);
@@ -333,7 +399,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     updateHeaderUI();
                 } else {
                     console.error("Invalid OTP entered.");
+                    showStatusMessage("OTP Failed", "Invalid OTP entered.", true);
                 }
+                setLoading('submitOtpBtn', false, 'Send OTP');
             });
 
             // --- SUBSCRIPTION LOGIC (Uses correct DB field names) ---
@@ -385,6 +453,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                             switchEmployerView("employer-post-view");
                             console.log(`Selected ${selectedPlan.name}. Job count reset to 0/${selectedPlan.limit}.`);
+                            showStatusMessage("Plan Updated", `${selectedPlan.name} is now your active plan.`, false);
                             subscriptionModal.style.display = "none";
                             updateHeaderUI();
                         } else {
@@ -409,12 +478,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (currentUser.role === "seeker") {
                     seekerDashboard.classList.remove("hidden");
                     employerDashboard.classList.add("hidden");
-                    showSeekerJobView();
+                    loadJobs(); // Calls loadJobs, which shows job view
                 } else if (currentUser.role === "employer") {
                     employerDashboard.classList.remove("hidden");
                     seekerDashboard.classList.add("hidden");
 
-                    document.querySelectorAll('.employer-tab-btn').forEach(btn => {
+                    document.querySelectorAll('#employer-dashboard .job-filter-nav button').forEach(btn => {
                         btn.onclick = (e) => {
                             const target = e.target.dataset.viewTarget;
                             switchEmployerView(target);
@@ -471,10 +540,12 @@ document.addEventListener("DOMContentLoaded", () => {
                         const data = await fetchApi('seeker/profile', 'PUT', formData, true);
                         setLocalUser(data.user);
                         console.log("Profile updated!");
+                        showStatusMessage("Profile Updated", "Your profile has been saved successfully.", false);
                         seekerJobView.classList.remove('hidden');
                         seekerProfileView.classList.add('hidden');
                     } catch (error) {
                         console.error("Profile update failed:", error.message);
+                        showStatusMessage("Profile Update Failed", error.message, true);
                     }
                 };
             }
@@ -511,9 +582,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     const seekerSkills = (currentUser.skills || []).map((s) => s.toLowerCase());
 
                     jobs.forEach((job) => {
-                                // Uses the database field names 'jobid' and 'seekerid'
                                 const hasApplied = mockApplications.some((app) => app.jobid === job.id && app.seekerid === currentUser.id);
-                                // Uses the database field name 'required_skills' (snake_case)
                                 const isShortlisted = (job.required_skills || []).map((s) => s.toLowerCase()).some((skill) => seekerSkills.includes(skill));
 
                                 const isDisabled = hasApplied;
@@ -543,7 +612,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     const jobId = parseInt(e.target.dataset.jobId);
                     const job = jobs.find(j => j.id === jobId);
                     let answers = [];
-                    // Uses the database field name 'screening_questions' (snake_case)
                     if (job.screening_questions && job.screening_questions.length > 0) {
                         console.log("This job requires screening questions before application.");
                         for (const q of job.screening_questions) {
@@ -559,9 +627,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     try {
                         await fetchApi(`seeker/apply/${jobId}`, 'POST', { answers });
                         console.log("Application submitted!");
+                        showStatusMessage("Application Sent", "Your application has been successfully submitted.", false);
                         loadJobs(); // Re-load to update UI status
                     } catch (error) {
                         console.error("Application failed:", error.message);
+                        showStatusMessage("Application Failed", error.message, true);
                     }
                 };
             });
@@ -599,7 +669,7 @@ document.addEventListener("DOMContentLoaded", () => {
             view.classList.add("hidden");
         });
 
-        document.querySelectorAll('.employer-tab-btn').forEach(btn => {
+        document.querySelectorAll('#employer-dashboard .job-filter-nav button').forEach(btn => {
             if (btn.dataset.viewTarget === targetViewId) {
                 btn.classList.add('btn-primary');
             } else {
@@ -692,6 +762,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function handleJobPost(e, jobId = null) {
         e.preventDefault();
+        const postJobSubmitBtn = document.getElementById('postJobSubmitBtn');
+        setLoading('postJobSubmitBtn', true, jobId ? 'Save Changes & Update Job' : 'Review & Post Job');
+        
         const jobData = {
             title: document.getElementById("job-title").value,
             category: document.getElementById("job-category").value,
@@ -710,7 +783,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const q1 = document.getElementById("sq1").value.trim();
             const q2 = document.getElementById("sq2").value.trim();
             const q3 = document.getElementById("sq3").value.trim();
-            if (q1 === "" || q2 === "") { console.error("Question 1 and 2 are mandatory."); return; }
+            if (q1 === "" || q2 === "") { console.error("Question 1 and 2 are mandatory."); setLoading('postJobSubmitBtn', false, postJobSubmitBtn.textContent); return; }
             if (q1) screeningQ.push(q1); if (q2) screeningQ.push(q2); if (q3) screeningQ.push(q3);
         }
         jobData.screeningQuestions = screeningQ;
@@ -726,12 +799,16 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             
             console.log(`Job ${jobId ? 'updated' : 'posted'} successfully!`);
+            showStatusMessage("Success!", `Job has been successfully ${jobId ? 'updated' : 'posted'}.`, false);
             
             document.getElementById("jobStep3Form").reset();
             switchEmployerView("employer-management-view");
 
         } catch (error) {
             console.error("Job operation failed:", error.message);
+            showStatusMessage("Job Operation Failed", error.message, true);
+        } finally {
+            setLoading('postJobSubmitBtn', false, postJobSubmitBtn.textContent);
         }
     }
 
@@ -839,9 +916,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 setLocalUser(user);
             }
             console.log("Job successfully deleted.");
+            showStatusMessage("Job Deleted", "The job has been permanently removed.", false);
             loadPostedJobs();
         } catch (error) {
             console.error("Deletion failed:", error.message);
+            showStatusMessage("Deletion Failed", error.message, true);
         }
     }
 
@@ -868,7 +947,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         <td>${(app.skills || []).join(", ") || 'N/A'}</td>
                         <td>
                             ${
-                                // Uses the database field name 'cvfilename'
                                 app.cvfilename 
                                 ? `<a href="#" class="cv-link" data-filename="${app.cvfilename}">View/Download</a>`
                                 : 'N/A'
@@ -937,7 +1015,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         e.preventDefault();
                         const seekerId = e.target.dataset.userid;
                         const seeker = allSeekers.find(u => u.id === seekerId);
-                        // Uses the database field name 'cvfilename'
                         console.log(`SEEKER PROFILE: Name: ${seeker.name}, CV: ${seeker.cvfilename || 'Not Uploaded'}`);
                     };
                 });
@@ -986,9 +1063,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ------------------------------------------------------------------
     // 5. ADMIN LOGIC (SIMULATED)
     // ------------------------------------------------------------------
-    // NOTE: This remains mock as Admin API endpoints were not defined.
     function initAdmin() {
-        // Mock DB implementation for Admin Stats
         const getMockDb = () => JSON.parse(localStorage.getItem("hirehiveDB") || '{"users": [], "jobs": []}');
         const db = getMockDb();
         

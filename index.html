@@ -465,6 +465,15 @@
         </div>
     </footer>
 
+    <div id="statusMessageModal" class="modal">
+        <div class="modal-content small-modal">
+            <span class="close-btn status-close-btn">&times;</span>
+            <h3 id="statusMessageTitle"></h3>
+            <p id="statusMessageBody"></p>
+            <button class="btn btn-primary status-close-btn">OK</button>
+        </div>
+    </div>
+
     <div id="authModal" class="modal">
         <div class="modal-content">
             <span class="close-btn">&times;</span>
@@ -477,7 +486,7 @@
                     <label for="loginPassword" class="hidden">Password</label>
                     <input type="password" id="loginPassword" name="loginPassword" placeholder="Password" required />
 
-                    <button type="submit" class="btn btn-primary">Login</button>
+                    <button type="submit" id="submitLoginBtn" class="btn btn-primary">Login</button>
                 </form>
                 <p><a href="#" class="switch-link" id="switch-to-otp">Login with OTP (Phone)</a></p>
             </div>
@@ -501,7 +510,7 @@
                         <option value="seeker">I'm a Job Seeker</option>
                         <option value="employer">I'm an Employer</option>
                     </select>
-                    <button type="submit" class="btn btn-primary">Sign Up</button>
+                    <button type="submit" id="submitSignupBtn" class="btn btn-primary">Sign Up</button>
                 </form>
             </div>
             <div id="otp-form-container" class="hidden">
@@ -509,10 +518,10 @@
                 <form id="otpForm">
                     <label for="otpPhone" class="hidden">Phone Number</label>
                     <input type="tel" id="otpPhone" name="otpPhone" placeholder="Enter your Phone Number (10 digits)" pattern="[0-9]{10}" maxlength="10" required/>
-                    <button type="submit" class="btn btn-primary">Send OTP</button>
+                    <button type="submit" id="submitOtpBtn" class="btn btn-primary">Send OTP</button>
                 </form>
             </div>
-            <p><a href="#" class="switch-link" id="switch-form-link">Need an account? Sign Up</a></p>
+            <p><a href="#" class="switch-link" id="switch-form-link">Already have an account? Log In</a></p>
         </div>
     </div>
 

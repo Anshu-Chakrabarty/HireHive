@@ -772,6 +772,10 @@ form select {
     margin: 5% auto;
 }
 
+.modal-content.small-modal {
+    max-width: 350px;
+}
+
 .close-btn {
     color: #aaa;
     float: right;
