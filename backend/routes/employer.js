@@ -53,14 +53,14 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
     // 1. Subscription Check and Enforcement
     const { data: user, error: userError } = await supabase
         .from('users')
-        // REVERTED to match SQL schema: all-lowercase column names
+        // Uses the all-lowercase column names
         .select('subscriptionstatus, jobpostcount')
         .eq('id', employerId)
         .single();
 
     if (userError || !user) return res.status(500).json({ error: 'Failed to retrieve user subscription status.' });
 
-    // REVERTED to match SQL schema: all-lowercase
+    // Uses the all-lowercase column name
     const currentPlanKey = user.subscriptionstatus || 'buzz';
 
     let planLimit = 0;
@@ -71,7 +71,7 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
 
     const isUnlimited = planLimit === Infinity;
 
-    // REVERTED to match SQL schema: all-lowercase column name for checking count
+    // Uses the all-lowercase column name for checking count
     if (!isUnlimited && user.jobpostcount >= planLimit) {
         return res.status(403).json({
             error: `Job posting limit (${planLimit}) reached for your current plan (${currentPlanKey}). Please upgrade.`
@@ -80,7 +80,7 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
 
     // 2. Insert Job Data
     const jobData = {
-        // REVERTED to match SQL schema: all-lowercase foreign key
+        // Uses the all-lowercase foreign key
         employerid: employerId,
         title,
         category,
@@ -88,7 +88,7 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
         experience,
         salary,
         ctc,
-        // Using snake_case for job fields as defined in SQL
+        // Uses snake_case for job fields as defined in SQL
         required_skills: requiredSkills,
         description,
         notice_period: noticePeriod,
@@ -105,7 +105,7 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
 
     // 3. Update Job Count for Basic Plans
     if (!isUnlimited) {
-        // REVERTED to match SQL schema: all-lowercase column name for updating
+        // Uses the all-lowercase column name for updating
         const { error: updateError } = await supabase
             .from('users')
             .update({ jobpostcount: user.jobpostcount + 1 })
@@ -129,9 +129,9 @@ router.get('/jobs', auth, isEmployer, async(req, res) => {
             *, 
             applications(count)
         `)
-        // REVERTED to match SQL schema: all-lowercase foreign key
+        // Uses the all-lowercase foreign key
         .eq('employerid', employerId)
-        // REVERTED to match SQL schema: all-lowercase column name
+        // Uses the all-lowercase column name for ordering
         .order('posteddate', { ascending: false });
 
     if (error) return res.status(400).json({ error: error.message });
@@ -148,7 +148,7 @@ router.put('/jobs/:jobId', auth, isEmployer, async(req, res) => {
         .from('jobs')
         .update(updateData)
         .eq('id', jobId)
-        // REVERTED to match SQL schema: all-lowercase foreign key
+        // Uses the all-lowercase foreign key
         .eq('employerid', employerId)
         .select()
         .single();
@@ -167,7 +167,7 @@ router.delete('/jobs/:jobId', auth, isEmployer, async(req, res) => {
     // 1. Get current user's job count (needed for decrement)
     const { data: user, error: userError } = await supabase
         .from('users')
-        // REVERTED to match SQL schema: all-lowercase column names
+        // Uses the all-lowercase column names
         .select('jobpostcount, subscriptionstatus')
         .eq('id', employerId)
         .single();
@@ -177,12 +177,12 @@ router.delete('/jobs/:jobId', auth, isEmployer, async(req, res) => {
         return res.status(500).json({ error: 'Failed to delete job due to user data issue.' });
     }
 
-    // REVERTED to match SQL schema: all-lowercase
+    // Uses the all-lowercase column name
     const currentPlanKey = user.subscriptionstatus || 'buzz';
     const plan = HIVE_PLANS[currentPlanKey];
     const isUnlimited = plan && plan.limit === Infinity;
 
-    // 2. Delete related applications first (REVERTED to match SQL schema: all-lowercase foreign key)
+    // 2. Delete related applications first (Uses the all-lowercase foreign key)
     await supabase.from('applications').delete().eq('jobid', jobId);
 
     // 3. Delete the job
@@ -190,18 +190,17 @@ router.delete('/jobs/:jobId', auth, isEmployer, async(req, res) => {
         .from('jobs')
         .delete()
         .eq('id', jobId)
-        // REVERTED to match SQL schema: all-lowercase foreign key
+        // Uses the all-lowercase foreign key
         .eq('employerid', employerId);
 
     if (jobDeleteError) return res.status(400).json({ error: jobDeleteError.message });
 
     // 4. Update Job Count for Basic Plans (only if job was actually deleted and count > 0)
-    // REVERTED to match SQL schema: all-lowercase
     if (!isUnlimited && user.jobpostcount > 0) {
         const newCount = user.jobpostcount - 1;
+        // Uses the all-lowercase column name for updating
         const { error: updateError } = await supabase
             .from('users')
-            // REVERTED to match SQL schema: all-lowercase column name for updating
             .update({ jobpostcount: newCount })
             .eq('id', employerId);
 
@@ -227,9 +226,9 @@ router.get('/applicants/:jobId', auth, isEmployer, async(req, res) => {
     const { data: job, error: jobError } = await supabase
         .from('jobs')
         .select('id, employerid, screening_questions, title')
-        .eq('id', jobId)
-        // REVERTED to match SQL schema: all-lowercase foreign key
+        // Uses the all-lowercase foreign key
         .eq('employerid', employerId)
+        .eq('id', jobId)
         .single();
 
     if (jobError || !job) return res.status(403).json({ error: 'Access denied to job applicants.' });
@@ -239,10 +238,10 @@ router.get('/applicants/:jobId', auth, isEmployer, async(req, res) => {
         .from('applications')
         .select(`
             answers,
-            // REVERTED to match SQL schema: all-lowercase foreign keys
+            // Uses the all-lowercase foreign key for aliasing
             seekers:seekerid (name, email, phone, skills, education, cvfilename) 
         `)
-        // REVERTED to match SQL schema: all-lowercase foreign key
+        // Uses the all-lowercase foreign key
         .eq('jobid', jobId);
 
     if (error) return res.status(400).json({ error: error.message });
@@ -265,7 +264,7 @@ router.get('/seekers', auth, isEmployer, async(req, res) => {
 
     const { data: seekers, error } = await supabase
         .from('users')
-        // REVERTED to match SQL schema: all-lowercase column names
+        // Uses the all-lowercase column names
         .select('id, name, email, phone, skills, education, cvfilename')
         .eq('role', 'seeker')
         .order('name', { ascending: true });

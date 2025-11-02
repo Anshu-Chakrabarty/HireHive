@@ -33,7 +33,7 @@ router.post('/signup', async(req, res) => {
         cvfilename: '',
         jobpostcount: 0,
 
-        // CRITICAL FIX: Renamed 'subscription' to 'subscription_jsonb' to match SQL schema
+        // CRITICAL FIX: Renamed property to 'subscription_jsonb' to match SQL schema
         subscription_jsonb: (role === 'employer') ? { active: true, plan: 'buzz' } : { active: false, plan: 'none' },
 
         // This is correct as it matches the all-lowercase SQL column
