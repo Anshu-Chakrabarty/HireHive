@@ -1,8 +1,6 @@
-// --- Backend: index.js (REPLACE ENTIRE FILE) ---
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import https from 'https';
 import authRoutes from './routes/auth.js';
 import seekerRoutes from './routes/seeker.js';
 import employerRoutes from './routes/employer.js';
@@ -12,28 +10,22 @@ dotenv.config();
 const app = express();
 
 // --- Middleware Setup ---
-// Define the allowed origins dynamically. 
 const allowedOrigins = [
     'http://127.0.0.1:5500', // Local Dev
     'http://localhost:3000', // Standard Dev port
     process.env.CLIENT_ORIGIN, // Vercel Preview URL (If set)
     'https://hirehive.in', // Working domain
-    'https://www.hirehive.in' // FIX: Explicitly allow www subdomain
+    'https://www.hirehive.in'
 ];
 
 app.use(cors({
     origin: (origin, callback) => {
         if (!origin) return callback(null, true);
 
-        if (allowedOrigins.includes(origin)) {
+        if (allowedOrigins.includes(origin) || origin.endsWith('.onrender.com') || origin.endsWith('.vercel.app')) {
             callback(null, true);
         } else {
-            // Allow dynamic Vercel/Render preview domains
-            if (origin.endsWith('.onrender.com') || origin.endsWith('.vercel.app')) {
-                callback(null, true);
-            } else {
-                callback(new Error(`Not allowed by CORS: ${origin}`), false);
-            }
+            callback(new Error(`Not allowed by CORS: ${origin}`), false);
         }
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -42,16 +34,15 @@ app.use(cors({
 
 app.use(express.json());
 
-// --- Status Check Endpoint ---
-app.get('/', (req, res) => {
-    res.send('HireHive API is alive!');
-});
+// --- Status Check Endpoint (Consolidated) ---
 app.get('/api/status', (req, res) => {
     res.json({
-        message: 'HireHive API is running!',
+        message: 'HireHive API is alive and running!',
         port: process.env.PORT || 5000
     });
 });
+// Simple root check
+app.get('/', (req, res) => res.send('HireHive API is running.'));
 
 // --- Route Mounting ---
 app.use('/api/auth', authRoutes);

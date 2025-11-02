@@ -1,11 +1,10 @@
-// --- Backend: routes/seeker.js (REPLACE ENTIRE FILE) ---
 import express from 'express';
 import multer from 'multer';
 import { supabase } from '../db.js';
 import jwt from 'jsonwebtoken';
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
 // ------------------------------------------------------------------
 // 1. MIDDLEWARE
@@ -26,7 +25,7 @@ const auth = (req, res, next) => {
 // Seeker/Admin Role Check Middleware
 const checkRole = (roles) => (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {
-        return res.status(403).json({ error: 'Access denied. Only job seekers can access this.' });
+        return res.status(403).json({ error: 'Access denied. Insufficient privileges.' });
     }
     next();
 };
@@ -43,6 +42,11 @@ router.put('/profile', auth, isSeeker, upload.single('cvFile'), async(req, res) 
     const userId = req.user.id;
     const { name, education, skills } = req.body;
 
+    // CRITICAL: Server-side validation
+    if (!name || !education || skills === undefined) {
+        return res.status(400).json({ error: 'Name, education, and skills are required.' });
+    }
+
     // Convert skills string to array of trimmed strings for Supabase JSON column
     let updateData = {
         name,
@@ -53,7 +57,7 @@ router.put('/profile', auth, isSeeker, upload.single('cvFile'), async(req, res) 
     // 1. Handle CV Upload (if a file is included)
     if (req.file) {
         const file = req.file;
-        // FINAL NAME ALIGNMENT: Use all lowercase name for DB column
+        // REVERTED: Use all-lowercase column name for consistency
         const cvfilename = `${userId}_${Date.now()}_${file.originalname}`;
 
         const { error: uploadError } = await supabase.storage
@@ -68,7 +72,7 @@ router.put('/profile', auth, isSeeker, upload.single('cvFile'), async(req, res) 
             return res.status(500).json({ error: 'CV upload failed.' });
         }
 
-        // Use the final lowercase column name in the update payload
+        // REVERTED: Use all-lowercase column name in the update payload
         updateData.cvfilename = cvfilename;
     }
 
@@ -97,9 +101,10 @@ router.get('/jobs', auth, isSeeker, async(req, res) => {
         .from('jobs')
         .select(`
             *,
+            // REVERTED to match SQL schema: all-lowercase foreign key
             employer:employerid (name) 
         `)
-        // FIX: Must order by the lowercase DB column name 'posteddate'
+        // REVERTED to match SQL schema: all-lowercase
         .order('posteddate', { ascending: false });
 
     if (error) return res.status(400).json({ error: error.message });
@@ -113,20 +118,29 @@ router.post('/apply/:jobId', auth, isSeeker, async(req, res) => {
     const { answers } = req.body;
     const seekerId = req.user.id;
 
+    // CRITICAL: Validate jobId
+    if (isNaN(parseInt(jobId))) {
+        return res.status(400).json({ error: 'Invalid job ID provided.' });
+    }
+
+    // 1. Check for existing application
     const { data: existingApp, error: checkError } = await supabase
         .from('applications')
         .select('id')
-        .eq('seekerId', seekerId)
-        .eq('jobId', jobId);
+        // REVERTED to match SQL schema: all-lowercase foreign keys
+        .eq('seekerid', seekerId)
+        .eq('jobid', jobId);
 
     if (checkError) return res.status(500).json({ error: checkError.message });
     if (existingApp && existingApp.length > 0) {
         return res.status(409).json({ error: 'You have already applied for this job.' });
     }
 
+    // 2. Insert new application
     const applicationData = {
-        jobId: parseInt(jobId),
-        seekerId,
+        // REVERTED to match SQL schema: all-lowercase foreign keys
+        jobid: parseInt(jobId),
+        seekerid: seekerId,
         status: 'applied',
         answers: answers || [],
     };
@@ -134,7 +148,7 @@ router.post('/apply/:jobId', auth, isSeeker, async(req, res) => {
     const { data, error } = await supabase
         .from('applications')
         .insert([applicationData])
-        .select()
+        .select('id')
         .single();
 
     if (error) return res.status(400).json({ error: error.message });
@@ -146,6 +160,7 @@ router.post('/apply/:jobId', auth, isSeeker, async(req, res) => {
 // 4. ADMIN/DEPRECATED ROUTES
 // ------------------------------------------------------------------
 router.get('/', (req, res) => {
+    // This endpoint is not meant to be used directly
     return res.status(404).json({ error: 'Endpoint deprecated.' });
 });
 
