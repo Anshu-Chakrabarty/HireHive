@@ -1,15 +1,15 @@
-// --- Frontend: app.js (FINAL CORRECTED) ---
 document.addEventListener("DOMContentLoaded", () => {
             // ------------------------------------------------------------------
             // 1. GLOBAL CONFIGURATION & API HELPERS
             // ------------------------------------------------------------------
+            // IMPORTANT: REPLACE THIS with your LIVE Render domain URL
             const BASE_URL = "https://hirehive-api.onrender.com/api";
 
             const getToken = () => localStorage.getItem("hirehiveToken");
             const setToken = (token) => localStorage.setItem("hirehiveToken", token);
             const removeToken = () => localStorage.removeItem("hirehiveToken");
 
-            // We use sessionStorage for currentUser as it persists across tabs but clears on session end
+            // Use sessionStorage for currentUser data persistence within the session
             const getLocalUser = () => JSON.parse(sessionStorage.getItem("localUser"));
             const setLocalUser = (user) => {
                 if (user) {
@@ -66,10 +66,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
 
-            // Helper to get job post count (uses correct DB field name)
+            // Helper uses the database field name 'jobpostcount'
             const getCurrentMonthJobCount = () => {
                 const currentUser = getLocalUser();
-                // Uses the database field name 'jobpostcount'
                 if (!currentUser || currentUser.role !== 'employer') return 0;
                 return currentUser.jobpostcount || 0;
             };
@@ -92,19 +91,13 @@ document.addEventListener("DOMContentLoaded", () => {
             const signupBtn = document.getElementById("signupBtn");
             const logoutBtn = document.getElementById("logoutBtn");
             const welcomeMessage = document.getElementById("welcome-message");
-            const seekerDashboard = document.getElementById("seeker-dashboard");
-            const employerDashboard = document.getElementById("employer-dashboard");
-            const employerNavTabs = document.getElementById("employer-nav-tabs");
-            const seekerJobView = document.getElementById("seeker-job-view");
-            const seekerProfileView = document.getElementById("seeker-profile-view");
-            const editProfileBtn = document.getElementById("editProfileBtn");
-            const backToJobsBtn = document.getElementById("backToJobsBtn");
-            const jobFilterBtns = document.querySelectorAll(".job-filter-btn");
-            const jobViewSections = document.querySelectorAll(".job-view-section");
             const menuToggle = document.getElementById('menuToggle');
             const navLinks = document.getElementById('navLinks');
 
-            // ... [Mobile Menu Toggle Logic and Navigation event listeners remain the same] ...
+            const employerDashboard = document.getElementById("employer-dashboard");
+            const employerNavTabs = document.getElementById("employer-nav-tabs");
+
+            // ... [Other dashboard elements] ...
 
             if (menuToggle && navLinks) {
                 menuToggle.addEventListener('click', () => {
@@ -221,7 +214,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             // ------------------------------------------------------------------
-            // 3. AUTH & MODAL LOGIC (FINALIZED WITH PASSWORD)
+            // 3. AUTH & MODAL LOGIC (FIXED PASSWORD SUBMISSION)
             // ------------------------------------------------------------------
             const modal = document.getElementById("authModal");
             const loginFormContainer = document.getElementById("login-form-container");
@@ -231,6 +224,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const applicantsModal = document.getElementById("applicantsModal");
             const subscriptionModal = document.getElementById("subscriptionModal");
             const closeApplicantsModalBtn = document.getElementById("close-applicants-modal");
+
             const switchToOtpLink = document.getElementById("switch-to-otp");
             const switchFormLink = document.getElementById("switch-form-link");
 
@@ -283,38 +277,41 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             }
 
-            // --- API SIGNUP (USES PASSWORD) ---
+            // --- API SIGNUP (FIXED) ---
             document.getElementById("signupForm").addEventListener("submit", async(e) => {
                 e.preventDefault();
-                const email = document.getElementById("signupEmail").value;
-                const password = document.getElementById("signupPassword").value;
-                const role = document.getElementById("userType").value;
+
                 const name = document.getElementById("signupName").value;
+                const email = document.getElementById("signupEmail").value;
+                const password = document.getElementById("signupPassword").value; // <-- FIX: Captures password
                 const phone = document.getElementById("signupPhone").value;
+                const role = document.getElementById("userType").value;
 
                 try {
                     const data = await fetchApi('auth/signup', 'POST', { name, email, password, role, phone });
                     setToken(data.token);
                     setLocalUser(data.user);
-                    modal.style.display = "none";
+                    document.getElementById("authModal").style.display = "none";
                     updateHeaderUI();
+                    console.log("Signup successful!");
                 } catch (error) {
                     console.error("Signup failed:", error.message);
                 }
             });
 
-            // --- API LOGIN (USES PASSWORD) ---
+            // --- API LOGIN (FIXED) ---
             document.getElementById("loginForm").addEventListener("submit", async(e) => {
                 e.preventDefault();
                 const email = document.getElementById("loginEmail").value;
-                const password = document.getElementById("loginPassword").value;
+                const password = document.getElementById("loginPassword").value; // <-- FIX: Captures password
 
                 try {
                     const data = await fetchApi('auth/login', 'POST', { email, password });
                     setToken(data.token);
                     setLocalUser(data.user);
-                    modal.style.display = "none";
+                    document.getElementById("authModal").style.display = "none";
                     updateHeaderUI();
+                    console.log("Login successful!");
                 } catch (error) {
                     console.error("Login failed:", error.message);
                 }
@@ -325,19 +322,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 e.preventDefault();
                 const phone = document.getElementById("otpPhone").value;
 
-                // NOTE: This section uses simulation variables. In a real app, this would be a real API call.
                 console.log(`Simulating OTP request for phone: ${phone}.`);
                 const fakeOtp = prompt("We've 'sent' an OTP to your number. (Hint: It's 123456)");
 
                 if (fakeOtp === "123456") {
-                    // Mock login for demo
-                    alert("OTP Verified. Simulating login. You will need to signup first if user is new.");
-                    // Since we can't search by phone easily on the API, this remains mock.
-                    // For a real integration, the API must verify the OTP and return a token/user object.
+                    console.log("OTP Verified. Simulating login.");
                     setToken('fake-otp-token');
-                    const mockUser = { id: 'mock-user', name: 'OTP User', role: 'seeker', email: 'otp@mock.com' };
+                    // Mock user creation for demo, assuming valid phone is in DB
+                    const mockUser = { id: 'mock-user-1', name: 'OTP User', role: 'seeker', email: 'otp@mock.com', cvfilename: 'mock.pdf', subscriptionstatus: 'none' };
                     setLocalUser(mockUser);
-                    modal.style.display = "none";
+                    document.getElementById("authModal").style.display = "none";
                     updateHeaderUI();
                 } else {
                     console.error("Invalid OTP entered.");
@@ -351,8 +345,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const modalContent = document.querySelector("#subscriptionModal .modal-content");
 
-                // FIX: Uses correct all-lowercase DB field name
+                // Uses the database field name 'subscriptionstatus'
                 const currentPlanKey = user.subscriptionstatus || 'buzz';
+                const currentPlan = HIVE_PLANS[currentPlanKey];
 
                 let planCardsHTML = `<span class="close-btn" id="close-subscription-modal">&times;</span><h2 style="margin-bottom: 1rem;">Choose Your Hive Plan</h2><div class="plans-container" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 1.5rem;">`;
 
@@ -385,10 +380,10 @@ document.addEventListener("DOMContentLoaded", () => {
                         const selectedPlan = HIVE_PLANS[planKey];
 
                         if (planKey === 'buzz') {
-                            // Simulating free tier selection
+                            // Simulating free tier selection and updating local storage with correct DB field names
                             const user = getLocalUser();
-                            user.subscriptionstatus = planKey;
-                            user.jobpostcount = 0;
+                            user.subscriptionstatus = planKey; // 'subscriptionstatus'
+                            user.jobpostcount = 0; // 'jobpostcount'
                             setLocalUser(user);
 
                             switchEmployerView("employer-post-view");
@@ -434,6 +429,8 @@ document.addEventListener("DOMContentLoaded", () => {
             // --- SEEKER PROFILE LOAD/SAVE (Uses correct DB field names) ---
             async function loadSeekerProfileForm() {
                 const currentUser = getLocalUser();
+                const seekerJobView = document.getElementById("seeker-job-view");
+                const seekerProfileView = document.getElementById("seeker-profile-view");
 
                 document.getElementById("seeker-name").value = currentUser.name || "";
                 document.getElementById("seeker-email").value = currentUser.email || "";
@@ -474,12 +471,23 @@ document.addEventListener("DOMContentLoaded", () => {
                         const data = await fetchApi('seeker/profile', 'PUT', formData, true);
                         setLocalUser(data.user);
                         console.log("Profile updated!");
-                        showSeekerJobView();
+                        seekerJobView.classList.remove('hidden');
+                        seekerProfileView.classList.add('hidden');
                     } catch (error) {
                         console.error("Profile update failed:", error.message);
                     }
                 };
             }
+            document.getElementById("editProfileBtn").onclick = () => {
+                document.getElementById("seeker-profile-view").classList.remove('hidden');
+                document.getElementById("seeker-job-view").classList.add('hidden');
+                loadSeekerProfileForm();
+            };
+            document.getElementById("backToJobsBtn").onclick = () => {
+                document.getElementById("seeker-job-view").classList.remove('hidden');
+                document.getElementById("seeker-profile-view").classList.add('hidden');
+                loadJobs();
+            };
 
             // --- JOB BOARD LOAD (Uses correct DB field names) ---
             async function loadJobs() {
@@ -493,9 +501,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 try {
                     const jobs = await fetchApi('seeker/jobs', 'GET');
 
-                    // NOTE: Replace this mock with a real API call for applications if needed
+                    // NOTE: Mock application check since a single API call for job status isn't integrated
+                    // Replace this mock with a real API call if implemented
                     const mockApplications = [
-                        // Mock a few applications for demo filtering
                         { jobid: 2, seekerid: currentUser.id, status: 'applied', answers: ['Yes', '30 days'] },
                         { jobid: 4, seekerid: currentUser.id, status: 'applied', answers: ['No', '60 days'] }
                     ];
@@ -559,13 +567,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 };
             });
 
+            const jobFilterBtns = document.querySelectorAll(".job-filter-btn");
+            const jobViewSections = document.querySelectorAll(".job-view-section");
+
             jobFilterBtns.forEach(btn => {
                 btn.onclick = (e) => {
                     const filter = e.target.dataset.filter;
                     jobFilterBtns.forEach(b => b.classList.remove('btn-primary'));
                     e.target.classList.add('btn-primary');
         
-                    document.querySelectorAll(".job-view-section").forEach(section => section.classList.add('hidden'));
+                    jobViewSections.forEach(section => section.classList.add('hidden'));
         
                     if (filter === 'all') {
                         document.getElementById('shortlisted-jobs').classList.remove('hidden');
@@ -627,8 +638,6 @@ document.addEventListener("DOMContentLoaded", () => {
         postJobSubmitBtn.disabled = !canPost;
         postJobSubmitBtn.textContent = canPost ? "Review & Post Job" : "Limit Reached";
         
-        // ... [Job Post Form logic remains the same] ...
-
         postJobSubmitBtn.onclick = (e) => {
             e.preventDefault();
             const form = document.getElementById("jobStep3Form");
@@ -639,7 +648,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         };
         
-        // Reset and step handling remains the same for multi-step form...
         const jobForms = {
             1: document.getElementById("jobStep1Form"), 2: document.getElementById("jobStep2Form"), 3: document.getElementById("jobStep3Form"),
         };
@@ -672,7 +680,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 jobForms[currentStep - 1].classList.remove("hidden");
             };
         });
-        // Screening question toggle logic remains the same
         const screeningSelect = document.getElementById("add-screening-questions");
         const screeningContainer = document.getElementById("screening-questions-container");
         screeningContainer.classList.add("hidden");
@@ -712,7 +719,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const response = await fetchApi(`employer/jobs${jobId ? '/' + jobId : ''}`, jobId ? 'PUT' : 'POST', jobData);
             
-            // NOTE: The API returns the updated user object with the new jobpostcount
+            // NOTE: The API should return the updated user object with the new jobpostcount
             setLocalUser(response.job.user); 
             console.log(`Job ${jobId ? 'updated' : 'posted'} successfully!`);
             
@@ -761,7 +768,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 `;
             });
-            // ... [event listeners for view/edit/delete remain the same] ...
             document.querySelectorAll(".view-applicants-btn").forEach((button) => {
                 button.onclick = (e) => { e.preventDefault(); showApplicantsModal(parseInt(e.currentTarget.dataset.jobId)); };
             });
@@ -822,6 +828,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!confirm("Are you sure you want to delete this job? This action cannot be undone.")) { return; }
         try {
             await fetchApi(`employer/jobs/${jobId}`, 'DELETE');
+            
             // NOTE: The backend handles the jobpostcount decrement
             const user = getLocalUser();
             if (user && user.jobpostcount > 0) {
@@ -927,6 +934,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         e.preventDefault();
                         const seekerId = e.target.dataset.userid;
                         const seeker = allSeekers.find(u => u.id === seekerId);
+                        // Uses the database field name 'cvfilename'
                         console.log(`SEEKER PROFILE: Name: ${seeker.name}, CV: ${seeker.cvfilename || 'Not Uploaded'}`);
                     };
                 });
@@ -972,18 +980,20 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
     
-    // --- ADMIN LOGIC (SIMULATED FROM MOCK LOCAL STORAGE) ---
-    // NOTE: This remains mock as the API endpoints for Admin were not defined.
+    // ------------------------------------------------------------------
+    // 5. ADMIN LOGIC (SIMULATED)
+    // ------------------------------------------------------------------
+    // NOTE: This remains mock as Admin API endpoints were not defined.
     function initAdmin() {
-        const getDb = () => JSON.parse(localStorage.getItem("hirehiveDB") || '{"users": [], "jobs": []}');
-        const db = getDb();
+        // Mock DB implementation for Admin Stats
+        const getMockDb = () => JSON.parse(localStorage.getItem("hirehiveDB") || '{"users": [], "jobs": []}');
+        const db = getMockDb();
         
         document.getElementById("total-seekers").textContent = db.users.filter((u) => u.role === "seeker").length;
         document.getElementById("total-employers").textContent = db.users.filter((u) => u.role === "employer").length;
         document.getElementById("total-jobs").textContent = db.jobs.length;
         document.getElementById("total-subscriptions").textContent = db.users.filter((u) => u.subscription && u.subscription.active).length;
 
-        // ... [Rendering logic remains the same] ...
         const seekersListContainer = document.getElementById("job-seekers-list");
         const seekers = db.users.filter((u) => u.role === "seeker");
         if (seekers.length > 0) {
