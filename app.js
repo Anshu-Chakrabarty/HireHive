@@ -1031,7 +1031,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function deleteJob(jobId) {
-         // NOTE: Using prompt as a placeholder for a custom modal confirmation
+        // NOTE: Using prompt as a placeholder for a custom modal confirmation
         if (!confirm("Are you sure you want to delete this job? This action cannot be undone.")) { return; }
         try {
             await fetchApi(`employer/jobs/${jobId}`, 'DELETE');

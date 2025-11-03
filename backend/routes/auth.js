@@ -8,7 +8,7 @@ const saltRounds = 10;
 const VALID_ROLES = ['seeker', 'employer'];
 
 // ------------------------------------------------------------------
-// LOCAL MIDDLEWARE (Defined here to support /me)
+// LOCAL MIDDLEWARE (Defined here to support /me and general auth)
 // ------------------------------------------------------------------
 const protect = (req, res, next) => {
     let token;
@@ -112,7 +112,7 @@ router.post('/login', async(req, res) => {
 });
 
 // Fetch current user profile using JWT
-router.get('/me', protect, async(req, res) => { // Using local 'protect'
+router.get('/me', protect, async(req, res) => {
     const userId = req.user.id;
 
     const { data, error } = await supabase

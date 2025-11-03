@@ -1,6 +1,6 @@
 import express from 'express';
 import { supabase } from '../db.js';
-import jwt from 'jsonwebtoken'; // Keep jwt for local auth functions
+import jwt from 'jsonwebtoken';
 
 const router = express.Router();
 
@@ -46,7 +46,7 @@ const isEmployer = checkRole(['employer', 'admin']);
 // ------------------------------------------------------------------
 
 // POST: Create a new job (Subscription Enforcement)
-router.post('/jobs', auth, isEmployer, async(req, res) => { // Using local 'auth'
+router.post('/jobs', auth, isEmployer, async(req, res) => {
     const { title, category, location, experience, salary, ctc, requiredSkills, description, noticePeriod, screeningQuestions } = req.body;
     const employerId = req.user.id;
 
@@ -120,7 +120,7 @@ router.post('/jobs', auth, isEmployer, async(req, res) => { // Using local 'auth
 });
 
 // GET: Retrieve all jobs posted by the current employer
-router.get('/jobs', auth, isEmployer, async(req, res) => { // Using local 'auth'
+router.get('/jobs', auth, isEmployer, async(req, res) => {
     const employerId = req.user.id;
 
     const { data: jobs, error } = await supabase
@@ -137,7 +137,7 @@ router.get('/jobs', auth, isEmployer, async(req, res) => { // Using local 'auth'
 });
 
 // PUT: Update an existing job
-router.put('/jobs/:jobId', auth, isEmployer, async(req, res) => { // Using local 'auth'
+router.put('/jobs/:jobId', auth, isEmployer, async(req, res) => {
     const { jobId } = req.params;
     const employerId = req.user.id;
     const updateData = req.body;
@@ -166,7 +166,7 @@ router.put('/jobs/:jobId', auth, isEmployer, async(req, res) => { // Using local
 });
 
 // DELETE: Delete a job (CRITICAL: Decrement Job Count)
-router.delete('/jobs/:jobId', auth, isEmployer, async(req, res) => { // Using local 'auth'
+router.delete('/jobs/:jobId', auth, isEmployer, async(req, res) => {
     const { jobId } = req.params;
     const employerId = req.user.id;
 
@@ -220,7 +220,7 @@ router.delete('/jobs/:jobId', auth, isEmployer, async(req, res) => { // Using lo
 // ------------------------------------------------------------------
 
 // GET: Retrieve all applicants for a specific job
-router.get('/applicants/:jobId', auth, isEmployer, async(req, res) => { // Using local 'auth'
+router.get('/applicants/:jobId', auth, isEmployer, async(req, res) => {
     const { jobId } = req.params;
     const employerId = req.user.id;
 
@@ -259,8 +259,7 @@ router.get('/applicants/:jobId', auth, isEmployer, async(req, res) => { // Using
 });
 
 // GET: Retrieve the list of all seekers (Talent Pool view)
-router.get('/seekers', auth, isEmployer, async(req, res) => { // Using local 'auth'
-
+router.get('/seekers', auth, isEmployer, async(req, res) => {
     const { data: seekers, error } = await supabase
         .from('users')
         .select('id, name, email, phone, skills, education, cvfilename')
@@ -276,7 +275,7 @@ router.get('/seekers', auth, isEmployer, async(req, res) => { // Using local 'au
 // ------------------------------------------------------------------
 
 // PUT: Update the employer's subscription status (e.g., free plan selection)
-router.put('/subscription', auth, isEmployer, async(req, res) => { // Using local 'auth'
+router.put('/subscription', auth, isEmployer, async(req, res) => {
     const { newPlanKey } = req.body;
     const employerId = req.user.id;
 
@@ -309,3 +308,5 @@ router.put('/subscription', auth, isEmployer, async(req, res) => { // Using loca
         user: userData
     });
 });
+
+export default router;

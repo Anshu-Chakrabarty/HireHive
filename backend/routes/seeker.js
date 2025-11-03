@@ -1,7 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import { supabase } from '../db.js';
-import jwt from 'jsonwebtoken'; // Keep jwt for local auth functions
+import jwt from 'jsonwebtoken';
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
@@ -38,7 +38,7 @@ const isSeeker = checkRole(['seeker', 'admin']);
 // ------------------------------------------------------------------
 
 // PUT: Update Seeker Profile Info and Optionally Upload CV
-router.put('/profile', auth, isSeeker, upload.single('cvFile'), async(req, res) => { // Using local 'auth'
+router.put('/profile', auth, isSeeker, upload.single('cvFile'), async(req, res) => {
     const userId = req.user.id;
     const { name, education, skills } = req.body;
 
@@ -90,7 +90,7 @@ router.put('/profile', auth, isSeeker, upload.single('cvFile'), async(req, res) 
 // ------------------------------------------------------------------
 
 // GET: Retrieve all available jobs (Job Board) with Filters
-router.get('/jobs', auth, isSeeker, async(req, res) => { // Using local 'auth'
+router.get('/jobs', auth, isSeeker, async(req, res) => {
     const { location, salary, experience, category } = req.query;
 
     let query = supabase
@@ -124,7 +124,7 @@ router.get('/jobs', auth, isSeeker, async(req, res) => { // Using local 'auth'
 
 
 // GET: Retrieve a seeker's application history and suggested jobs
-router.get('/applications', auth, isSeeker, async(req, res) => { // Using local 'auth'
+router.get('/applications', auth, isSeeker, async(req, res) => {
     const seekerId = req.user.id;
 
     // 1. Fetch all applications made by the current seeker, joining job details
@@ -183,7 +183,7 @@ router.get('/applications', auth, isSeeker, async(req, res) => { // Using local 
 
 
 // POST: Apply for a specific job
-router.post('/apply/:jobId', auth, isSeeker, async(req, res) => { // Using local 'auth'
+router.post('/apply/:jobId', auth, isSeeker, async(req, res) => {
     const { jobId } = req.params;
     const { answers } = req.body;
     const seekerId = req.user.id;
