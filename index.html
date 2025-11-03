@@ -180,7 +180,7 @@
 
                     <label for="contact-message" class="hidden">Your Message</label>
                     <textarea id="contact-message" name="contact-message" placeholder="Your Message" rows="4" required></textarea>
-                    <button type="submit" class="btn btn-primary">Send Message</button>
+                    <button type="submit" id="contactSubmitBtn" class="btn btn-primary">Send Message</button>
                 </form>
                 <div class="return-home-container">
                     <button class="btn btn-primary" data-view="home">Back to Home</button>
@@ -191,67 +191,118 @@
         <div id="dashboard-view" class="page-view hidden dashboard-container">
             <h2>Your Dashboard</h2>
 
-            <div id="seeker-dashboard" class="role-view hidden full-width-dashboard">
-
-                <div id="seeker-job-view" class="full-screen-view card">
-                    <div class="seeker-job-header">
-                        <h2>Job Opportunities</h2>
-                        <button id="editProfileBtn" class="btn">Edit Your Profile</button>
-                    </div>
-
-                    <div class="job-filter-nav">
-                        <button class="btn btn-primary job-filter-btn" data-filter="all">All Jobs</button>
-                        <button class="btn job-filter-btn" data-filter="shortlisted">Shortlisted Jobs</button>
-                        <button class="btn job-filter-btn" data-filter="applied">Applied Jobs</button>
-                    </div>
-
-                    <div id="job-list-content">
-                        <div id="shortlisted-jobs" class="job-view-section">
-                            <h3><i class="fas fa-star"></i> Shortlisted Jobs</h3>
-                            <div id="shortlisted-jobs-list" class="job-list"></div>
+            <div id="seeker-dashboard" class="role-view hidden seeker-layout">
+                <div class="seeker-sidebar">
+                    <div class="card profile-completion-card">
+                        <h3>Profile Health Check 🩺</h3>
+                        <div class="progress-container">
+                            <div id="profileCompletionBar" class="progress-bar" style="width: 0%;"></div>
                         </div>
-                        <div id="all-jobs" class="job-view-section">
-                            <h3>All Available Jobs</h3>
-                            <div id="all-jobs-list" class="job-list"></div>
-                        </div>
-                        <div id="applied-jobs" class="job-view-section hidden">
-                            <h3><i class="fas fa-check-circle"></i> Your Applications</h3>
-                            <div id="applied-jobs-list" class="job-list"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="seeker-profile-view" class="full-screen-view card hidden">
-                    <div class="back-navigation-container">
-                        <button class="btn" id="backToJobsBtn"><i class="fas fa-arrow-left"></i> Back to Jobs</button>
+                        <p id="profileCompletionText">0% Complete</p>
+                        <button id="editProfileSidebarBtn" class="btn btn-primary btn-small">
+                            <i class="fas fa-user-edit"></i> Edit Profile
+                        </button>
+                        <hr>
+                        <p><a href="#settings" class="sidebar-link"><i class="fas fa-cog"></i> Account Settings</a></p>
+                        <p><a href="#" onclick="event.preventDefault(); showSubscriptionModal();" class="sidebar-link"><i class="fas fa-credit-card"></i> Manage Subscriptions</a></p>
+                        <p><a href="#feedback" class="sidebar-link"><i class="fas fa-comment-alt"></i> Send Feedback</a></p>
                     </div>
 
-                    <div class="profile-section">
-                        <h3>Edit My Profile</h3>
-                        <form id="profile-form">
-                            <label for="seeker-name">Name</label>
-                            <input type="text" id="seeker-name" name="seeker-name" required>
+                    <div class="card filter-widget">
+                        <h3>Filter Jobs 🔎</h3>
+                        <form id="jobFilterForm">
+                            <label for="filter-location">Job Location</label>
+                            <input type="text" id="filter-location" placeholder="e.g., Mumbai, Remote">
 
-                            <label for="seeker-email">Email</label>
-                            <input type="email" id="seeker-email" name="seeker-email" disabled>
+                            <label for="filter-salary">Minimum Salary (LPA)</label>
+                            <input type="number" id="filter-salary" min="0" placeholder="e.g., 8">
 
-                            <label for="seeker-skills">Skills (comma-separated)</label>
-                            <input type="text" id="seeker-skills" name="seeker-skills" placeholder="e.g., HTML, CSS, JavaScript, React">
+                            <label for="filter-experience">Min Experience (Years)</label>
+                            <select id="filter-experience">
+                                <option value="0">Any</option>
+                                <option value="1">1+ Year</option>
+                                <option value="2">2+ Years</option>
+                                <option value="5">5+ Years</option>
+                                <option value="10">10+ Years</option>
+                            </select>
 
-                            <label for="seeker-education">Education</label>
-                            <input type="text" id="seeker-education" name="seeker-education" placeholder="e.g., B.Tech in Computer Science">
+                            <label for="filter-category">Job Domain</label>
+                            <select id="filter-category">
+                                <option value="">All Domains</option>
+                                <option value="IT & Tech">IT & Tech</option>
+                                <option value="Marketing & Finance">Marketing & Finance</option>
+                                <option value="Manufacturing">Manufacturing</option>
+                                <option value="Hospitality">Hospitality</option>
+                                <option value="Sales">Sales</option>
+                                <option value="Management">Management</option>
+                            </select>
 
-                            <label for="cv-upload">Upload CV (PDF, DOCX)</label>
-                            <input type="file" id="cv-upload" name="cv-upload" accept=".pdf,.doc,.docx">
-
-                            <p id="cv-filename" class="cv-status"></p>
-                            <button type="submit" class="btn btn-primary">Save Profile</button>
+                            <button type="submit" class="btn btn-primary" id="applyFiltersBtn">Apply Filters</button>
+                            <button type="button" class="btn" id="resetFiltersBtn">Reset</button>
                         </form>
                     </div>
                 </div>
 
-            </div>
+                <div class="seeker-main-content">
+                    <div id="seeker-job-view" class="full-screen-view card">
+                        <div class="seeker-job-header">
+                            <h2>Job Opportunities</h2>
+                            <button id="editProfileBtn" class="btn">Edit Your Profile</button>
+                        </div>
 
+                        <div class="job-filter-nav">
+                            <button class="btn btn-primary job-filter-btn" data-filter="all">All Jobs</button>
+                            <button class="btn job-filter-btn" data-filter="shortlisted">Shortlisted Jobs</button>
+                            <button class="btn job-filter-btn" data-filter="applied">Applied Jobs</button>
+                        </div>
+
+                        <div id="job-list-content">
+                            <div id="shortlisted-jobs" class="job-view-section">
+                                <h3><i class="fas fa-star"></i> Shortlisted Jobs</h3>
+                                <div id="shortlisted-jobs-list" class="job-list"></div>
+                            </div>
+                            <div id="all-jobs" class="job-view-section">
+                                <h3>All Available Jobs</h3>
+                                <div id="all-jobs-list" class="job-list"></div>
+                            </div>
+                            <div id="applied-jobs" class="job-view-section hidden">
+                                <h3><i class="fas fa-check-circle"></i> Your Applications</h3>
+                                <div id="applied-jobs-list" class="job-list"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="seeker-profile-view" class="full-screen-view card hidden">
+                        <div class="back-navigation-container">
+                            <button class="btn" id="backToJobsBtn"><i class="fas fa-arrow-left"></i> Back to Jobs</button>
+                        </div>
+
+                        <div class="profile-section">
+                            <h3>Edit My Profile</h3>
+                            <form id="profile-form">
+                                <label for="seeker-name">Name</label>
+                                <input type="text" id="seeker-name" name="seeker-name" required>
+
+                                <label for="seeker-email">Email</label>
+                                <input type="email" id="seeker-email" name="seeker-email" disabled>
+
+                                <label for="seeker-skills">Skills (comma-separated)</label>
+                                <input type="text" id="seeker-skills" name="seeker-skills" placeholder="e.g., HTML, CSS, JavaScript, React">
+
+                                <label for="seeker-education">Education</label>
+                                <input type="text" id="seeker-education" name="seeker-education" placeholder="e.g., B.Tech in Computer Science">
+
+                                <label for="cv-upload">Upload CV (PDF, DOCX)</label>
+                                <input type="file" id="cv-upload" name="cv-upload" accept=".pdf,.doc,.docx">
+
+                                <p id="cv-filename" class="cv-status"></p>
+                                <button type="submit" class="btn btn-primary">Save Profile</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
             <div id="employer-dashboard" class="role-view hidden full-width-dashboard">
 
                 <div id="employer-nav-tabs" class="job-filter-nav">

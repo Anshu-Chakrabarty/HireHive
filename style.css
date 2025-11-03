@@ -1,4 +1,4 @@
-/* --- Frontend: style.css (FINAL CORRECTED) --- */
+/* --- Frontend: style.css (FINAL CORRECTED + SIDEBAR & FILTERS) --- */
 
 html,
 body {
@@ -160,6 +160,12 @@ body {
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
+}
+
+.btn-small {
+    /* NEW */
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
 }
 
 
@@ -481,11 +487,119 @@ body {
     padding: 2rem 5%;
 }
 
+
+/* ⬅️ NEW SEEKER LAYOUT STYLING */
+
 .seeker-layout {
     display: grid;
-    grid-template-columns: 1fr 2fr;
+    grid-template-columns: 280px 1fr;
+    /* Sidebar width: 280px */
     gap: 2rem;
+    padding: 2rem 5%;
 }
+
+.seeker-sidebar {
+    /* Sticky sidebar on desktop */
+    position: sticky;
+    top: 75px;
+    align-self: flex-start;
+}
+
+.seeker-main-content {
+    min-width: 0;
+    /* Ensures content doesn't overflow */
+}
+
+
+/* Profile Completion Card Styling */
+
+.profile-completion-card {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.profile-completion-card h3 {
+    color: var(--secondary-color);
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+}
+
+.progress-container {
+    width: 100%;
+    background-color: #e9ecef;
+    border-radius: 5px;
+    margin: 1rem 0;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 15px;
+    background-color: var(--success-color);
+    transition: width 0.5s ease-in-out;
+}
+
+.profile-completion-card p {
+    font-weight: 600;
+    color: var(--secondary-color);
+    margin-bottom: 1rem;
+}
+
+.profile-completion-card hr {
+    margin: 1.5rem 0;
+    border: 0;
+    border-top: 1px solid #eee;
+}
+
+.sidebar-link {
+    display: block;
+    text-align: left;
+    color: var(--secondary-color) !important;
+    text-decoration: none;
+    padding: 0.5rem 0;
+    transition: color 0.3s ease;
+}
+
+.sidebar-link:hover {
+    color: var(--primary-color) !important;
+}
+
+.sidebar-link i {
+    margin-right: 0.5rem;
+    width: 20px;
+}
+
+
+/* Filter Widget Styling */
+
+.filter-widget label {
+    font-weight: 500;
+    display: block;
+    margin-top: 1rem;
+    margin-bottom: 0.3rem;
+    font-size: 0.9rem;
+}
+
+.filter-widget select,
+.filter-widget input[type="text"],
+.filter-widget input[type="number"] {
+    width: 100%;
+    padding: 0.7rem;
+    margin-bottom: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+#jobFilterForm button {
+    width: 100%;
+    margin-top: 1rem;
+}
+
+#resetFiltersBtn {
+    margin-top: 0.5rem;
+}
+
+
+/* ⬅️ END NEW SEEKER LAYOUT STYLING */
 
 .card {
     background: var(--white-color);
@@ -1045,8 +1159,14 @@ footer {
     .logo {
         order: 1;
     }
+    /* ⬅️ SEEKER LAYOUT CHANGE FOR MOBILE */
     .seeker-layout {
         grid-template-columns: 1fr;
+        padding: 1rem 5%;
+    }
+    .seeker-sidebar {
+        position: static;
+        top: auto;
     }
     .employer-management-content-grid {
         grid-template-columns: 1fr;
