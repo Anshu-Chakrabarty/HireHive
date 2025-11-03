@@ -7,6 +7,30 @@ const router = express.Router();
 const saltRounds = 10;
 const VALID_ROLES = ['seeker', 'employer'];
 
+// ------------------------------------------------------------------
+// LOCAL MIDDLEWARE (Defined here to support /me)
+// ------------------------------------------------------------------
+const protect = (req, res, next) => {
+    let token;
+
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        try {
+            token = req.headers.authorization.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            req.user = { id: decoded.id, role: decoded.role };
+            next();
+        } catch (error) {
+            return res.status(401).json({ error: 'Not authorized, token failed' });
+        }
+    }
+
+    if (!token) {
+        return res.status(401).json({ error: 'Not authorized, no token' });
+    }
+};
+// ------------------------------------------------------------------
+
+
 // Signup
 router.post('/signup', async(req, res) => {
     const { name, email, password, role, phone } = req.body;
@@ -33,10 +57,7 @@ router.post('/signup', async(req, res) => {
         cvfilename: '',
         jobpostcount: 0,
 
-        // CRITICAL FIX: Renamed property to 'subscription_jsonb' to match SQL schema
         subscription_jsonb: (role === 'employer') ? { active: true, plan: 'buzz' } : { active: false, plan: 'none' },
-
-        // This is correct as it matches the all-lowercase SQL column
         subscriptionstatus: (role === 'employer') ? 'buzz' : 'none'
     };
 
@@ -88,6 +109,25 @@ router.post('/login', async(req, res) => {
 
     const token = jwt.sign({ id: data.id, role: data.role }, process.env.JWT_SECRET, { expiresIn: '1d' });
     res.json({ message: 'Login successful', token, user: userData });
+});
+
+// Fetch current user profile using JWT
+router.get('/me', protect, async(req, res) => { // Using local 'protect'
+    const userId = req.user.id;
+
+    const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+    if (error || !data) {
+        console.error("Fetch user data error:", error ? error.message : "User data not found");
+        return res.status(404).json({ error: 'User not found' });
+    }
+
+    const { password, ...userData } = data;
+    res.json({ user: userData });
 });
 
 export default router;

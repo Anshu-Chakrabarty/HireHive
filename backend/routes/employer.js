@@ -1,6 +1,6 @@
 import express from 'express';
 import { supabase } from '../db.js';
-import jwt from 'jsonwebtoken';
+import jwt from 'jsonwebtoken'; // Keep jwt for local auth functions
 
 const router = express.Router();
 
@@ -15,7 +15,7 @@ const HIVE_PLANS = {
 
 
 // ------------------------------------------------------------------
-// 1. MIDDLEWARE
+// 1. MIDDLEWARE (Local definitions to avoid ERR_MODULE_NOT_FOUND)
 // ------------------------------------------------------------------
 
 // General Authentication Middleware
@@ -46,21 +46,19 @@ const isEmployer = checkRole(['employer', 'admin']);
 // ------------------------------------------------------------------
 
 // POST: Create a new job (Subscription Enforcement)
-router.post('/jobs', auth, isEmployer, async(req, res) => {
+router.post('/jobs', auth, isEmployer, async(req, res) => { // Using local 'auth'
     const { title, category, location, experience, salary, ctc, requiredSkills, description, noticePeriod, screeningQuestions } = req.body;
     const employerId = req.user.id;
 
     // 1. Subscription Check and Enforcement
     const { data: user, error: userError } = await supabase
         .from('users')
-        // Uses the all-lowercase column names
-        .select('subscriptionstatus, jobpostcount')
+        .select('jobpostcount, subscriptionstatus')
         .eq('id', employerId)
         .single();
 
     if (userError || !user) return res.status(500).json({ error: 'Failed to retrieve user subscription status.' });
 
-    // Uses the all-lowercase column name
     const currentPlanKey = user.subscriptionstatus || 'buzz';
 
     let planLimit = 0;
@@ -71,7 +69,6 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
 
     const isUnlimited = planLimit === Infinity;
 
-    // Uses the all-lowercase column name for checking count
     if (!isUnlimited && user.jobpostcount >= planLimit) {
         return res.status(403).json({
             error: `Job posting limit (${planLimit}) reached for your current plan (${currentPlanKey}). Please upgrade.`
@@ -80,7 +77,6 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
 
     // 2. Insert Job Data
     const jobData = {
-        // Uses the all-lowercase foreign key
         employerid: employerId,
         title,
         category,
@@ -88,7 +84,6 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
         experience,
         salary,
         ctc,
-        // Uses snake_case for job fields as defined in SQL
         required_skills: requiredSkills,
         description,
         notice_period: noticePeriod,
@@ -104,23 +99,28 @@ router.post('/jobs', auth, isEmployer, async(req, res) => {
     if (jobInsertError) return res.status(400).json({ error: jobInsertError.message });
 
     // 3. Update Job Count for Basic Plans
+    let updatedUser;
     if (!isUnlimited) {
-        // Uses the all-lowercase column name for updating
-        const { error: updateError } = await supabase
+        const { data: updateData, error: updateError } = await supabase
             .from('users')
             .update({ jobpostcount: user.jobpostcount + 1 })
-            .eq('id', employerId);
+            .eq('id', employerId)
+            .select()
+            .single();
 
         if (updateError) {
             console.error("Failed to update job post count:", updateError);
         }
+        updatedUser = updateData;
     }
 
-    res.json({ message: 'Job posted successfully', job: job });
+    const { password: userPassword, ...userData } = updatedUser || {};
+
+    res.json({ message: 'Job posted successfully', job: job, user: userData });
 });
 
 // GET: Retrieve all jobs posted by the current employer
-router.get('/jobs', auth, isEmployer, async(req, res) => {
+router.get('/jobs', auth, isEmployer, async(req, res) => { // Using local 'auth'
     const employerId = req.user.id;
 
     const { data: jobs, error } = await supabase
@@ -129,9 +129,7 @@ router.get('/jobs', auth, isEmployer, async(req, res) => {
             *, 
             applications(count)
         `)
-        // Uses the all-lowercase foreign key
         .eq('employerid', employerId)
-        // Uses the all-lowercase column name for ordering
         .order('posteddate', { ascending: false });
 
     if (error) return res.status(400).json({ error: error.message });
@@ -139,16 +137,24 @@ router.get('/jobs', auth, isEmployer, async(req, res) => {
 });
 
 // PUT: Update an existing job
-router.put('/jobs/:jobId', auth, isEmployer, async(req, res) => {
+router.put('/jobs/:jobId', auth, isEmployer, async(req, res) => { // Using local 'auth'
     const { jobId } = req.params;
     const employerId = req.user.id;
     const updateData = req.body;
 
+    const mappedUpdateData = {};
+    for (const key in updateData) {
+        if (key === 'requiredSkills') mappedUpdateData['required_skills'] = updateData[key];
+        else if (key === 'noticePeriod') mappedUpdateData['notice_period'] = updateData[key];
+        else if (key === 'screeningQuestions') mappedUpdateData['screening_questions'] = updateData[key];
+        else mappedUpdateData[key] = updateData[key];
+    }
+
+
     const { data, error } = await supabase
         .from('jobs')
-        .update(updateData)
+        .update(mappedUpdateData)
         .eq('id', jobId)
-        // Uses the all-lowercase foreign key
         .eq('employerid', employerId)
         .select()
         .single();
@@ -160,14 +166,13 @@ router.put('/jobs/:jobId', auth, isEmployer, async(req, res) => {
 });
 
 // DELETE: Delete a job (CRITICAL: Decrement Job Count)
-router.delete('/jobs/:jobId', auth, isEmployer, async(req, res) => {
+router.delete('/jobs/:jobId', auth, isEmployer, async(req, res) => { // Using local 'auth'
     const { jobId } = req.params;
     const employerId = req.user.id;
 
     // 1. Get current user's job count (needed for decrement)
     const { data: user, error: userError } = await supabase
         .from('users')
-        // Uses the all-lowercase column names
         .select('jobpostcount, subscriptionstatus')
         .eq('id', employerId)
         .single();
@@ -177,12 +182,11 @@ router.delete('/jobs/:jobId', auth, isEmployer, async(req, res) => {
         return res.status(500).json({ error: 'Failed to delete job due to user data issue.' });
     }
 
-    // Uses the all-lowercase column name
     const currentPlanKey = user.subscriptionstatus || 'buzz';
     const plan = HIVE_PLANS[currentPlanKey];
     const isUnlimited = plan && plan.limit === Infinity;
 
-    // 2. Delete related applications first (Uses the all-lowercase foreign key)
+    // 2. Delete related applications first
     await supabase.from('applications').delete().eq('jobid', jobId);
 
     // 3. Delete the job
@@ -190,7 +194,6 @@ router.delete('/jobs/:jobId', auth, isEmployer, async(req, res) => {
         .from('jobs')
         .delete()
         .eq('id', jobId)
-        // Uses the all-lowercase foreign key
         .eq('employerid', employerId);
 
     if (jobDeleteError) return res.status(400).json({ error: jobDeleteError.message });
@@ -198,7 +201,6 @@ router.delete('/jobs/:jobId', auth, isEmployer, async(req, res) => {
     // 4. Update Job Count for Basic Plans (only if job was actually deleted and count > 0)
     if (!isUnlimited && user.jobpostcount > 0) {
         const newCount = user.jobpostcount - 1;
-        // Uses the all-lowercase column name for updating
         const { error: updateError } = await supabase
             .from('users')
             .update({ jobpostcount: newCount })
@@ -218,7 +220,7 @@ router.delete('/jobs/:jobId', auth, isEmployer, async(req, res) => {
 // ------------------------------------------------------------------
 
 // GET: Retrieve all applicants for a specific job
-router.get('/applicants/:jobId', auth, isEmployer, async(req, res) => {
+router.get('/applicants/:jobId', auth, isEmployer, async(req, res) => { // Using local 'auth'
     const { jobId } = req.params;
     const employerId = req.user.id;
 
@@ -226,7 +228,6 @@ router.get('/applicants/:jobId', auth, isEmployer, async(req, res) => {
     const { data: job, error: jobError } = await supabase
         .from('jobs')
         .select('id, employerid, screening_questions, title')
-        // Uses the all-lowercase foreign key
         .eq('employerid', employerId)
         .eq('id', jobId)
         .single();
@@ -238,10 +239,8 @@ router.get('/applicants/:jobId', auth, isEmployer, async(req, res) => {
         .from('applications')
         .select(`
             answers,
-            // Uses the all-lowercase foreign key for aliasing
             seekers:seekerid (name, email, phone, skills, education, cvfilename) 
         `)
-        // Uses the all-lowercase foreign key
         .eq('jobid', jobId);
 
     if (error) return res.status(400).json({ error: error.message });
@@ -260,11 +259,10 @@ router.get('/applicants/:jobId', auth, isEmployer, async(req, res) => {
 });
 
 // GET: Retrieve the list of all seekers (Talent Pool view)
-router.get('/seekers', auth, isEmployer, async(req, res) => {
+router.get('/seekers', auth, isEmployer, async(req, res) => { // Using local 'auth'
 
     const { data: seekers, error } = await supabase
         .from('users')
-        // Uses the all-lowercase column names
         .select('id, name, email, phone, skills, education, cvfilename')
         .eq('role', 'seeker')
         .order('name', { ascending: true });
@@ -273,4 +271,41 @@ router.get('/seekers', auth, isEmployer, async(req, res) => {
     res.json(seekers);
 });
 
-export default router;
+// ------------------------------------------------------------------
+// 4. SUBSCRIPTION MANAGEMENT (/api/employer/subscription)
+// ------------------------------------------------------------------
+
+// PUT: Update the employer's subscription status (e.g., free plan selection)
+router.put('/subscription', auth, isEmployer, async(req, res) => { // Using local 'auth'
+    const { newPlanKey } = req.body;
+    const employerId = req.user.id;
+
+    if (!HIVE_PLANS[newPlanKey]) {
+        return res.status(400).json({ error: "Invalid subscription plan provided." });
+    }
+
+    const updateData = {
+        subscriptionstatus: newPlanKey,
+        jobpostcount: 0,
+        subscription_jsonb: { active: true, plan: newPlanKey }
+    };
+
+    const { data: updatedUser, error: updateError } = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('id', employerId)
+        .select()
+        .single();
+
+    if (updateError) {
+        console.error("Supabase subscription update error:", updateError);
+        return res.status(500).json({ error: 'Failed to update subscription status.' });
+    }
+
+    const { password: userPassword, ...userData } = updatedUser;
+
+    res.json({
+        message: `Subscription plan updated to ${newPlanKey}.`,
+        user: userData
+    });
+});

@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import seekerRoutes from './routes/seeker.js';
 import employerRoutes from './routes/employer.js';
+import contactRoutes from './routes/contact.js'; // ⬅️ NEW IMPORT: Contact Route
 
 dotenv.config();
 
@@ -12,7 +13,7 @@ if (!process.env.JWT_SECRET) {
     console.error("CRITICAL ERROR: JWT_SECRET environment variable is missing.");
 }
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
-    console.error("CRITICAL ERROR: Supabase configuration environment variables are missing.");
+    console.error("CRITICAL ERROR: Supabase configuration environment variables is missing.");
 }
 
 console.log(`Server starting on Node version: ${process.version}`);
@@ -60,6 +61,7 @@ app.get('/', (req, res) => res.send('HireHive API is running.'));
 app.use('/api/auth', authRoutes);
 app.use('/api/seeker', seekerRoutes);
 app.use('/api/employer', employerRoutes);
+app.use('/api/contact', contactRoutes); // ⬅️ NEW ROUTE: For contact form submissions
 
 const PORT = process.env.PORT || 5000;
 
