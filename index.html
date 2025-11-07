@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HireHive - All-in-One</title>
     <meta name="description" content="HireHive - Your complete career ecosystem for job seekers and employers. Discover opportunities in IT, Sales, Management, and more.">
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
@@ -46,6 +49,37 @@
                 </div>
             </section>
 
+            <section class="home-search-section">
+                <form id="homeSearchBarForm" class="home-search-bar-form">
+
+                    <div class="search-field-wrapper">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="home-search-keywords" placeholder="Skills, Designations, Companies">
+                    </div>
+
+                    <div class="search-field-wrapper">
+                        <i class="fas fa-briefcase search-icon"></i>
+                        <select id="home-search-experience">
+                            <option value="">Select experience</option>
+                            <option value="0">Fresher (0 years)</option>
+                            <option value="1">1+ Year</option>
+                            <option value="2">2+ Years</option>
+                            <option value="3">3+ Years</option>
+                            <option value="5">5+ Years</option>
+                            <option value="8">8+ Years</option>
+                            <option value="10">10+ Years</option>
+                        </select>
+                        <i class="fas fa-chevron-down select-arrow"></i>
+                    </div>
+
+                    <div class="search-field-wrapper">
+                        <i class="fas fa-map-marker-alt search-icon"></i>
+                        <input type="text" id="home-search-location" placeholder="Enter location">
+                    </div>
+
+                    <button type="submit" class="btn btn-home-search">Search</button>
+                </form>
+            </section>
             <section id="services" class="services-section">
                 <h2>Explore Our Hive of Opportunities (Click to Start)</h2>
                 <div class="hive-container">
@@ -203,9 +237,7 @@
                             <i class="fas fa-user-edit"></i> Edit Profile
                         </button>
                         <hr>
-                        <p><a href="#settings" class="sidebar-link"><i class="fas fa-cog"></i> Account Settings</a></p>
-                        <p><a href="#" onclick="event.preventDefault(); showSubscriptionModal();" class="sidebar-link"><i class="fas fa-credit-card"></i> Manage Subscriptions</a></p>
-                        <p><a href="#feedback" class="sidebar-link"><i class="fas fa-comment-alt"></i> Send Feedback</a></p>
+                        <p><a href="#contact" data-view="contact" class="sidebar-link"><i class="fas fa-comment-alt"></i> Send Feedback</a></p>
                     </div>
 
                     <div class="card filter-widget">
@@ -303,15 +335,16 @@
                 </div>
 
             </div>
+
             <div id="employer-dashboard" class="role-view hidden full-width-dashboard">
 
                 <div id="employer-nav-tabs" class="job-filter-nav">
-                    <button id="postJobTab" class="btn btn-primary employer-tab-btn" data-view-target="employer-post-view">Post Job</button>
-                    <button id="manageJobsTab" class="btn employer-tab-btn" data-view-target="employer-management-view">Manage Posted Jobs</button>
-                    <button id="viewSeekersTab" class="btn employer-tab-btn" data-view-target="employer-seeker-view">View Seeker CVs</button>
+                    <button id="postJobTab" class="btn employer-tab-btn" data-view-target="employer-post-view">Post Job</button>
+                    <button id="manageJobsTab" class="btn btn-primary employer-tab-btn" data-view-target="employer-management-view">Manage Posted Jobs</button>
+                    <button id="choosePlanTab" class="btn employer-tab-btn">Choose Hive Plan</button>
                 </div>
 
-                <div id="employer-post-view" class="full-screen-view card">
+                <div id="employer-post-view" class="full-screen-view card hidden">
                     <div class="employer-post-header">
                         <h2>Post a New Job</h2>
                         <div id="employer-subscription-status-small" class="employer-subscription-status-small"></div>
@@ -346,7 +379,7 @@
                                 <input type="text" id="job-experience" name="job-experience" placeholder="Experience Required (e.g., 2-4 years)" required>
 
                                 <label for="job-salary" class="hidden">Expected Salary</label>
-                                <input type="text" id="job-salary" name="job-salary" placeholder="Expected Salary (e.g., ₹8-12 LPA)" required>
+                                <input type="text" id="job-salary" name="job-salary" placeholder="Expected Salary (e.g., ₹8-12 LPA)">
 
                                 <label for="job-current-ctc" class="hidden">Current CTC</label>
                                 <input type="text" id="job-current-ctc" name="job-current-ctc" placeholder="Current CTC (Optional, e.g., ₹5 LPA)">
@@ -397,43 +430,14 @@
                     </div>
                 </div>
 
-                <div id="employer-management-view" class="full-screen-view card hidden">
+                <div id="employer-management-view" class="full-screen-view card">
                     <div class="employer-management-header">
                         <h2>Manage Posted Jobs</h2>
                         <button id="postNewJobBtn" class="btn btn-primary">Post New Job</button>
                     </div>
-                    <div class="employer-management-content-grid">
-                        <div class="employer-stats card">
-                            <h3>Total Seekers</h3>
-                            <p>We have <strong id="seeker-count">0</strong> talented job seekers on our platform!</p>
-                        </div>
-                        <div class="posted-jobs-section">
-                            <h3>Your Posted Jobs (Click to View Applicants)</h3>
-                            <div id="posted-jobs-list" class="job-list"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="employer-seeker-view" class="full-screen-view card hidden">
-                    <h2 class="spaced-heading">Talent Pool (Job Seeker CVs)</h2>
-
-                    <div class="seeker-filter-options">
-                        <label for="seeker-filter-category" class="hidden">Filter by Domain</label>
-                        <select id="seeker-filter-category" name="seeker-filter-category">
-                            <option value="all">Filter by Domain (All)</option>
-                            <option value="IT & Tech">IT & Tech</option>
-                            <option value="Marketing & Finance">Marketing & Finance</option>
-                            <option value="Manufacturing">Manufacturing</option>
-                            <option value="Hospitality">Hospitality</option>
-                            <option value="Sales">Sales</option>
-                            <option value="Management">Management</option>
-                        </select>
-
-                        <label for="seeker-filter-skill" class="hidden">Filter by Skill</label>
-                        <input type="text" id="seeker-filter-skill" name="seeker-filter-skill" placeholder="Filter by Specific Skill (e.g., Python, React)">
-                    </div>
-
-                    <div id="seeker-cv-list">
+                    <div class="posted-jobs-section">
+                        <h3>Your Posted Jobs (Click to View Applicants)</h3>
+                        <div id="posted-jobs-list" class="job-list"></div>
                     </div>
                 </div>
 
@@ -479,7 +483,7 @@
             <div class="hive-cell-small orbit-item-small item-1-small"><span><i class="fas fa-laptop-code"></i> IT</span></div>
             <div class="hive-cell-small orbit-item-small item-2-small"><span><i class="fas fa-bullhorn"></i> Mktg</span></div>
             <div class="hive-cell-small orbit-item-small item-3-small"><span><i class="fas fa-industry"></i> Mfg</span></div>
-            <div class="hive-cell-small orbit-item-small item-4-small"><span><i class="fas fa-concierge-bell"></i> Hosp</span></div>
+            <div classs="hive-cell-small orbit-item-small item-4-small"><span><i class="fas fa-concierge-bell"></i> Hosp</span></div>
             <div class="hive-cell-small orbit-item-small item-5-small"><span><i class="fas fa-chart-line"></i> Sales</span></div>
             <div class="hive-cell-small orbit-item-small item-6-small"><span><i class="fas fa-handshake"></i> Mgmt</span></div>
         </div>
@@ -555,6 +559,9 @@
 
                     <label for="signupPhone" class="hidden">Phone Number</label>
                     <input type="tel" id="signupPhone" name="signupPhone" placeholder="Phone Number (10 digits)" pattern="[0-9]{10}" maxlength="10" required/>
+
+                    <label for="signupCompanyName" class="hidden">Company Name</label>
+                    <input type="text" id="signupCompanyName" name="signupCompanyName" placeholder="Company Name" class="hidden" />
 
                     <label for="userType" class="hidden">I am a...</label>
                     <select id="userType" name="userType" required>
