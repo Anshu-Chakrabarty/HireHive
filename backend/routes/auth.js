@@ -71,7 +71,10 @@ router.post("/signup", async(req, res) => {
         role,
         skills: [],
         education: "",
-        companyname: role === "employer" ? companyName : null,
+
+        // FIX: Using company_name to match Supabase SQL schema, resolving 'companyname' error
+        company_name: role === "employer" ? companyName : null,
+
         cvfilename: "",
         jobpostcount: 0,
         subscription_jsonb: role === "employer" ? { active: true, plan: "buzz" } : { active: false, plan: "none" },

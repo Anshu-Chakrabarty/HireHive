@@ -174,7 +174,7 @@ router.get('/applications', auth, isSeeker, async(req, res) => {
     // 3. Simple approach for Suggested Jobs (Find skill-matches not already applied for)
     const { data: user } = await supabase.from('users').select('skills').eq('id', seekerId).single();
 
-    // FINAL FIX: Backward compatible check for seekerSkills
+    // FIX: Backward compatible check for seekerSkills
     let seekerSkills = [];
     if (user && user.skills && Array.isArray(user.skills)) {
         seekerSkills = user.skills.map(s => s.toLowerCase());

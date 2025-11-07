@@ -1,4 +1,4 @@
-// --- Frontend: app.js (FINAL RAZORPAY COMMENTED OUT) ---
+// --- Frontend: app.js (FINAL RAZORPAY COMMENTED OUT, ERROR-FREE) ---
 document.addEventListener("DOMContentLoaded", () => {
             // ------------------------------------------------------------------
             // 1. GLOBAL CONFIGURATION & API HELPERS
