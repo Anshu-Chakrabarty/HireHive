@@ -143,14 +143,14 @@ router.get('/applications', auth, isSeeker, async(req, res) => {
     const seekerId = req.user.id;
 
     // 1. Fetch all applications made by the current seeker, joining job details
-    // FIX: Using explicit jobid reference to prevent join ambiguity
+    // Query uses the canonical Supabase syntax for joins.
     const { data: applications, error } = await supabase
         .from('applications')
         .select(`
             status,
             applieddate,
             jobid,
-            jobs ( // <-- Simplifed the join selection here
+            jobs:jobid ( 
                 id, title, location, experience, salary, description, required_skills, 
                 employer:employerid (name)
             )
@@ -159,7 +159,6 @@ router.get('/applications', auth, isSeeker, async(req, res) => {
 
     if (error) {
         console.error("Supabase application fetch error:", error);
-        // Ensure the 500 status code is returned as seen in the error log
         return res.status(500).json({ error: 'Failed to retrieve application history.' });
     }
 
