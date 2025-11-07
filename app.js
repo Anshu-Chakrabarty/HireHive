@@ -421,19 +421,32 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             // ------------------------------------------------------------------
-            // NEW: TWILIO OTP FLOW
+            // NEW: TWILIO OTP FLOW (E.164 Formatting Applied)
             // ------------------------------------------------------------------
             document.getElementById("otpForm").addEventListener("submit", async(e) => {
                 e.preventDefault();
 
                 const phoneInput = document.getElementById("otpPhone");
-                const phone = phoneInput.value;
+                let phone = phoneInput.value.trim(); // Start with raw input
                 const submitBtn = document.getElementById('submitOtpBtn');
+
+                // --- E.164 Formatting Fix ---
+                if (phone.length === 10 && !phone.startsWith('+')) {
+                    // Assume 10-digit number is domestic Indian number and prepend +91
+                    phone = '+91' + phone;
+                } else if (phone.length === 12 && phone.startsWith('91')) {
+                    // Handle case where user types '917477800284' but misses '+'
+                    phone = '+' + phone;
+                }
+                // CRITICAL: Update the input field display immediately before processing 
+                phoneInput.value = phone;
+                // ----------------------------
 
                 setLoading(submitBtn.id, true, 'Send OTP');
 
                 // Step 1: Send OTP via Twilio
                 try {
+                    // Use the formatted phone number
                     await fetchApi('auth/send-otp', 'POST', { phone });
 
                     // Step 2: Prompt user for the received OTP
@@ -465,6 +478,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 } catch (error) {
                     console.error("OTP flow failed:", error.message);
+                    // Display specific error message back to the user
                     const displayError = error.message.includes('Invalid or expired') ? "Invalid or expired code. Please try again." : error.message;
                     showStatusMessage("Verification Failed", displayError, true);
                 } finally {
@@ -490,7 +504,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         showStatusMessage("Message Sent!", "Thank you for contacting HireHive. We will get back to you shortly.", false);
                         contactForm.reset();
                     } catch (error) {
-                        console.error("Contact form submission failed:", error);
+                        console.error("Contact form submission failed:", error.message);
                         showStatusMessage("Submission Failed", "There was an error sending your message. Please try again.", true);
                     } finally {
                         setLoading('contactSubmitBtn', false, 'Send Message');
@@ -765,7 +779,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 try {
                     const filterParams = new URLSearchParams(filters).toString();
+                    // Fetch jobs first
                     const jobs = await fetchApi(`seeker/jobs?${filterParams}`, 'GET');
+                    // Fetch application/suggestion data (uses the stable two-query method)
                     const applicationData = await fetchApi('seeker/applications', 'GET');
 
                     const appliedJobIds = applicationData.applied.map(job => job.id);
@@ -1293,7 +1309,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            const keywords = document.getElementById("home-search-keywords").value;
+            const keywords = document.getElementById("home-search-keywords")?.value;
             const experience = document.getElementById("home-search-experience").value;
             const location = document.getElementById("home-search-location").value;
 
