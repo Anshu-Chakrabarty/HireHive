@@ -2,6 +2,7 @@ import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { supabase } from "../db.js";
+import { startVerification, checkVerification } from "../utils/twilio.js"; // Import Twilio Verify functions
 
 const router = express.Router();
 const saltRounds = 10;
@@ -11,10 +12,8 @@ const VALID_ROLES = ["seeker", "employer"];
 // JWT HELPERS
 // ------------------------------------------------------------------
 
-// Local Middleware to protect routes (checks for valid token)
 const protect = (req, res, next) => {
     let token;
-
     if (
         req.headers.authorization &&
         req.headers.authorization.startsWith("Bearer")
@@ -29,20 +28,20 @@ const protect = (req, res, next) => {
             return res.status(401).json({ error: "Not authorized, token failed" });
         }
     }
-
     if (!token) {
         return res.status(401).json({ error: "Not authorized, no token" });
     }
 };
 
-// Helper function to generate JWT (for consistency)
 const generateToken = (id, role) => {
     return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: "1d" });
 };
 
 // ------------------------------------------------------------------
+// STANDARD AUTH ROUTES (No changes needed)
+// ------------------------------------------------------------------
 
-// Signup
+// POST: Standard Signup
 router.post("/signup", async(req, res) => {
     const { name, email, password, role, phone, companyName } = req.body;
 
@@ -60,7 +59,6 @@ router.post("/signup", async(req, res) => {
         return res.status(400).json({ error: "Invalid user role specified." });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     let profileData = {
@@ -71,10 +69,7 @@ router.post("/signup", async(req, res) => {
         role,
         skills: [],
         education: "",
-
-        // FIX: Using company_name to match Supabase SQL schema, resolving 'companyname' error
-        company_name: role === "employer" ? companyName : null,
-
+        company_name: role === "employer" ? companyName : null, // Uses corrected SQL column name
         cvfilename: "",
         jobpostcount: 0,
         subscription_jsonb: role === "employer" ? { active: true, plan: "buzz" } : { active: false, plan: "none" },
@@ -105,7 +100,7 @@ router.post("/signup", async(req, res) => {
     res.json({ message: "Signup successful", token, user: userData });
 });
 
-// Login
+// POST: Standard Login
 router.post("/login", async(req, res) => {
     const { email, password } = req.body;
 
@@ -135,10 +130,80 @@ router.post("/login", async(req, res) => {
     res.json({ message: "Login successful", token, user: userData });
 });
 
-// Fetch current user profile using JWT
+
+// ------------------------------------------------------------------
+// TWILIO VERIFY OTP FLOW
+// ------------------------------------------------------------------
+
+// POST: Initiate OTP verification (send SMS)
+router.post("/send-otp", async(req, res) => {
+    const { phone } = req.body;
+
+    if (!phone) {
+        return res.status(400).json({ error: "Phone number is required." });
+    }
+
+    // 1. Check if user is registered using phone number
+    const { data: user, error: findError } = await supabase
+        .from("users")
+        .select("id")
+        .eq("phone", phone)
+        .single();
+
+    if (findError || !user) {
+        return res.status(404).json({ error: "Phone number not registered. Please sign up." });
+    }
+
+    // 2. Call Twilio Verify to send the code
+    try {
+        await startVerification(phone);
+        res.json({ message: "Verification code sent successfully." });
+    } catch (e) {
+        // e.message contains the error thrown by the Twilio utility
+        res.status(500).json({ error: e.message || "Failed to send SMS verification code." });
+    }
+});
+
+
+// POST: Verify OTP and log in
+router.post("/verify-otp", async(req, res) => {
+    const { phone, otp } = req.body;
+
+    if (!phone || !otp) {
+        return res.status(400).json({ error: "Phone number and verification code are required." });
+    }
+
+    // 1. Check code with Twilio Verify
+    try {
+        await checkVerification(phone, otp);
+
+    } catch (e) {
+        // This catches Twilio errors (invalid code, expired code)
+        return res.status(400).json({ error: e.message || "Invalid or expired verification code." });
+    }
+
+    // 2. If Twilio approved, fetch user data and log them in
+    const { data: user, error: userError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("phone", phone)
+        .single();
+
+    if (userError || !user) {
+        return res.status(500).json({ error: "User data retrieval failed after successful verification." });
+    }
+
+    // 3. Generate JWT and send success response
+    const { password, ...userData } = user;
+    const token = generateToken(user.id, user.role);
+
+    res.json({ message: "Login successful via OTP", token, user: userData });
+});
+
+
+// GET: Fetch current user profile using JWT
 router.get("/me", protect, async(req, res) => {
     const userId = req.user.id;
-
     const { data, error } = await supabase
         .from("users")
         .select("*")

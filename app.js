@@ -1,4 +1,4 @@
-// --- Frontend: app.js (FINAL RAZORPAY COMMENTED OUT, ERROR-FREE) ---
+// --- Frontend: app.js (FINAL TWILIO VERIFY READY) ---
 document.addEventListener("DOMContentLoaded", () => {
             // ------------------------------------------------------------------
             // 1. GLOBAL CONFIGURATION & API HELPERS
@@ -420,26 +420,59 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
 
+            // ------------------------------------------------------------------
+            // NEW: TWILIO OTP FLOW
+            // ------------------------------------------------------------------
             document.getElementById("otpForm").addEventListener("submit", async(e) => {
                 e.preventDefault();
-                setLoading('submitOtpBtn', true, 'Send OTP');
-                const phone = document.getElementById("otpPhone").value;
 
-                const fakeOtp = await showConfirmation("Enter OTP", `We've 'sent' an OTP to ${phone}. (Hint: It's 123456).`, true);
+                const phoneInput = document.getElementById("otpPhone");
+                const phone = phoneInput.value;
+                const submitBtn = document.getElementById('submitOtpBtn');
 
-                if (fakeOtp === "123456") {
-                    console.log("OTP Verified. Simulating login.");
-                    setToken('fake-otp-token');
-                    const mockUser = { id: 'mock-user-1', name: 'OTP User', role: 'seeker', email: 'otp@mock.com', cvfilename: 'mock.pdf', subscriptionstatus: 'none' };
-                    setLocalUser(mockUser);
+                setLoading(submitBtn.id, true, 'Send OTP');
+
+                // Step 1: Send OTP via Twilio
+                try {
+                    await fetchApi('auth/send-otp', 'POST', { phone });
+
+                    // Step 2: Prompt user for the received OTP
+                    const receivedOtp = await showConfirmation(
+                        "Enter Verification Code",
+                        `A code has been sent to ${phone}. Enter it below to log in.`,
+                        true,
+                        'Verify'
+                    );
+
+                    if (receivedOtp === null) {
+                        // User cancelled verification
+                        setLoading(submitBtn.id, false, 'Send OTP');
+                        return;
+                    }
+
+                    setLoading(submitBtn.id, true, 'Verifying...');
+
+                    // Step 3: Verify OTP and log in
+                    const data = await fetchApi('auth/verify-otp', 'POST', { phone, otp: receivedOtp });
+
+                    // Step 4: Successful Login
+                    setToken(data.token);
+                    setLocalUser(data.user);
                     authModal.style.display = "none";
+                    document.getElementById("otpForm").reset();
                     updateHeaderUI();
-                } else if (fakeOtp !== null) {
-                    showStatusMessage("OTP Failed", "Invalid OTP entered.", true);
-                }
+                    showStatusMessage("Login Successful!", "You have logged in via SMS.", false);
 
-                setLoading('submitOtpBtn', false, 'Send OTP');
+                } catch (error) {
+                    console.error("OTP flow failed:", error.message);
+                    const displayError = error.message.includes('Invalid or expired') ? "Invalid or expired code. Please try again." : error.message;
+                    showStatusMessage("Verification Failed", displayError, true);
+                } finally {
+                    setLoading(submitBtn.id, false, 'Send OTP'); // Reset button for retry
+                }
             });
+            // ------------------------------------------------------------------
+
 
             // ------------------------------------------------------------------
             // 4. CONTACT FORM LOGIC
@@ -1024,7 +1057,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             <div class="job-actions">
                                 <button class="btn view-applicants-btn" data-job-id="${job.id}" data-job-title="${job.title}">
                                     <i class="fas fa-users"></i> Applicants (<span class="applicant-count">${applicantCount}</span>)
-                                </button>
+                                </mutton>
                                 <button class="btn btn-secondary edit-job-btn" data-job-id="${job.id}"><i class="fas fa-edit"></i> Edit</button>
                                 <button class="btn delete-job-btn" data-job-id="${job.id}"><i class="fas fa-trash-alt"></i> Delete</button>
                             </div>
