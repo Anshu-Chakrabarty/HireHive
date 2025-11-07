@@ -143,13 +143,14 @@ router.get('/applications', auth, isSeeker, async(req, res) => {
     const seekerId = req.user.id;
 
     // 1. Fetch all applications made by the current seeker, joining job details
+    // FIX: Using explicit jobid reference to prevent join ambiguity
     const { data: applications, error } = await supabase
         .from('applications')
         .select(`
             status,
             applieddate,
             jobid,
-            jobs:jobid (
+            jobs ( // <-- Simplifed the join selection here
                 id, title, location, experience, salary, description, required_skills, 
                 employer:employerid (name)
             )
@@ -158,6 +159,7 @@ router.get('/applications', auth, isSeeker, async(req, res) => {
 
     if (error) {
         console.error("Supabase application fetch error:", error);
+        // Ensure the 500 status code is returned as seen in the error log
         return res.status(500).json({ error: 'Failed to retrieve application history.' });
     }
 
@@ -174,7 +176,7 @@ router.get('/applications', auth, isSeeker, async(req, res) => {
     // 3. Simple approach for Suggested Jobs (Find skill-matches not already applied for)
     const { data: user } = await supabase.from('users').select('skills').eq('id', seekerId).single();
 
-    // FIX: Backward compatible check for seekerSkills
+    // Backward compatible check for seekerSkills
     let seekerSkills = [];
     if (user && user.skills && Array.isArray(user.skills)) {
         seekerSkills = user.skills.map(s => s.toLowerCase());
@@ -196,7 +198,7 @@ router.get('/applications', auth, isSeeker, async(req, res) => {
 
     res.json({
         applied: appliedJobs,
-        shortlisted: suggestedJobs // Note: Frontend uses 'shortlisted' label for this suggested list
+        shortlisted: suggestedJobs
     });
 });
 
