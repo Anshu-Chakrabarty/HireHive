@@ -9,7 +9,22 @@ const saltRounds = 10;
 const VALID_ROLES = ["seeker", "employer"];
 
 // ------------------------------------------------------------------
-// JWT HELPERS
+// UTILITY: Normalize E.164 format (Assumes India +91 if 10 digits)
+// ------------------------------------------------------------------
+const normalizePhone = (phone) => {
+    let cleanPhone = phone.trim().replace(/[^0-9+]/g, ''); // Remove non-numeric/non-plus characters
+    if (cleanPhone.length === 10 && !cleanPhone.startsWith('+')) {
+        return '+91' + cleanPhone;
+    }
+    // Handle case where user types '9174...' but misses '+'
+    if (cleanPhone.length === 12 && cleanPhone.startsWith('91')) {
+        return '+' + cleanPhone;
+    }
+    return cleanPhone;
+};
+
+// ------------------------------------------------------------------
+// JWT HELPERS (Existing code omitted for brevity)
 // ------------------------------------------------------------------
 
 const protect = (req, res, next) => {
@@ -38,12 +53,13 @@ const generateToken = (id, role) => {
 };
 
 // ------------------------------------------------------------------
-// STANDARD AUTH ROUTES (No changes needed)
+// STANDARD AUTH ROUTES 
 // ------------------------------------------------------------------
 
 // POST: Standard Signup
 router.post("/signup", async(req, res) => {
-    const { name, email, password, role, phone, companyName } = req.body;
+    const { name, email, password, role, companyName } = req.body;
+    let phone = req.body.phone; // Get raw phone number
 
     if (!name || !email || !password || !role || !phone) {
         return res.status(400).json({ error: "Missing required signup fields." });
@@ -59,6 +75,9 @@ router.post("/signup", async(req, res) => {
         return res.status(400).json({ error: "Invalid user role specified." });
     }
 
+    // CRITICAL FIX: Normalize phone number before hashing and saving to DB
+    phone = normalizePhone(phone);
+
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     let profileData = {
@@ -69,7 +88,7 @@ router.post("/signup", async(req, res) => {
         role,
         skills: [],
         education: "",
-        company_name: role === "employer" ? companyName : null, // Uses corrected SQL column name
+        company_name: role === "employer" ? companyName : null,
         cvfilename: "",
         jobpostcount: 0,
         subscription_jsonb: role === "employer" ? { active: true, plan: "buzz" } : { active: false, plan: "none" },
@@ -100,7 +119,7 @@ router.post("/signup", async(req, res) => {
     res.json({ message: "Signup successful", token, user: userData });
 });
 
-// POST: Standard Login
+// POST: Standard Login (Existing code omitted for brevity)
 router.post("/login", async(req, res) => {
     const { email, password } = req.body;
 
@@ -137,19 +156,23 @@ router.post("/login", async(req, res) => {
 
 // POST: Initiate OTP verification (send SMS)
 router.post("/send-otp", async(req, res) => {
-    const { phone } = req.body;
+    const { phone: rawPhone } = req.body;
+
+    // FIX: Normalize the phone number *before* searching the database
+    const phone = normalizePhone(rawPhone);
 
     if (!phone) {
         return res.status(400).json({ error: "Phone number is required." });
     }
 
-    // 1. Check if user is registered using phone number
+    // 1. Check if user is registered using normalized E.164 phone number
     const { data: user, error: findError } = await supabase
         .from("users")
         .select("id")
         .eq("phone", phone)
         .single();
 
+    // CRITICAL: Return 404 if user not found with the normalized phone number
     if (findError || !user) {
         return res.status(404).json({ error: "Phone number not registered. Please sign up." });
     }
@@ -159,15 +182,17 @@ router.post("/send-otp", async(req, res) => {
         await startVerification(phone);
         res.json({ message: "Verification code sent successfully." });
     } catch (e) {
-        // e.message contains the error thrown by the Twilio utility
         res.status(500).json({ error: e.message || "Failed to send SMS verification code." });
     }
 });
 
 
-// POST: Verify OTP and log in
+// POST: Verify OTP and log in (Existing code omitted for brevity)
 router.post("/verify-otp", async(req, res) => {
-    const { phone, otp } = req.body;
+    const { phone: rawPhone, otp } = req.body;
+
+    // FIX: Normalize phone number before verification check
+    const phone = normalizePhone(rawPhone);
 
     if (!phone || !otp) {
         return res.status(400).json({ error: "Phone number and verification code are required." });
@@ -178,7 +203,6 @@ router.post("/verify-otp", async(req, res) => {
         await checkVerification(phone, otp);
 
     } catch (e) {
-        // This catches Twilio errors (invalid code, expired code)
         return res.status(400).json({ error: e.message || "Invalid or expired verification code." });
     }
 
@@ -201,7 +225,7 @@ router.post("/verify-otp", async(req, res) => {
 });
 
 
-// GET: Fetch current user profile using JWT
+// GET: Fetch current user profile using JWT (Existing code omitted for brevity)
 router.get("/me", protect, async(req, res) => {
     const userId = req.user.id;
     const { data, error } = await supabase
