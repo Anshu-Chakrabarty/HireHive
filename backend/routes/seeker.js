@@ -142,57 +142,57 @@ router.get('/jobs', auth, isSeeker, async(req, res) => {
 router.get('/applications', auth, isSeeker, async(req, res) => {
     const seekerId = req.user.id;
 
-    // 1. Fetch all applications made by the current seeker, joining job details
-    // Query uses the canonical Supabase syntax for joins.
-    const { data: applications, error } = await supabase
+    // --- CRITICAL FIX: Replaced complex join with two simpler queries ---
+
+    // 1. Fetch Application History (Only IDs and Status)
+    const { data: applicationRecords, error: historyError } = await supabase
         .from('applications')
-        .select(`
-            status,
-            applieddate,
-            jobid,
-            jobs:jobid ( 
-                id, title, location, experience, salary, description, required_skills, 
-                employer:employerid (name)
-            )
-        `)
+        .select('jobid, status')
         .eq('seekerid', seekerId);
 
-    if (error) {
-        console.error("Supabase application fetch error:", error);
+    if (historyError) {
+        console.error("Supabase application history fetch error:", historyError);
         return res.status(500).json({ error: 'Failed to retrieve application history.' });
     }
 
-    // 2. Separate applied and categorized jobs
-    const appliedJobs = [];
+    const appliedJobIds = applicationRecords.map(app => app.jobid);
 
-    applications.forEach(app => {
-        if (app.jobs) {
-            const jobData = {...app.jobs, status: app.status };
-            appliedJobs.push(jobData);
+    // 2. Fetch Job Details based on IDs and Status
+    const { data: jobsData, error: jobsError } = await supabase
+        .from('jobs')
+        .select('*, employer:employerid (name)');
+
+    if (jobsError) {
+        console.error("Supabase job data fetch error:", jobsError);
+        // This usually wouldn't crash but protects against a missing table
+        return res.status(500).json({ error: 'Failed to retrieve application history.' });
+    }
+
+    // 3. Separate applied jobs and fetch user skills for suggestions
+    const appliedJobs = [];
+    const allJobs = jobsData || [];
+
+    // Map the fetched job data to the application records
+    applicationRecords.forEach(app => {
+        const jobDetail = allJobs.find(job => job.id === app.jobid);
+        if (jobDetail) {
+            appliedJobs.push({...jobDetail, status: app.status });
         }
     });
 
-    // 3. Simple approach for Suggested Jobs (Find skill-matches not already applied for)
+    // 4. Find Suggested Jobs (Skill Match)
     const { data: user } = await supabase.from('users').select('skills').eq('id', seekerId).single();
 
-    // Backward compatible check for seekerSkills
     let seekerSkills = [];
     if (user && user.skills && Array.isArray(user.skills)) {
         seekerSkills = user.skills.map(s => s.toLowerCase());
     }
 
-    const appliedJobIds = applications.map(app => app.jobid);
-
-    const { data: allJobs } = await supabase
-        .from('jobs')
-        .select('*, employer:employerid (name)');
-
-    // Filter jobs: not already applied, and skill matches
-    const suggestedJobs = (allJobs || [])
-        .filter(job => !appliedJobIds.includes(job.id))
+    const suggestedJobs = allJobs
+        .filter(job => !appliedJobIds.includes(job.id)) // Not already applied
         .filter(job => {
             const jobSkills = (job.required_skills || []).map(s => s.toLowerCase());
-            return jobSkills.some(skill => seekerSkills.includes(skill));
+            return jobSkills.some(skill => seekerSkills.includes(skill)); // Skill match
         });
 
     res.json({
