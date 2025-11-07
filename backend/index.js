@@ -8,7 +8,7 @@ import contactRoutes from "./routes/contact.js";
 
 dotenv.config();
 
-// --- CRITICAL STARTUP CHECK (MODIFIED) ---
+// --- CRITICAL STARTUP CHECK ---
 if (!process.env.JWT_SECRET) {
     console.error("CRITICAL ERROR: JWT_SECRET environment variable is missing.");
 }
@@ -17,12 +17,12 @@ if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
         "CRITICAL ERROR: Supabase configuration environment variables is missing."
     );
 }
-// NEW CHECK FOR RAZORPAY
-if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-    console.warn(
-        "WARNING: Razorpay environment variables are missing. Payment API will fail."
-    );
-}
+// RAZORPAY COMMENTED OUT
+// if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+//     console.warn(
+//         "WARNING: Razorpay environment variables are missing. Payment API will fail."
+//     );
+// }
 
 console.log(`Server starting on Node version: ${process.version}`);
 console.log(`Running in environment: ${process.env.NODE_ENV || "development"}`);
@@ -37,6 +37,8 @@ const allowedOrigins = [
     process.env.CLIENT_ORIGIN,
     "https://hirehive.in",
     "https://www.hirehive.in",
+    "https://hirehive-frontend.onrender.com",
+    "https://hirehive.vercel.app",
 ];
 
 app.use(

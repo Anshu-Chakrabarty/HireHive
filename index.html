@@ -7,8 +7,6 @@
     <title>HireHive - All-in-One</title>
     <meta name="description" content="HireHive - Your complete career ecosystem for job seekers and employers. Discover opportunities in IT, Sales, Management, and more.">
 
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
@@ -483,7 +481,7 @@
             <div class="hive-cell-small orbit-item-small item-1-small"><span><i class="fas fa-laptop-code"></i> IT</span></div>
             <div class="hive-cell-small orbit-item-small item-2-small"><span><i class="fas fa-bullhorn"></i> Mktg</span></div>
             <div class="hive-cell-small orbit-item-small item-3-small"><span><i class="fas fa-industry"></i> Mfg</span></div>
-            <div classs="hive-cell-small orbit-item-small item-4-small"><span><i class="fas fa-concierge-bell"></i> Hosp</span></div>
+            <div class="hive-cell-small orbit-item-small item-4-small"><span><i class="fas fa-concierge-bell"></i> Hosp</span></div>
             <div class="hive-cell-small orbit-item-small item-5-small"><span><i class="fas fa-chart-line"></i> Sales</span></div>
             <div class="hive-cell-small orbit-item-small item-6-small"><span><i class="fas fa-handshake"></i> Mgmt</span></div>
         </div>
@@ -526,6 +524,18 @@
             <h3 id="statusMessageTitle"></h3>
             <p id="statusMessageBody"></p>
             <button class="btn btn-primary status-close-btn">OK</button>
+        </div>
+    </div>
+
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content small-modal">
+            <h3 id="confirmTitle"></h3>
+            <p id="confirmBody"></p>
+            <input type="text" id="confirmInput" class="hidden" placeholder="Enter your answer">
+            <div class="modal-actions" style="display: flex; justify-content: space-around; gap: 10px; margin-top: 1rem;">
+                <button class="btn" id="confirmCancelBtn">Cancel</button>
+                <button class="btn btn-primary" id="confirmOKBtn">OK</button>
+            </div>
         </div>
     </div>
 

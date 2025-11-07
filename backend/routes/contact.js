@@ -11,20 +11,29 @@ router.post('/', (req, res) => {
         return res.status(400).json({ error: "Name, email, and message fields are required." });
     }
 
+    // --- Enhanced Validation: Check Email Format ---
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: "Invalid email format. Please check your entry." });
+    }
+
+    // --- SECURITY STEP: Input Sanitization Placeholder ---
+    const sanitizedName = name.trim();
+    const sanitizedEmail = email.trim().toLowerCase();
+    const sanitizedMessage = message.trim();
+
     // --- LOGIC SIMULATION ---
-    /* In a live application, this section would contain code to:
-    1. Sanitize the inputs (to prevent XSS or injection).
-    2. Save the message to a 'contact_inquiries' table in Supabase.
-    3. Use a service like Nodemailer or SendGrid to send an internal email notification 
-       to your support team (e.g., support@hirehive.com).
-    */
     console.log(`\n--- CONTACT FORM RECEIVED ---`);
-    console.log(`From: ${name} <${email}>`);
-    console.log(`Message Snippet: ${message.substring(0, 50)}...`);
+    console.log(`From: ${sanitizedName} <${sanitizedEmail}>`);
+    console.log(`Message Snippet: ${sanitizedMessage.substring(0, 50)}...`);
     console.log(`-----------------------------\n`);
 
-    // Respond with success. The HTTP 202 status code is often used for accepted 
-    // requests that will be processed asynchronously (like sending an email).
+    /* In a live application, this section would contain code to:
+       1. Save the message to Supabase.
+       2. Use Nodemailer/SendGrid to send an internal email notification.
+    */
+
+    // Respond with success. 202 (Accepted) is perfect for asynchronous processing.
     res.status(202).json({
         message: "Contact message successfully received and forwarded to the support team."
     });
