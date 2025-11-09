@@ -2,29 +2,20 @@ import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { supabase } from "../db.js";
-import { startVerification, checkVerification } from "../utils/twilio.js"; // Import Twilio Verify functions
+import fetch from 'node-fetch'; // Required for making API calls to Google
 
 const router = express.Router();
 const saltRounds = 10;
 const VALID_ROLES = ["seeker", "employer"];
 
-// ------------------------------------------------------------------
-// UTILITY: Normalize E.164 format (Assumes India +91 if 10 digits)
-// ------------------------------------------------------------------
-const normalizePhone = (phone) => {
-    let cleanPhone = phone.trim().replace(/[^0-9+]/g, ''); // Remove non-numeric/non-plus characters
-    if (cleanPhone.length === 10 && !cleanPhone.startsWith('+')) {
-        return '+91' + cleanPhone;
-    }
-    // Handle case where user types '9174...' but misses '+'
-    if (cleanPhone.length === 12 && cleanPhone.startsWith('91')) {
-        return '+' + cleanPhone;
-    }
-    return cleanPhone;
-};
+// --- GOOGLE OAUTH CONFIG (Set in Render Environment Variables) ---
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'https://hirehive.vercel.app';
+const REDIRECT_URI = `${CLIENT_ORIGIN}/#callback`; // Must match Google Console setting
 
 // ------------------------------------------------------------------
-// JWT HELPERS (Existing code omitted for brevity)
+// JWT HELPERS
 // ------------------------------------------------------------------
 
 const protect = (req, res, next) => {
@@ -58,8 +49,7 @@ const generateToken = (id, role) => {
 
 // POST: Standard Signup
 router.post("/signup", async(req, res) => {
-    const { name, email, password, role, companyName } = req.body;
-    let phone = req.body.phone; // Get raw phone number
+    const { name, email, password, role, phone, companyName } = req.body;
 
     if (!name || !email || !password || !role || !phone) {
         return res.status(400).json({ error: "Missing required signup fields." });
@@ -75,9 +65,6 @@ router.post("/signup", async(req, res) => {
         return res.status(400).json({ error: "Invalid user role specified." });
     }
 
-    // CRITICAL FIX: Normalize phone number before hashing and saving to DB
-    phone = normalizePhone(phone);
-
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     let profileData = {
@@ -88,7 +75,7 @@ router.post("/signup", async(req, res) => {
         role,
         skills: [],
         education: "",
-        company_name: role === "employer" ? companyName : null,
+        company_name: role === "employer" ? companyName : null, // Uses corrected SQL column name
         cvfilename: "",
         jobpostcount: 0,
         subscription_jsonb: role === "employer" ? { active: true, plan: "buzz" } : { active: false, plan: "none" },
@@ -119,7 +106,7 @@ router.post("/signup", async(req, res) => {
     res.json({ message: "Signup successful", token, user: userData });
 });
 
-// POST: Standard Login (Existing code omitted for brevity)
+// POST: Standard Login
 router.post("/login", async(req, res) => {
     const { email, password } = req.body;
 
@@ -151,81 +138,118 @@ router.post("/login", async(req, res) => {
 
 
 // ------------------------------------------------------------------
-// TWILIO VERIFY OTP FLOW
+// NEW: GOOGLE OAUTH ROUTES (REPLACES OTP FLOW)
 // ------------------------------------------------------------------
 
-// POST: Initiate OTP verification (send SMS)
-router.post("/send-otp", async(req, res) => {
-    const { phone: rawPhone } = req.body;
-
-    // FIX: Normalize the phone number *before* searching the database
-    const phone = normalizePhone(rawPhone);
-
-    if (!phone) {
-        return res.status(400).json({ error: "Phone number is required." });
+// 1. Initiate Google Login (Frontend directs here)
+router.get('/google/login', (req, res) => {
+    if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+        console.error("GOOGLE OAUTH CONFIG MISSING!");
+        return res.redirect(`${CLIENT_ORIGIN}/#error=Google+Configuration+Missing`);
     }
 
-    // 1. Check if user is registered using normalized E.164 phone number
-    const { data: user, error: findError } = await supabase
-        .from("users")
-        .select("id")
-        .eq("phone", phone)
-        .single();
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+        `client_id=${GOOGLE_CLIENT_ID}&` +
+        `redirect_uri=${REDIRECT_URI}&` +
+        `response_type=code&` +
+        `scope=profile email&` +
+        `access_type=offline&` +
+        `prompt=consent`;
 
-    // CRITICAL: Return 404 if user not found with the normalized phone number
-    if (findError || !user) {
-        return res.status(404).json({ error: "Phone number not registered. Please sign up." });
+    res.redirect(authUrl);
+});
+
+
+// 2. Handle Google Callback (Google redirects here with code)
+router.get('/google/callback', async(req, res) => {
+    const code = req.query.code;
+    const error = req.query.error;
+
+    if (error) {
+        return res.redirect(`${CLIENT_ORIGIN}/#error=${error}`);
+    }
+    if (!code) {
+        return res.redirect(`${CLIENT_ORIGIN}/#error=AuthCodeMissing`);
     }
 
-    // 2. Call Twilio Verify to send the code
     try {
-        await startVerification(phone);
-        res.json({ message: "Verification code sent successfully." });
-    } catch (e) {
-        res.status(500).json({ error: e.message || "Failed to send SMS verification code." });
+        // Step A: Exchange Authorization Code for Tokens
+        const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                code: code,
+                client_id: GOOGLE_CLIENT_ID,
+                client_secret: GOOGLE_CLIENT_SECRET,
+                redirect_uri: REDIRECT_URI,
+                grant_type: 'authorization_code',
+            }).toString(),
+        });
+        const tokenData = await tokenResponse.json();
+        const accessToken = tokenData.access_token;
+
+        if (!accessToken) throw new Error("Failed to get access token from Google.");
+
+        // Step B: Use Access Token to Get User Profile Info
+        const profileResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        const profile = await profileResponse.json();
+
+        if (!profile || !profile.id || !profile.email) throw new Error("Failed to retrieve profile from Google.");
+
+        // Step C: Check Database (Login or Register)
+
+        // Check for existing user by Google ID or Email
+        let { data: user, error: dbError } = await supabase
+            .from('users')
+            .select('*')
+            .or(`google_id.eq.${profile.id},email.eq.${profile.email}`)
+            .single();
+
+        if (dbError && dbError.code !== 'PGRST116') { // PGRST116 = No rows found
+            console.error("Supabase lookup error during Google auth:", dbError);
+            throw new Error("Database lookup failed.");
+        }
+
+        if (!user) {
+            // NEW USER: Create account using Google data
+            const newUser = {
+                name: profile.name,
+                email: profile.email,
+                password: await bcrypt.hash(profile.id, saltRounds), // Use Google ID as temporary password
+                google_id: profile.id, // Store unique Google ID (requires new DB column)
+                role: 'seeker', // Default to seeker for new users
+                is_verified: true,
+                subscription_jsonb: { active: false, plan: "none" },
+                subscriptionstatus: "none",
+                jobpostcount: 0
+            };
+
+            const { data: insertedUser } = await supabase
+                .from('users')
+                .insert([newUser])
+                .select()
+                .single();
+            user = insertedUser;
+        }
+
+        // Step D: Finalize Login (Generate App JWT)
+        if (!user) throw new Error("User record could not be created or found.");
+
+        const appToken = generateToken(user.id, user.role);
+
+        // Redirect back to frontend with app-specific JWT token in the hash
+        res.redirect(`${CLIENT_ORIGIN}/#google_token=${appToken}`);
+
+    } catch (error) {
+        console.error("Google Auth Final Error:", error.message);
+        res.redirect(`${CLIENT_ORIGIN}/#error=GoogleAuthFailed`);
     }
 });
 
 
-// POST: Verify OTP and log in (Existing code omitted for brevity)
-router.post("/verify-otp", async(req, res) => {
-    const { phone: rawPhone, otp } = req.body;
-
-    // FIX: Normalize phone number before verification check
-    const phone = normalizePhone(rawPhone);
-
-    if (!phone || !otp) {
-        return res.status(400).json({ error: "Phone number and verification code are required." });
-    }
-
-    // 1. Check code with Twilio Verify
-    try {
-        await checkVerification(phone, otp);
-
-    } catch (e) {
-        return res.status(400).json({ error: e.message || "Invalid or expired verification code." });
-    }
-
-    // 2. If Twilio approved, fetch user data and log them in
-    const { data: user, error: userError } = await supabase
-        .from("users")
-        .select("*")
-        .eq("phone", phone)
-        .single();
-
-    if (userError || !user) {
-        return res.status(500).json({ error: "User data retrieval failed after successful verification." });
-    }
-
-    // 3. Generate JWT and send success response
-    const { password, ...userData } = user;
-    const token = generateToken(user.id, user.role);
-
-    res.json({ message: "Login successful via OTP", token, user: userData });
-});
-
-
-// GET: Fetch current user profile using JWT (Existing code omitted for brevity)
+// GET: Fetch current user profile using JWT (remains the same)
 router.get("/me", protect, async(req, res) => {
     const userId = req.user.id;
     const { data, error } = await supabase

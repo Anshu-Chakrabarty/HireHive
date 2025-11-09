@@ -555,8 +555,17 @@
 
                     <button type="submit" id="submitLoginBtn" class="btn btn-primary">Login</button>
                 </form>
-                <p><a href="#" class="switch-link" id="switch-to-otp">Login with OTP (Phone)</a></p>
+
+                <div class="google-auth-separator" style="margin-top: 1rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; width: 100%;">
+                    <hr style="flex-grow: 1; border: 0; border-top: 1px solid #ccc;"><span style="padding: 0 10px; color: #666;">OR</span>
+                    <hr style="flex-grow: 1; border: 0; border-top: 1px solid #ccc;">
+                </div>
+                <button id="googleLoginBtn" class="btn btn-primary btn-google" style="background-color: #4285F4; color: white; width: 100%;">
+                    <i class="fab fa-google"></i> Sign In with Google
+                </button>
+
             </div>
+
             <div id="signup-form-container" class="hidden">
                 <h3>Join the Hive</h3>
                 <form id="signupForm">
@@ -583,14 +592,10 @@
                     <button type="submit" id="submitSignupBtn" class="btn btn-primary">Sign Up</button>
                 </form>
             </div>
+
             <div id="otp-form-container" class="hidden">
-                <h3>Login with OTP</h3>
-                <form id="otpForm">
-                    <label for="otpPhone" class="hidden">Phone Number</label>
-                    <input type="tel" id="otpPhone" name="otpPhone" placeholder="Enter your Phone Number (10 digits)" pattern="[0-9]{10}" maxlength="10" required/>
-                    <button type="submit" id="submitOtpBtn" class="btn btn-primary">Send OTP</button>
-                </form>
             </div>
+
             <p><a href="#" class="switch-link" id="switch-form-link">Already have an account? Log In</a></p>
         </div>
     </div>
@@ -611,5 +616,7 @@
 
     <script src="app.js"></script>
 </body>
+
+</html>
 
 </html>
