@@ -127,18 +127,20 @@ body {
     z-index: 1000;
 }
 
+
+/* FIX: Logo now uses the generic H1/I structure from index.html */
+
 .logo h1 {
-    display: none;
-    /* Hide H1 structure if image is present */
+    color: var(--secondary-color);
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-
-/* New Image Logo Styles */
-
-#siteLogoImage {
-    height: 40px;
-    width: auto;
-    display: block;
+.logo i {
+    color: var(--primary-color);
+    font-size: 1.6rem;
 }
 
 
@@ -242,9 +244,8 @@ body {
 /* 2. HERO BACKGROUND FIX */
 
 .hero {
-    /* Opaque Background Image (No color overlay) */
-    background: url("Logo.png") center center no-repeat;
-    /* Updated to use your local logo file name for consistency */
+    /* Opaque Background Image (Path corrected) */
+    background: url("Logo.jpg") center center no-repeat;
     background-size: cover;
     color: var(--white-color);
     height: 70vh;

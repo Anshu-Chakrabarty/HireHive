@@ -1,4 +1,4 @@
-// --- Frontend: app.js (FINAL CODE WITH CHATBOT, FORGOT PASSWORD, & GUIDE SYSTEM) ---
+// --- Frontend: app.js (FINAL CODE WITH CHATBOT AND FORGOT PASSWORD) ---
 document.addEventListener("DOMContentLoaded", () => {
             // ------------------------------------------------------------------
             // 1. GLOBAL CONFIGURATION & API HELPERS
@@ -254,10 +254,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             }
 
-            // 💡 NEW FIX: Close Navbar Menu when clicking outside (on main content area)
+            // 💡 FIX: Close Navbar Menu when clicking outside (on main content area)
             if (appMainContent && navLinks) {
                 appMainContent.addEventListener('click', (event) => {
                     if (window.innerWidth < 992 && navLinks.classList.contains('active')) {
+                        // Ensure the click didn't originate from inside the navbar or the toggle itself
                         if (!navLinks.contains(event.target) && event.target !== menuToggle && !menuToggle.contains(event.target)) {
                             navLinks.classList.remove('active');
                         }
@@ -792,68 +793,68 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (editProfileSidebarBtn) {
                     editProfileSidebarBtn.onclick = () => {
                         document.getElementById("seeker-profile-view").classList.remove('hidden');
-                        document.getElementById("seeker-job-view').classList.add('hidden');
-                            loadSeekerProfileForm();
-                        };
-                    }
-
-                    document.getElementById("profile-form").onsubmit = async(e) => {
-                        e.preventDefault();
-                        const saveBtn = e.target.querySelector('button[type="submit"]');
-                        setLoading(saveBtn.id || 'profileSaveBtn', true, 'Save Profile');
-
-                        const name = document.getElementById("seeker-name").value;
-                        const skills = document.getElementById("seeker-skills").value;
-                        const education = document.getElementById("seeker-education").value;
-                        const cvFile = document.getElementById("cv-upload").files[0];
-
-                        const formData = new FormData();
-                        formData.append('name', name);
-                        formData.append('education', education);
-                        formData.append('skills', skills);
-                        if (cvFile) {
-                            formData.append('cvFile', cvFile);
-                        }
-
-                        try {
-                            const data = await fetchApi('seeker/profile', 'PUT', formData, true);
-                            setLocalUser(data.user);
-                            console.log("Profile updated!");
-                            showStatusMessage("Profile Updated", "Your profile has been saved successfully.", false);
-                            seekerJobView.classList.remove('hidden');
-                            seekerProfileView.classList.add('hidden');
-                            loadSeekerProfileForm();
-                        } catch (error) {
-                            console.error("Profile update failed:", error.message);
-                            showStatusMessage("Profile Update Failed", error.message, true);
-                        } finally {
-                            setLoading(saveBtn.id || 'profileSaveBtn', false, 'Save Profile');
-                        }
+                        document.getElementById("seeker-job-view").classList.add('hidden'); // Corrected syntax here
+                        loadSeekerProfileForm();
                     };
                 }
 
-                async function loadJobs(filters = {}) {
-                    const allJobsList = document.getElementById("all-jobs-list");
-                    const shortlistedJobsList = document.getElementById("shortlisted-jobs-list");
-                    const appliedJobsList = document.getElementById("applied-jobs-list");
-                    allJobsList.innerHTML = shortlistedJobsList.innerHTML = appliedJobsList.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Loading jobs...</p>';
+                document.getElementById("profile-form").onsubmit = async(e) => {
+                    e.preventDefault();
+                    const saveBtn = e.target.querySelector('button[type="submit"]');
+                    setLoading(saveBtn.id || 'profileSaveBtn', true, 'Save Profile');
+
+                    const name = document.getElementById("seeker-name").value;
+                    const skills = document.getElementById("seeker-skills").value;
+                    const education = document.getElementById("seeker-education").value;
+                    const cvFile = document.getElementById("cv-upload").files[0];
+
+                    const formData = new FormData();
+                    formData.append('name', name);
+                    formData.append('education', education);
+                    formData.append('skills', skills);
+                    if (cvFile) {
+                        formData.append('cvFile', cvFile);
+                    }
 
                     try {
-                        const filterParams = new URLSearchParams(filters).toString();
-                        const jobs = await fetchApi(`seeker/jobs?${filterParams}`, 'GET');
-                        const applicationData = await fetchApi('seeker/applications', 'GET');
+                        const data = await fetchApi('seeker/profile', 'PUT', formData, true);
+                        setLocalUser(data.user);
+                        console.log("Profile updated!");
+                        showStatusMessage("Profile Updated", "Your profile has been saved successfully.", false);
+                        seekerJobView.classList.remove('hidden');
+                        seekerProfileView.classList.add('hidden');
+                        loadSeekerProfileForm();
+                    } catch (error) {
+                        console.error("Profile update failed:", error.message);
+                        showStatusMessage("Profile Update Failed", error.message, true);
+                    } finally {
+                        setLoading(saveBtn.id || 'profileSaveBtn', false, 'Save Profile');
+                    }
+                };
+            }
 
-                        const appliedJobIds = applicationData.applied.map(job => job.id);
-                        const shortlistedJobDetails = applicationData.shortlisted;
+            async function loadJobs(filters = {}) {
+                const allJobsList = document.getElementById("all-jobs-list");
+                const shortlistedJobsList = document.getElementById("shortlisted-jobs-list");
+                const appliedJobsList = document.getElementById("applied-jobs-list");
+                allJobsList.innerHTML = shortlistedJobsList.innerHTML = appliedJobsList.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Loading jobs...</p>';
 
-                        allJobsList.innerHTML = shortlistedJobsList.innerHTML = appliedJobsList.innerHTML = "";
+                try {
+                    const filterParams = new URLSearchParams(filters).toString();
+                    const jobs = await fetchApi(`seeker/jobs?${filterParams}`, 'GET');
+                    const applicationData = await fetchApi('seeker/applications', 'GET');
 
-                        jobs.forEach((job) => {
-                                    const hasApplied = appliedJobIds.includes(job.id);
-                                    const isDisabled = hasApplied;
-                                    const applyButtonText = hasApplied ? "Applied" : "Apply Now";
+                    const appliedJobIds = applicationData.applied.map(job => job.id);
+                    const shortlistedJobDetails = applicationData.shortlisted;
 
-                                    const jobCardHTML = `
+                    allJobsList.innerHTML = shortlistedJobsList.innerHTML = appliedJobsList.innerHTML = "";
+
+                    jobs.forEach((job) => {
+                                const hasApplied = appliedJobIds.includes(job.id);
+                                const isDisabled = hasApplied;
+                                const applyButtonText = hasApplied ? "Applied" : "Apply Now";
+
+                                const jobCardHTML = `
                     <div class="job-card" data-job-id="${job.id}">
                         <h4>${job.title} (${job.employer?.name || 'Unknown Company'})</h4> 
                         <p><i class="fas fa-map-marker-alt"></i> ${job.location} | <i class="fas fa-briefcase"></i> ${job.experience} | <i class="fas fa-money-bill-wave"></i> ${job.salary}</p>
@@ -967,7 +968,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // ------------------------------------------------------------------
-    // 8. EMPLOYER DASHBOARD LOGIC 
+    // 8. EMPLOYER DASHBOARD LOGIC (omitted for brevity)
     // ------------------------------------------------------------------
     function switchEmployerView(targetViewId) {
         document.querySelectorAll("#employer-dashboard .full-screen-view").forEach(view => {
