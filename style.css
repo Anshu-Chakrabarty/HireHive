@@ -1,9 +1,9 @@
-/* --- Frontend: style.css (FINAL PROFESSIONAL DESIGN - COMPLETE AND EXTENDED) --- */
+/* --- Frontend: style.css (FINAL PROFESSIONAL DESIGN - COMPLETE AND ALIGNED) --- */
 
 html,
 body {
-    /* Prevents double-tap zooming on mobile */
     touch-action: manipulation;
+    /* Prevents double-tap zooming on mobile */
 }
 
 
@@ -112,7 +112,7 @@ body {
 }
 
 
-/* 1. NAVBAR ALIGNMENT FIX */
+/* 1. NAVBAR ALIGNMENT & SPACING FIX */
 
 .navbar {
     display: flex;
@@ -130,10 +130,18 @@ body {
 .logo h1 {
     color: var(--secondary-color);
     font-size: 1.5rem;
+    display: flex;
+    /* Make logo a flex container */
+    align-items: center;
+    /* Vertically align icon and text */
+    gap: 8px;
+    /* Space between icon and text */
 }
 
 .logo i {
     color: var(--primary-color);
+    font-size: 1.6rem;
+    /* Slightly larger icon */
 }
 
 
@@ -142,7 +150,8 @@ body {
 .nav-links a {
     color: var(--secondary-color);
     text-decoration: none;
-    margin: 0 1rem;
+    margin: 0 0.8rem;
+    /* Reduced margin for less spacing */
     font-weight: 500;
     transition: color 0.3s ease;
 }
@@ -233,10 +242,11 @@ body {
 }
 
 
-/* 2. HERO BACKGROUND FIX */
+/* 2. OPAQUE HERO BACKGROUND IMAGE */
 
 .hero {
-    background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("https://images.unsplash.com/photo-1521791136064-7986c2920216?q=80&w=2069") center center no-repeat;
+    /* Removed linear-gradient overlay for opaque image */
+    background: url("https://images.unsplash.com/photo-1521791136064-7986c2920216?q=80&w=2069") center center no-repeat;
     background-size: cover;
     color: var(--white-color);
     height: 70vh;
@@ -254,10 +264,11 @@ body {
     font-size: 3rem;
     margin-bottom: 1rem;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    /* Keep text readable */
 }
 
 
-/* 3. SEARCH BAR ALIGNMENT FIX (Home Search Section) */
+/* 3. PROMINENT & DARK SEARCH BAR */
 
 .home-search-section {
     position: relative;
@@ -270,10 +281,12 @@ body {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    background-color: var(--white-color);
+    background-color: var(--dark-bg);
+    /* Dark background */
     border-radius: 12px;
     padding: 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    /* Stronger shadow */
     max-width: 1000px;
     margin: 0 auto;
     gap: 15px;
@@ -284,7 +297,8 @@ body {
     display: flex;
     align-items: center;
     flex: 1 1 200px;
-    border-right: 1px solid #eee;
+    border-right: 1px solid #444;
+    /* Darker border */
     padding-right: 15px;
 }
 
@@ -299,7 +313,8 @@ body {
 .home-search-bar-form .search-icon {
     position: absolute;
     left: 15px;
-    color: #999;
+    color: var(--primary-color);
+    /* Primary color for icons */
     font-size: 1rem;
 }
 
@@ -311,7 +326,8 @@ body {
     border: none;
     outline: none;
     font-size: 1rem;
-    color: var(--secondary-color);
+    color: var(--light-color);
+    /* Light text for contrast */
     background: transparent;
     appearance: none;
     width: 100%;
@@ -324,20 +340,32 @@ body {
 .home-search-bar-form .select-arrow {
     position: absolute;
     right: 15px;
-    color: #999;
+    color: var(--primary-color);
+    /* Primary color for arrow */
     pointer-events: none;
 }
+
+
+/* Stronger color for the search button (High Contrast) */
 
 .btn-home-search {
     background-color: var(--primary-color);
     color: var(--secondary-color);
-    border: none;
-    padding: 14px 30px;
+    /* Dark text for contrast */
+    border: 1px solid var(--primary-color);
+    padding: 10px 25px;
     border-radius: 8px;
     cursor: pointer;
     font-weight: 600;
     transition: background-color 0.3s ease, box-shadow 0.3s ease;
     flex-shrink: 0;
+    height: 48px;
+}
+
+.btn-home-search:hover {
+    background-color: var(--primary-hover-color);
+    border-color: var(--primary-hover-color);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
 
@@ -587,7 +615,7 @@ body {
 }
 
 
-/* 3. SIMPLE CONTENT PAGES (About, Contact, Career Growth) */
+/* SIMPLE CONTENT PAGES (About, Contact, Career Growth) */
 
 .simple-content-page {
     max-width: 900px;
@@ -647,7 +675,7 @@ body {
 }
 
 
-/* 4. DASHBOARD ALIGNMENT FIXES */
+/* DASHBOARD ALIGNMENT FIXES */
 
 .dashboard-container,
 .admin-container {
@@ -1261,7 +1289,7 @@ footer {
 }
 
 
-/* 5. RESPONSIVE ALIGNMENT FIXES */
+/* RESPONSIVE ALIGNMENT FIXES */
 
 @media (max-width: 992px) {
     /* Navbar Fix: Ensure toggle/buttons are horizontally correct */
@@ -1278,7 +1306,8 @@ footer {
     .search-field-wrapper {
         width: 100%;
         border-right: none;
-        border-bottom: 1px solid #eee;
+        border-bottom: 1px solid #444;
+        /* Darker border */
         padding-right: 0;
         padding-bottom: 15px;
     }
