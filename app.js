@@ -139,6 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 'about': document.getElementById("about-view"),
                 'contact': document.getElementById("contact-view"),
                 'career-growth': document.getElementById("career-growth-view"),
+                'plans': document.getElementById("plans-view"), // NEW VIEW ADDED
             };
 
             const dashboardLink = document.getElementById("dashboardLink");
@@ -226,7 +227,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     guideBody.innerHTML = step.body;
                     guideModal.style.display = 'block';
 
-                    // FIX: Removed the HTML entity &rarr;
+                    // FIX: Removed the HTML entity &rarr; and added back the space
                     guideNextBtn.textContent = (currentGuideStep === guideFlow.length - 1) ? 'Start Exploring!' : 'Next Tip';
                     currentGuideStep++;
                 } else {
@@ -469,7 +470,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     const data = await fetchApi('auth/signup', 'POST', signupData);
                     setToken(data.token);
                     setLocalUser(data.user);
-                    authModal.style.display = "none";
+
+                    authModal.style.display = "none"; // <<-- FIX: Close Auth Modal on success
+
                     document.getElementById("signupForm").reset();
                     updateHeaderUI();
 
@@ -478,6 +481,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 } catch (error) {
                     console.error("Signup failed:", error.message);
+                    authModal.style.display = "none"; // <<-- FIX: Close Auth Modal on failure
                     if (error.message.includes('already exists')) {
                         showStatusMessage("Account Exists", "A user with this email already exists. Please log in.", true);
                         showForm(loginFormContainer);
@@ -498,7 +502,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     const data = await fetchApi('auth/login', 'POST', { email, password });
                     setToken(data.token);
                     setLocalUser(data.user);
-                    authModal.style.display = "none";
+
+                    authModal.style.display = "none"; // <<-- FIX: Close Auth Modal on success
+
                     document.getElementById("loginForm").reset();
                     updateHeaderUI();
 
@@ -506,6 +512,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 } catch (error) {
                     console.error("Login failed:", error.message);
+                    authModal.style.display = "none"; // <<-- FIX: Close Auth Modal on failure
                     showStatusMessage("Login Failed", error.message.includes('credentials') ? error.message : "Invalid email or password. Please try again.", true);
                 } finally {
                     setLoading('submitLoginBtn', false, 'Login');
@@ -518,6 +525,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // ------------------------------------------------------------------
             if (googleLoginBtn) {
                 googleLoginBtn.addEventListener('click', () => {
+                    // Note: Auth modal closes when redirecting to Google, so no manual closure needed here.
                     window.location.href = `${BASE_URL}/auth/google/login`;
                 });
             }
@@ -531,6 +539,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 history.pushState("", document.title, window.location.pathname + window.location.search);
 
                 if (error) {
+                    authModal.style.display = "none"; // <<-- FIX: Close Auth Modal after callback failure
                     showStatusMessage("Google Sign-In Failed", `Authentication was cancelled or failed. Error: ${error}`, true);
                     return;
                 }
@@ -541,9 +550,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         const userData = await fetchApi('auth/me', 'GET');
                         setLocalUser(userData.user);
                         updateHeaderUI();
+                        authModal.style.display = "none"; // <<-- FIX: Close Auth Modal after successful user fetch
                         triggerSuccessEffect(); // 🎉 Balloon Burst on Google Login Success
                     } catch (e) {
                         removeToken();
+                        authModal.style.display = "none"; // <<-- FIX: Close Auth Modal after token/user failure
                         showStatusMessage("Sign In Error", "Could not retrieve user data after Google authentication.", true);
                     }
                 }
@@ -1159,7 +1170,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function deleteJob(jobId) {
-        const result = await showConfirmation("Confirm Deletion", "Are you sure you want to delete this job? This action cannot be undone.", false, 'Yes, Delete It');
+        const result = await showConfirmation(`Confirm Deletion`, "Are you sure you want to delete this job? This action cannot be undone.", false, 'Yes, Delete It');
         if (!result) { return; }
 
         try {
@@ -1308,35 +1319,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ------------------------------------------------------------------
-    // 10. HERO SEARCH BAR LOGIC (remains the same)
+    // 10. HERO SEARCH BAR LOGIC (REMOVED FROM HOME PAGE)
     // ------------------------------------------------------------------
-    const homeSearchBarForm = document.getElementById("homeSearchBarForm");
-    if (homeSearchBarForm) {
-        homeSearchBarForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const currentUser = getLocalUser();
-            if (!currentUser) {
-                showStatusMessage("Login Required", "Please log in as a Job Seeker to search jobs.", false);
-                showForm(loginFormContainer);
-                return;
-            }
-            if (currentUser.role !== 'seeker') {
-                showView('dashboard', true, null);
-                return;
-            }
-
-            const keywords = document.getElementById("home-search-keywords")?.value;
-            const experience = document.getElementById("home-search-experience").value;
-            const location = document.getElementById("home-search-location").value;
-
-            const filters = {};
-            if (keywords) filters.keywords = keywords;
-            if (location) filters.location = location;
-            if (experience && experience !== '0') filters.experience = experience;
-            
-            showView('dashboard', true, filters);
-        });
-    }
+    // Removed homeSearchBarForm logic since the element is no longer in index.html
 
     // ------------------------------------------------------------------
     // 11. CHATBOT INTERFACE LOGIC (SIMULATED & FULLY FUNCTIONAL)
@@ -1380,11 +1365,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         setTimeout(() => {
             const lowerMsg = message.toLowerCase();
-            let botResponse = `I'm sorry, I couldn't process that query. I can help with **Domains**, **About Us**, **Dashboard guidance**, or general **Support**.`;
+            let botResponse = `I'm sorry, I still couldn't understand that query. I can help you navigate the site using keywords like **Domains**, **Plans**, **Dashboard**, **About Us**, or **Support**.`;
 
             if (lowerMsg.includes('domain') || lowerMsg.includes('job categories')) {
                 botResponse = `HireHive features opportunities in **IT & Tech**, **Sales**, and **Management**. <a href="#" onclick="window.guideUser('home', 'services'); return false;">Click here to view all domains on the page.</a>`;
-            } else if (lowerMsg.includes('about') || lowerMsg.includes('who are you')) {
+            } else if (lowerMsg.includes('about') || lowerMsg.includes('who are you') || lowerMsg.includes('mission')) {
                 botResponse = `We are HireHive, a modern career ecosystem connecting top talent with employers through affordable plans. <a href="#" onclick="window.guideUser('about', null); return false;">Learn more about our mission.</a>`;
             } else if (lowerMsg.includes('support') || lowerMsg.includes('help') || lowerMsg.includes('contact')) {
                 botResponse = `For dedicated support or business inquiries, please visit our <a href="#" onclick="window.guideUser('contact', null); return false;">**Contact Us**</a> page.`;
@@ -1395,6 +1380,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 } else {
                     botResponse = `To access your dashboard, you need to log in first. Please use the **Login** or **Join the Hive** buttons.`;
                 }
+            } else if (lowerMsg.includes('plans') || lowerMsg.includes('pricing') || lowerMsg.includes('subscription')) {
+                botResponse = `Subscription plans are only required for **Employers** to post jobs and access resumes. Job seekers can use the site for free! <a href="#" onclick="window.guideUser('plans', null); return false;">Click here to see the Hive Plans.</a>`;
             } else if (lowerMsg.includes('login') || lowerMsg.includes('sign up')) {
                 botResponse = `Sure! You can find the login and sign-up buttons in the top right corner.`;
             }

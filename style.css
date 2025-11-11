@@ -264,7 +264,7 @@ body {
 }
 
 
-/* 3. PROMINENT & DARK SEARCH BAR */
+/* 3. PROMINENT & DARK SEARCH BAR (STYLED FOR SEEKER DASHBOARD FILTER) */
 
 .home-search-section {
     position: relative;
@@ -1293,9 +1293,43 @@ footer {
         flex-wrap: wrap;
     }
     .nav-links {
+        /* FIX: Collapsed menu default state */
+        display: none;
+        width: 100%;
+        position: absolute;
         top: var(--nav-height);
+        left: 0;
+        box-shadow: 0 4px 5px rgba(0, 0, 0, 0.1);
+        flex-direction: column;
+        background: var(--white-color);
     }
-    /* Search Bar Collapse */
+    .nav-links.active {
+        display: flex;
+        /* Opened state */
+    }
+    .nav-links a {
+        padding: 0.8rem 1rem;
+        border-top: 1px solid var(--light-color);
+        margin: 0;
+    }
+    .menu-toggle {
+        display: block;
+        /* Show the three dots */
+        order: 3;
+        margin-left: 1rem;
+    }
+    /* Logo and Auth Buttons alignment in mobile navbar row */
+    .auth-buttons {
+        order: 2;
+        margin-left: auto;
+        /* Push buttons to the right */
+        gap: 5px;
+        /* Tighter button spacing on small screen */
+    }
+    .logo {
+        order: 1;
+    }
+    /* Search Bar Collapse (styles kept for integrity, though element removed) */
     .home-search-bar-form {
         flex-direction: column;
     }

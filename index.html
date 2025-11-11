@@ -29,6 +29,7 @@
                 <a href="#about" data-view="about">About Us</a>
                 <a href="#contact" data-view="contact">Contact Us</a>
                 <a href="#services" data-view="home-link">Domains</a>
+                <a href="#plans" data-view="plans">Hive Plans</a>
                 <a href="#dashboard" id="dashboardLink" class="hidden" data-view="dashboard" aria-hidden="true">Dashboard</a>
                 <a href="#admin" id="adminLink" class="hidden" data-view="admin" aria-hidden="true">Admin</a>
             </div>
@@ -58,43 +59,6 @@
 
                     <p>Discover opportunities, build your network, and find where you belong.</p>
                 </div>
-            </section>
-
-
-            <section class="home-search-section">
-
-                <form id="homeSearchBarForm" class="home-search-bar-form">
-
-
-                    <div class="search-field-wrapper">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text" id="home-search-keywords" placeholder="Skills, Designations, Companies">
-                    </div>
-
-
-                    <div class="search-field-wrapper">
-                        <i class="fas fa-briefcase search-icon"></i>
-                        <select id="home-search-experience">
-                            <option value="">Select experience</option>
-                            <option value="0">Fresher (0 years)</option>
-                            <option value="1">1+ Year</option>
-                            <option value="2">2+ Years</option>
-                            <option value="3">3+ Years</option>
-                            <option value="5">5+ Years</option>
-                            <option value="8">8+ Years</option>
-                            <option value="10">10+ Years</option>
-                        </select>
-                        <i class="fas fa-chevron-down select-arrow"></i>
-                    </div>
-
-
-                    <div class="search-field-wrapper">
-                        <i class="fas fa-map-marker-alt search-icon"></i>
-                        <input type="text" id="home-search-location" placeholder="Enter location">
-                    </div>
-
-                    <button type="submit" class="btn btn-home-search">Search</button>
-                </form>
             </section>
 
             <section id="services" class="services-section">
@@ -314,7 +278,29 @@
             </section>
         </div>
 
-
+        <div id="plans-view" class="page-view hidden simple-content-page">
+            <section class="info-section">
+                <h2 class="view-title">Our Hive Plans (For Employers)</h2>
+                <p class="center-text spaced-paragraph">
+                    Subscription plans are essential for employers to post jobs and access the resume database. Job seekers can upload resumes and apply for jobs at no cost.
+                </p>
+                <div id="static-plan-display" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin-top: 2rem;">
+                    <div class="subscription-card" style="width: 300px; border: 2px solid #28a745;">
+                        <h3 style="color:#28a745;"><i class="fas fa-bug"></i> Buzz Plan</h3>
+                        <p style="font-weight: bold; font-size: 1.1rem; margin-bottom: 0.5rem; color: #28a745;">Free (Basic)</p>
+                        <p style="font-size: 0.8rem; color: #666;">Post 2 jobs, access to limited candidate applications. Perfect for small businesses.</p>
+                    </div>
+                    <div class="subscription-card" style="width: 300px; border: 2px solid #007bff;">
+                        <h3 style="color:#007bff;"><i class="fas fa-user-tie"></i> Worker Plan</h3>
+                        <p style="font-weight: bold; font-size: 1.1rem; margin-bottom: 0.5rem;">₹X,XXX / month</p>
+                        <p style="font-size: 0.8rem; color: #666;">Post up to 5 active jobs. Access to 50 verified resumes monthly.</p>
+                    </div>
+                </div>
+                <div class="return-home-container">
+                    <button class="btn btn-primary" data-view="home">Back to Home</button>
+                </div>
+            </section>
+        </div>
         <div id="dashboard-view" class="page-view hidden dashboard-container">
 
             <h2>Your Dashboard</h2>
@@ -679,6 +665,7 @@
                     <li><a href="#about" data-view="about">About Us</a></li>
 
                     <li><a href="#contact" data-view="contact">Contact Us</a></li>
+                    <li><a href="#plans" data-view="plans">Hive Plans</a></li>
 
                     <li><a href="#career-growth" data-view="career-growth">Career Growth at HireHive</a></li>
                 </ul>
