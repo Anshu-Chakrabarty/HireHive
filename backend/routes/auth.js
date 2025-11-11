@@ -8,7 +8,7 @@ const router = express.Router();
 const saltRounds = 10;
 const VALID_ROLES = ["seeker", "employer"];
 
-// --- GOOGLE OAUTH CONFIG (Set in Render Environment Variables) ---
+// --- GOOGLE OAUTH CONFIG ---
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'https://hirehive.vercel.app';
@@ -26,13 +26,11 @@ export const protect = (req, res, next) => {
     ) {
         try {
             token = req.headers.authorization.split(" ")[1];
-            // 💡 FIX: Use simple jwt.verify for faster response
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
             req.user = { id: decoded.id, role: decoded.role };
             next();
         } catch (error) {
             console.error("JWT verification failed:", error.message);
-            // 💡 FIX: Return specific 401 response
             return res.status(401).json({ error: "Not authorized, token failed or expired." });
         }
     }
@@ -46,14 +44,13 @@ const generateToken = (id, role) => {
 };
 
 // ------------------------------------------------------------------
-// STANDARD AUTH ROUTES (OPTIMIZED)
+// STANDARD AUTH ROUTES 
 // ------------------------------------------------------------------
 
 // POST: Standard Signup
 router.post("/signup", async(req, res) => {
     const { name, email, password, role, phone, companyName } = req.body;
 
-    // ... (Validation remains the same) ...
     if (!name || !email || !password || !role || !phone) {
         return res.status(400).json({ error: "Missing required signup fields." });
     }
@@ -84,7 +81,6 @@ router.post("/signup", async(req, res) => {
 
     if (email === "admin@hirehive.com") profileData.role = "admin";
 
-    // 💡 OPTIMIZATION: Only select user data needed for frontend (excluding password)
     const { data, error } = await supabase
         .from("users")
         .insert([profileData])
@@ -111,7 +107,8 @@ router.post("/login", async(req, res) => {
         return res.status(400).json({ error: "Email and password are required for login." });
     }
 
-    // 💡 OPTIMIZATION: Only select columns absolutely required for verification first
+    // FIX: Explicitly select the 'password' field, plus all other necessary fields.
+    // If 'password' isn't explicitly selected, Supabase may omit it due to RLS or configuration.
     const { data, error } = await supabase
         .from("users")
         .select(`id, role, password, google_id, name, email, phone, skills, education, cvfilename, company_name, jobpostcount, subscriptionstatus, created_at`)
@@ -119,20 +116,24 @@ router.post("/login", async(req, res) => {
         .single();
 
     if (error || !data) {
-        // 💡 FIX: Return generic/vague error for security (prevents guessing emails)
+        // If query fails or no user found
         return res.status(400).json({ error: "Invalid credentials." });
     }
 
+    // Check if the user has a local password set (i.e., not a Google-only user)
     if (!data.password) {
-        // 💡 FIX: Explicit message for Google-only users attempting password login
         return res.status(400).json({ error: "Account created via Google. Please use the 'Sign In with Google' button." });
     }
 
-    // This is the main bottleneck. If bcrypt is slow, the host is slow.
+    // Validate password
     const match = await bcrypt.compare(password, data.password);
-    if (!match) return res.status(400).json({ error: "Invalid credentials." });
 
-    const { password: userPassword, ...userData } = data; // Destructure to remove password before sending
+    if (!match) {
+        // If password hash comparison fails
+        return res.status(400).json({ error: "Invalid credentials." });
+    }
+
+    const { password: userPassword, ...userData } = data; // Remove password before sending
     const token = generateToken(data.id, data.role);
 
     res.json({ message: "Login successful", token, user: userData });
@@ -140,10 +141,10 @@ router.post("/login", async(req, res) => {
 
 
 // ------------------------------------------------------------------
-// NEW: GOOGLE OAUTH ROUTES (OPTIMIZED)
+// NEW: GOOGLE OAUTH ROUTES 
 // ------------------------------------------------------------------
 
-// 1. Initiate Google Login (remains the same)
+// 1. Initiate Google Login
 router.get('/google/login', (req, res) => {
     if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
         return res.redirect(`${CLIENT_ORIGIN}/#error=Google+Configuration+Missing`);
@@ -161,7 +162,7 @@ router.get('/google/login', (req, res) => {
 });
 
 
-// 2. Handle Google Callback (OPTIMIZED)
+// 2. Handle Google Callback
 router.get('/google/callback', async(req, res) => {
     const code = req.query.code;
     const error = req.query.error;
@@ -174,7 +175,7 @@ router.get('/google/callback', async(req, res) => {
     }
 
     try {
-        // Step A & B: Exchange Code & Get Profile Info (Standard OAuth flow, fast)
+        // Step A & B: Exchange Code & Get Profile Info
         const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -197,7 +198,6 @@ router.get('/google/callback', async(req, res) => {
         if (!profile || !profile.id || !profile.email) throw new Error("Failed to retrieve profile from Google.");
 
         // Step C: Check Database (Login or Register)
-        // 💡 OPTIMIZATION: Select all needed user fields in one query for frontend response
         const USER_SELECT_FIELDS = `id, role, name, email, phone, skills, education, cvfilename, company_name, jobpostcount, subscriptionstatus, google_id, created_at`;
 
         let { data: user, error: dbError } = await supabase
@@ -206,7 +206,7 @@ router.get('/google/callback', async(req, res) => {
             .or(`google_id.eq.${profile.id},email.eq.${profile.email}`)
             .single();
 
-        if (dbError && dbError.code !== 'PGRST116') { // PGRST116 = No rows found
+        if (dbError && dbError.code !== 'PGRST116') {
             console.error("Supabase lookup error during Google auth:", dbError);
             throw new Error("Database lookup failed.");
         }
@@ -228,7 +228,7 @@ router.get('/google/callback', async(req, res) => {
             const { data: insertedUser } = await supabase
                 .from('users')
                 .insert([newUser])
-                .select(USER_SELECT_FIELDS) // Use optimized select fields
+                .select(USER_SELECT_FIELDS)
                 .single();
             user = insertedUser;
 
@@ -258,10 +258,9 @@ router.get('/google/callback', async(req, res) => {
 });
 
 
-// GET: Fetch current user profile using JWT (Used by frontend on load/refresh)
+// GET: Fetch current user profile using JWT 
 router.get("/me", protect, async(req, res) => {
     const userId = req.user.id;
-    // 💡 OPTIMIZATION: Only select user data needed for frontend (excluding password)
     const { data, error } = await supabase
         .from("users")
         .select(`id, role, name, email, phone, skills, education, cvfilename, company_name, jobpostcount, subscriptionstatus, google_id, created_at`)
@@ -270,7 +269,6 @@ router.get("/me", protect, async(req, res) => {
 
     if (error || !data) {
         console.error("Fetch user data error:", error ? error.message : "User data not found");
-        // This is where a token mismatch or expired token will fail.
         return res.status(401).json({ error: "Session invalid or user not found. Please log in again." });
     }
 
