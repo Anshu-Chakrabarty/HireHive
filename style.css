@@ -1,4 +1,4 @@
-/* --- Frontend: style.css (FINAL CORRECTED + SIDEBAR & FILTERS + HOME SEARCH) --- */
+/* --- Frontend: style.css (FINAL PROFESSIONAL DESIGN - COMPLETE) --- */
 
 html,
 body {
@@ -7,23 +7,30 @@ body {
 }
 
 
-/* General Styling */
+/* General Styling & Color Variables */
 
 :root {
     --primary-color: #ffc107;
     /* Amber/Bright Yellow */
     --primary-hover-color: #e0a800;
-    /* Defined for consistency */
+    /* Darker Amber */
     --secondary-color: #343a40;
-    /* Dark Gray */
+    /* Dark Gray/Text */
+    --accent-color: #007bff;
+    /* Blue for links/info */
     --light-color: #f8f9fa;
-    --white-color: #fff;
+    /* Near White/Content Background */
+    --soft-bg: #f4f4f7;
+    /* Soft off-white background for pages */
+    --dark-bg: #212529;
+    /* Deep dark background */
     --success-color: #28a745;
     --danger-color: #dc3545;
-    /* NEW: For danger/error states */
     --info-color: #007bff;
-    /* NEW: For info/links */
     --font-family: "Poppins", sans-serif;
+    /* New Spacing Variables for Consistency */
+    --nav-height: 75px;
+    --nav-padding: 1rem 5%;
 }
 
 * {
@@ -35,9 +42,10 @@ body {
 body {
     font-family: var(--font-family);
     line-height: 1.6;
-    background-color: var(--light-color);
+    background-color: var(--soft-bg);
+    /* Set body background to soft color */
     color: var(--secondary-color);
-    padding-top: 75px;
+    padding-top: var(--nav-height);
     /* Offset for fixed navbar */
 }
 
@@ -50,7 +58,8 @@ body {
 
 .page-view,
 .role-view {
-    min-height: 70vh;
+    /* Adjusted min-height calculation for responsiveness */
+    min-height: calc(100vh - var(--nav-height) - 100px);
 }
 
 .spaced-heading {
@@ -66,9 +75,6 @@ body {
     font-weight: bold;
 }
 
-
-/* NEW UTILITY: Font Weights */
-
 .font-bold {
     font-weight: 700 !important;
 }
@@ -78,35 +84,48 @@ body {
 }
 
 
-/* Replaced inline styles from HTML */
+/* Feature List Enhancement (For About/Career Growth pages) */
 
 .feature-list {
     list-style-type: none;
     padding: 0;
-    text-align: center;
+    text-align: left;
+    /* Align features left for readability */
+    max-width: 600px;
+    margin: 2rem auto;
 }
 
 .feature-list li {
-    margin-bottom: 0.5rem;
-    font-size: 1.1rem;
-    /* Slightly larger for emphasis */
+    margin-bottom: 1rem;
+    font-size: 1.05rem;
+    padding: 0.5rem;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    border-left: 4px solid var(--primary-color);
+    /* Visual accent */
+    background-color: var(--light-color);
+}
+
+.feature-list li:hover {
+    background-color: #fff;
+    transform: translateX(5px);
 }
 
 .check-icon {
     color: var(--primary-color);
-    margin-right: 0.5rem;
+    margin-right: 0.75rem;
+    font-size: 1.1rem;
 }
 
 
-/* Navbar */
+/* 1. NAVBAR FIXES & PROFESSIONALISM */
 
 .navbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem 5%;
+    padding: var(--nav-padding);
     background: var(--white-color);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     position: fixed;
     top: 0;
     width: 100%;
@@ -165,7 +184,7 @@ body {
 }
 
 
-/* Buttons */
+/* Buttons (Unchanged) */
 
 .btn {
     padding: 0.6rem 1.2rem;
@@ -177,7 +196,6 @@ body {
     font-weight: 500;
     transition: all 0.3s ease, box-shadow 0.3s ease;
     text-decoration: none;
-    /* Ensure buttons used as links look correct */
     display: inline-block;
 }
 
@@ -190,7 +208,6 @@ body {
 .btn:hover {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     transform: translateY(-2px);
-    /* Small lift on hover */
 }
 
 .btn-primary:hover {
@@ -198,7 +215,6 @@ body {
 }
 
 .btn-secondary {
-    /* Definition for neutral actions like "Cancel" or "Back" */
     background-color: var(--secondary-color);
     border-color: var(--secondary-color);
     color: var(--white-color);
@@ -222,7 +238,7 @@ body {
 }
 
 
-/* Hero Section */
+/* Hero Section (Added subtle curve & shadow) */
 
 .hero {
     background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("https://images.unsplash.com/photo-1521791136064-7986c2920216?q=80&w=2069") center/cover no-repeat;
@@ -234,7 +250,8 @@ body {
     text-align: center;
     border-bottom-left-radius: 50% 15%;
     border-bottom-right-radius: 50% 15%;
-    /* Soft curve effect */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    /* Added Shadow */
 }
 
 .hero-content h2 {
@@ -244,13 +261,12 @@ body {
 }
 
 
-/* === MODIFIED: Home Page Search Section === */
+/* Search Section (Remains effective) */
 
 .home-search-section {
     position: relative;
     z-index: 50;
     margin-top: -60px;
-    /* Overlap with hero section */
     padding: 0 5%;
 }
 
@@ -260,22 +276,18 @@ body {
     background-color: var(--white-color);
     border-radius: 12px;
     padding: 15px;
-    /* Uniform padding */
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    /* Slightly stronger shadow */
     max-width: 1000px;
     margin: 0 auto;
     gap: 15px;
 }
-
-
-/* New wrapper for each field */
 
 .search-field-wrapper {
     position: relative;
     display: flex;
     align-items: center;
     flex-grow: 1;
-    /* Add visual separators */
     border-right: 1px solid #eee;
     padding-right: 15px;
 }
@@ -299,7 +311,8 @@ body {
 .home-search-bar-form select {
     flex-grow: 1;
     padding: 12px 15px 12px 45px;
-    /* Left padding for icon */
+    padding-right: 15px;
+    /* Reset padding for text input */
     border: none;
     outline: none;
     font-size: 1rem;
@@ -307,12 +320,10 @@ body {
     background: transparent;
     appearance: none;
     width: 100%;
-    /* Ensure it fills wrapper */
 }
 
 .home-search-bar-form select {
     padding-right: 35px;
-    /* Make space for custom arrow */
 }
 
 .home-search-bar-form .select-arrow {
@@ -339,7 +350,6 @@ body {
 
 .home-search-bar-form select:valid {
     color: var(--secondary-color);
-    /* Color when an option is selected */
 }
 
 
@@ -347,18 +357,14 @@ body {
 
 .btn-home-search {
     background-color: var(--primary-color);
-    /* USE BRAND COLOR */
     color: var(--secondary-color);
-    /* Match other primary buttons */
     border: none;
     padding: 14px 30px;
-    /* Slightly larger padding */
     border-radius: 8px;
     cursor: pointer;
     font-weight: 600;
     transition: background-color 0.3s ease, box-shadow 0.3s ease;
     flex-shrink: 0;
-    /* Prevent button from shrinking */
 }
 
 .btn-home-search:hover {
@@ -367,15 +373,13 @@ body {
 }
 
 
-/* === END OF MODIFICATION === */
-
-
-/* Hive/Services Section - Standard Layout */
+/* Hive/Services Section */
 
 .services-section {
     padding: 4rem 2rem;
     text-align: center;
-    background-color: #f2f2f2;
+    background-color: var(--light-color);
+    /* Light gray band */
 }
 
 .hive-container {
@@ -397,13 +401,14 @@ body {
     flex-direction: column;
     color: var(--secondary-color);
     font-weight: 600;
-    transition: transform 0.3s ease, background-color 0.3s ease;
+    transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
     cursor: pointer;
 }
 
 .hive-cell:hover {
     transform: scale(1.1);
     background-color: var(--primary-hover-color);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
 }
 
 .hive-cell span i {
@@ -550,8 +555,7 @@ body {
 .blog-section {
     padding: 4rem 5%;
     text-align: center;
-    background-color: var(--white-color);
-    /* Changed from light-color to white for contrast */
+    background-color: var(--soft-bg);
 }
 
 .blog-container {
@@ -563,8 +567,7 @@ body {
 }
 
 .blog-card {
-    background: var(--light-color);
-    /* Changed to light-color for better separation from section background */
+    background: var(--white-color);
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
     overflow: hidden;
@@ -573,7 +576,7 @@ body {
 
 .blog-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
 }
 
 .blog-card-image {
@@ -617,19 +620,26 @@ body {
 }
 
 
-/* Simple Content Page Layout (for About/Contact) */
+/* 2. SIMPLE CONTENT PAGES (About, Contact, Career Growth) */
 
 .simple-content-page {
     max-width: 900px;
     margin: 2rem auto;
     padding: 4rem 5%;
     background-color: var(--white-color);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    /* Content block remains white */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.05);
+    /* Added depth */
     border-radius: 10px;
+    border-top: 5px solid var(--primary-color);
+    /* Accent stripe */
 }
 
 .info-section h2.view-title {
-    color: var(--primary-color);
+    color: var(--secondary-color);
+    /* Changed title color for better hierarchy */
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 10px;
     margin-bottom: 1.5rem;
     text-align: center;
 }
@@ -645,9 +655,12 @@ body {
 
 .contact-details {
     margin: 2rem 0;
-    padding: 1rem;
-    border: 1px dashed #ddd;
-    border-radius: 5px;
+    padding: 1.5rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: var(--light-color);
+    /* Added contrast */
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .contact-details i {
@@ -666,7 +679,6 @@ body {
 
 .contact-form button[type="submit"] {
     margin-top: 0.5rem;
-    /* Spacing for button */
 }
 
 .return-home-container {
@@ -675,11 +687,13 @@ body {
 }
 
 
-/* Dashboard & Admin Styling */
+/* 3. DASHBOARD STYLING */
 
 .dashboard-container,
 .admin-container {
     padding: 2rem 5%;
+    background-color: var(--soft-bg);
+    /* Page background */
 }
 
 
@@ -688,25 +702,27 @@ body {
 .seeker-layout {
     display: grid;
     grid-template-columns: 280px 1fr;
-    /* Sidebar width: 280px */
     gap: 2rem;
     padding: 2rem 5%;
 }
 
 .seeker-sidebar {
-    /* Sticky sidebar on desktop */
     position: sticky;
-    top: 75px;
+    top: var(--nav-height);
     align-self: flex-start;
 }
 
 .seeker-main-content {
     min-width: 0;
-    /* Ensures content doesn't overflow */
 }
 
-
-/* Profile Completion Card Styling */
+.card {
+    background: var(--white-color);
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1.5rem;
+}
 
 .profile-completion-card {
     text-align: center;
@@ -751,11 +767,13 @@ body {
     color: var(--secondary-color) !important;
     text-decoration: none;
     padding: 0.5rem 0;
-    transition: color 0.3s ease;
+    transition: color 0.3s ease, transform 0.2s ease, background-color 0.2s ease;
 }
 
 .sidebar-link:hover {
     color: var(--primary-color) !important;
+    transform: translateX(3px);
+    background-color: #f0f0f0;
 }
 
 .sidebar-link i {
@@ -794,15 +812,7 @@ body {
 }
 
 
-/* ⬅️ END SEEKER LAYOUT STYLING */
-
-.card {
-    background: var(--white-color);
-    padding: 1.5rem;
-    border-radius: 10px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-    margin-bottom: 1.5rem;
-}
+/* End Seeker Layout */
 
 form label {
     display: block;
@@ -844,14 +854,14 @@ form select {
 /* Employer Tabs */
 
 #employer-nav-tabs {
-    /* Reuse existing job-filter-nav style for tabs */
+    display: flex;
+    gap: 10px;
     margin-bottom: 2rem;
     padding: 0;
 }
 
 .employer-tab-btn {
     flex-grow: 1;
-    /* Make tabs span evenly */
     text-align: center;
 }
 
@@ -864,9 +874,6 @@ form select {
     padding-bottom: 0.5rem;
     border-bottom: 2px solid var(--light-color);
 }
-
-
-/* New smaller status element for Post view header */
 
 .employer-post-header .employer-subscription-status-small {
     font-size: 0.9rem;
@@ -884,41 +891,19 @@ form select {
 }
 
 
-/* Subscription Card (ONLY FOR MODAL USE NOW) */
-
-.subscription-card {
-    text-align: center;
-    background: var(--white-color);
-    border: 1px solid #ddd;
-    padding: 1.5rem;
-    margin-bottom: 0;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.subscription-card h3 {
-    font-size: 1.3rem;
-    color: var(--secondary-color);
-    margin-bottom: 0.5rem;
-}
-
-.subscription-card p {
-    font-size: 1rem;
-    margin-bottom: 1rem;
-    font-weight: 500;
-}
+/* Job Post/Edit Form Styling Enhancement */
 
 .job-step-form {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 1.5rem;
+    background-color: var(--light-color);
+    /* Soft background for forms */
     border: 1px solid #ddd;
-    border-radius: 8px;
+    border-left: 5px solid var(--accent-color);
+    /* Visual marker for forms */
+    margin: 0 auto 1.5rem;
 }
 
 .job-step-form h4 {
-    margin-bottom: 1.5rem;
-    color: var(--primary-color);
+    color: var(--accent-color);
 }
 
 
@@ -940,7 +925,6 @@ form select {
 .job-list {
     overflow-y: auto;
     max-height: none;
-    /* Reset max-height */
 }
 
 
@@ -948,25 +932,25 @@ form select {
 
 .job-card {
     border: 1px solid #ddd;
-    /* Slightly darker border */
     padding: 1.2rem;
     margin-bottom: 1rem;
     border-radius: 8px;
     transition: all 0.2s ease;
     cursor: pointer;
-    /* Implies clickable area */
 }
 
 .job-card:hover {
-    border-color: var(--primary-color);
+    border-color: var(--accent-color);
+    /* Highlight on hover */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+    /* Slight lift */
 }
 
 .job-card h4 {
     margin-bottom: 0.5rem;
     color: var(--secondary-color);
     font-size: 1.15rem;
-    /* Slightly larger title */
 }
 
 .job-card p {
@@ -983,7 +967,6 @@ form select {
 
 .job-card .skills span {
     background: var(--light-color);
-    /* Lighter chip background */
     color: var(--secondary-color);
     padding: 0.3rem 0.6rem;
     border-radius: 15px;
@@ -997,7 +980,6 @@ form select {
 .job-card .apply-btn,
 .view-applicants-btn {
     margin-top: 1rem;
-    /* Ensure action buttons are clearly separated */
 }
 
 .form-actions {
@@ -1050,7 +1032,6 @@ form select {
 
 .job-filter-nav .btn {
     flex: 1 1 auto;
-    /* Allow buttons to size based on content but fill space */
 }
 
 .job-view-section {
@@ -1089,7 +1070,6 @@ form select {
     position: relative;
     text-align: center;
     animation: fadeIn 0.3s ease-out;
-    /* Modal animation */
 }
 
 @keyframes fadeIn {
@@ -1311,7 +1291,6 @@ footer {
     display: flex;
     flex-direction: row;
     align-items: flex-start;
-    /* Align icons to the start on desktop */
 }
 
 .footer-col.social i {
@@ -1338,7 +1317,8 @@ footer {
         background: var(--white-color);
         box-shadow: 0 4px 5px rgba(0, 0, 0, 0.1);
         position: absolute;
-        top: 100%;
+        top: var(--nav-height);
+        /* Use variable height */
         left: 0;
         z-index: 999;
     }
@@ -1354,7 +1334,6 @@ footer {
     .menu-toggle {
         display: block;
         order: 3;
-        /* Move toggle icon to the right side of the navbar */
         margin-left: 1rem;
     }
     .auth-buttons {
@@ -1372,33 +1351,49 @@ footer {
         position: static;
         top: auto;
     }
-    .employer-management-content-grid {
-        grid-template-columns: 1fr;
-    }
-    .job-step-form {
-        max-width: 90%;
-    }
-    #design-globe-container {
-        padding: 30px 0;
-        height: 180px;
-    }
-    .globe-center-small {
-        width: 80px;
-        height: 80px;
-    }
     .hive-container {
         gap: 1rem;
     }
     .hive-cell {
         width: 140px;
-        /* Slightly smaller cell */
         height: 160px;
         font-size: 0.9rem;
     }
     .hive-cell span i {
         font-size: 1.8rem;
     }
-    /* Adjust rotation size for smaller screens */
+    /* Home Search Bar Responsiveness */
+    .home-search-bar-form {
+        flex-direction: column;
+        padding: 20px;
+        gap: 15px;
+    }
+    .search-field-wrapper {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #eee;
+        padding-right: 0;
+        padding-bottom: 15px;
+    }
+    .search-field-wrapper:last-of-type {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+    .btn-home-search {
+        width: 100%;
+        padding: 15px;
+    }
+    .home-search-bar-form input[type="text"],
+    .home-search-bar-form select {
+        padding: 12px 10px 12px 40px;
+    }
+    .home-search-bar-form .search-icon {
+        left: 10px;
+    }
+    .home-search-bar-form .select-arrow {
+        right: 10px;
+    }
+    /* Orbital globe adjustments */
     .opportunity-orbit-container-small {
         width: 280px;
         height: 280px;
@@ -1420,49 +1415,6 @@ footer {
     }
     .item-6-small {
         transform: rotate(300deg) translate(140px) rotate(-300deg);
-    }
-    #subscriptionModal .modal-content {
-        max-width: 90%;
-        /* Adjust modal width for small screens */
-    }
-    .plans-container {
-        grid-template-columns: 1fr !important;
-        /* Stack plans on mobile */
-    }
-    /* === MODIFIED: Home Search Bar Responsiveness === */
-    .home-search-bar-form {
-        flex-direction: column;
-        padding: 20px;
-        gap: 15px;
-    }
-    .search-field-wrapper {
-        width: 100%;
-        border-right: none;
-        /* Remove vertical borders */
-        padding-right: 0;
-        /* Add bottom border for separation */
-        border-bottom: 1px solid #eee;
-        padding-bottom: 15px;
-    }
-    .search-field-wrapper:last-of-type {
-        border-bottom: none;
-        /* Remove border from last item */
-        padding-bottom: 0;
-    }
-    .btn-home-search {
-        width: 100%;
-        padding: 15px;
-    }
-    .home-search-bar-form .search-icon {
-        left: 10px;
-    }
-    .home-search-bar-form .select-arrow {
-        right: 10px;
-    }
-    .home-search-bar-form input[type="text"],
-    .home-search-bar-form select {
-        padding: 12px 10px 12px 40px;
-        /* Adjust padding */
     }
 }
 
@@ -1501,7 +1453,7 @@ footer {
         font-size: 0.75rem;
         padding: 8px 5px;
     }
-    /* Further adjustment for very small screens */
+    /* Further orbital globe adjustments */
     .opportunity-orbit-container-small {
         width: 220px;
         height: 220px;
@@ -1527,7 +1479,7 @@ footer {
 }
 
 
-/* 💻 Print Styles (Best Practice) */
+/* 💻 Print Styles (Best Practice - Unchanged) */
 
 @media print {
     body {
