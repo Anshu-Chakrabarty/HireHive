@@ -1,4 +1,4 @@
-// --- Frontend: app.js (FINAL CODE WITH CHATBOT AND FULL DASHBOARD LOGIC) ---
+// --- Frontend: app.js (FINAL CODE WITH CHATBOT AND FORGOT PASSWORD) ---
 document.addEventListener("DOMContentLoaded", () => {
             // ------------------------------------------------------------------
             // 1. GLOBAL CONFIGURATION & API HELPERS
@@ -139,7 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 'about': document.getElementById("about-view"),
                 'contact': document.getElementById("contact-view"),
                 'career-growth': document.getElementById("career-growth-view"),
-                'plans': document.getElementById("plans-view"), // NEW VIEW ADDED
+                'plans': document.getElementById("plans-view"),
             };
 
             const dashboardLink = document.getElementById("dashboardLink");
@@ -152,6 +152,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const navLinks = document.getElementById('navLinks');
             const employerDashboard = document.getElementById("employer-dashboard");
             const googleLoginBtn = document.getElementById("googleLoginBtn");
+            const appMainContent = document.getElementById('app-main-content');
 
             // NEW GUIDE ELEMENTS
             const guideModal = document.getElementById('guideModal');
@@ -227,7 +228,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     guideBody.innerHTML = step.body;
                     guideModal.style.display = 'block';
 
-                    // FIX: Removed the HTML entity &rarr; and added back the space
                     guideNextBtn.textContent = (currentGuideStep === guideFlow.length - 1) ? 'Start Exploring!' : 'Next Tip';
                     currentGuideStep++;
                 } else {
@@ -253,6 +253,18 @@ document.addEventListener("DOMContentLoaded", () => {
                     });
                 });
             }
+
+            // 💡 NEW FIX: Close Navbar Menu when clicking outside (on main content area)
+            if (appMainContent && navLinks) {
+                appMainContent.addEventListener('click', (event) => {
+                    if (window.innerWidth < 992 && navLinks.classList.contains('active')) {
+                        if (!navLinks.contains(event.target) && event.target !== menuToggle && !menuToggle.contains(event.target)) {
+                            navLinks.classList.remove('active');
+                        }
+                    }
+                });
+            }
+
 
             async function updateHeaderUI() {
                 let user = getLocalUser();
@@ -380,11 +392,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             // ------------------------------------------------------------------
-            // 3. AUTH & MODAL LOGIC (SUCCESS CONFETTI INTEGRATED)
+            // 3. AUTH & MODAL LOGIC (PASSWORD RESET & CLOSURE FIX)
             // ------------------------------------------------------------------
             const authModal = document.getElementById("authModal");
             const loginFormContainer = document.getElementById("login-form-container");
             const signupFormContainer = document.getElementById("signup-form-container");
+            const forgotFormContainer = document.getElementById("forgot-form-container"); // NEW
             const otpFormContainer = document.getElementById("otp-form-container");
             const closeAuthBtn = document.querySelector("#authModal .close-btn");
             const applicantsModal = document.getElementById("applicantsModal");
@@ -393,18 +406,28 @@ document.addEventListener("DOMContentLoaded", () => {
             const userTypeSelect = document.getElementById("userType");
             const companyNameInput = document.getElementById("signupCompanyName");
             const switchFormLink = document.getElementById("switch-form-link");
+            const forgotPasswordLink = document.getElementById("forgotPasswordLink"); // NEW
+            const backToLoginLink = document.getElementById("backToLoginLink"); // NEW
 
 
             const showForm = (formToShow) => {
-                [loginFormContainer, signupFormContainer, otpFormContainer].forEach((f) => f.classList.add("hidden"));
+                [loginFormContainer, signupFormContainer, forgotFormContainer, otpFormContainer].forEach((f) => f ? f.classList.add("hidden") : null);
                 formToShow.classList.remove("hidden");
                 authModal.style.display = "block";
-                const isLogin = formToShow === loginFormContainer;
-                if (switchFormLink) {
-                    switchFormLink.textContent = isLogin ?
-                        "Need an account? Sign Up" :
-                        "Already have an account? Log In";
+
+                // Handle switch/forgot links visibility
+                if (formToShow === loginFormContainer || formToShow === signupFormContainer) {
+                    if (switchFormLink) {
+                        switchFormLink.style.display = 'block';
+                        const isLogin = formToShow === loginFormContainer;
+                        switchFormLink.textContent = isLogin ? "Need an account? Sign Up" : "Already have an account? Log In";
+                    }
+                    if (forgotPasswordLink) forgotPasswordLink.style.display = 'block';
+                } else {
+                    if (switchFormLink) switchFormLink.style.display = 'none';
+                    if (forgotPasswordLink) forgotPasswordLink.style.display = 'none';
                 }
+
                 if (formToShow === signupFormContainer) {
                     userTypeSelect.value = 'seeker';
                     companyNameInput.classList.add('hidden');
@@ -415,6 +438,13 @@ document.addEventListener("DOMContentLoaded", () => {
             if (signupBtn) { signupBtn.onclick = () => showForm(signupFormContainer); }
             if (closeAuthBtn) { closeAuthBtn.onclick = () => { authModal.style.display = "none"; }; }
             if (closeApplicantsModalBtn) { closeApplicantsModalBtn.onclick = () => { applicantsModal.style.display = "none"; }; }
+
+            // Navigation for Forgot Password
+            if (forgotPasswordLink) { forgotPasswordLink.onclick = (e) => { e.preventDefault();
+                    showForm(forgotFormContainer); }; }
+            if (backToLoginLink) { backToLoginLink.onclick = (e) => { e.preventDefault();
+                    showForm(loginFormContainer); }; }
+
 
             // Global modal close logic (remains the same)
             window.onclick = (event) => {
@@ -451,6 +481,29 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 });
             }
+
+            // Forgot Password Submission Logic
+            if (document.getElementById("forgotPasswordForm")) {
+                document.getElementById("forgotPasswordForm").addEventListener("submit", async(e) => {
+                    e.preventDefault();
+                    setLoading('submitResetBtn', true, 'Send Reset Link');
+                    const email = document.getElementById("resetEmail").value;
+                    try {
+                        const data = await fetchApi('auth/forgot-password', 'POST', { email });
+
+                        authModal.style.display = "none";
+                        showStatusMessage("Reset Link Sent", data.message, false);
+                        document.getElementById("forgotPasswordForm").reset();
+
+                    } catch (error) {
+                        authModal.style.display = "none";
+                        showStatusMessage("Reset Failed", error.message, true);
+                    } finally {
+                        setLoading('submitResetBtn', false, 'Send Reset Link');
+                    }
+                });
+            }
+
 
             // Auth Submission Logic (FIXED for better error handling)
             document.getElementById("signupForm").addEventListener("submit", async(e) => {
@@ -1321,7 +1374,33 @@ document.addEventListener("DOMContentLoaded", () => {
     // ------------------------------------------------------------------
     // 10. HERO SEARCH BAR LOGIC (REMOVED FROM HOME PAGE)
     // ------------------------------------------------------------------
-    // Removed homeSearchBarForm logic since the element is no longer in index.html
+    const homeSearchBarForm = document.getElementById("homeSearchBarForm");
+    if (homeSearchBarForm) {
+        homeSearchBarForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const currentUser = getLocalUser();
+            if (!currentUser) {
+                showStatusMessage("Login Required", "Please log in as a Job Seeker to search jobs.", false);
+                showForm(loginFormContainer);
+                return;
+            }
+            if (currentUser.role !== 'seeker') {
+                showView('dashboard', true, null);
+                return;
+            }
+
+            const keywords = document.getElementById("home-search-keywords")?.value;
+            const experience = document.getElementById("home-search-experience").value;
+            const location = document.getElementById("home-search-location").value;
+
+            const filters = {};
+            if (keywords) filters.keywords = keywords;
+            if (location) filters.location = location;
+            if (experience && experience !== '0') filters.experience = experience;
+            
+            showView('dashboard', true, filters);
+        });
+    }
 
     // ------------------------------------------------------------------
     // 11. CHATBOT INTERFACE LOGIC (SIMULATED & FULLY FUNCTIONAL)
@@ -1365,7 +1444,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         setTimeout(() => {
             const lowerMsg = message.toLowerCase();
-            let botResponse = `I'm sorry, I still couldn't understand that query. I can help you navigate the site using keywords like **Domains**, **Plans**, **Dashboard**, **About Us**, or **Support**.`;
+            let botResponse = `I'm sorry, I still couldn't understand that query. I can help you navigate the site using keywords like **Domains**, **Plans**, **Dashboard**, **About Us**, or general **Support**.`;
 
             if (lowerMsg.includes('domain') || lowerMsg.includes('job categories')) {
                 botResponse = `HireHive features opportunities in **IT & Tech**, **Sales**, and **Management**. <a href="#" onclick="window.guideUser('home', 'services'); return false;">Click here to view all domains on the page.</a>`;

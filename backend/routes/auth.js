@@ -107,8 +107,7 @@ router.post("/login", async(req, res) => {
         return res.status(400).json({ error: "Email and password are required for login." });
     }
 
-    // FIX: Explicitly select the 'password' field, plus all other necessary fields.
-    // If 'password' isn't explicitly selected, Supabase may omit it due to RLS or configuration.
+    // Select all necessary fields, including password
     const { data, error } = await supabase
         .from("users")
         .select(`id, role, password, google_id, name, email, phone, skills, education, cvfilename, company_name, jobpostcount, subscriptionstatus, created_at`)
@@ -116,20 +115,16 @@ router.post("/login", async(req, res) => {
         .single();
 
     if (error || !data) {
-        // If query fails or no user found
         return res.status(400).json({ error: "Invalid credentials." });
     }
 
-    // Check if the user has a local password set (i.e., not a Google-only user)
     if (!data.password) {
         return res.status(400).json({ error: "Account created via Google. Please use the 'Sign In with Google' button." });
     }
 
-    // Validate password
     const match = await bcrypt.compare(password, data.password);
 
     if (!match) {
-        // If password hash comparison fails
         return res.status(400).json({ error: "Invalid credentials." });
     }
 
@@ -139,12 +134,47 @@ router.post("/login", async(req, res) => {
     res.json({ message: "Login successful", token, user: userData });
 });
 
+// 🚀 NEW: Forgot Password Request Endpoint
+router.post("/forgot-password", async(req, res) => {
+    const { email } = req.body;
+
+    if (!email) {
+        return res.status(400).json({ error: "Email is required to reset password." });
+    }
+
+    // 1. Simulate user existence check (crucial for security)
+    const { data: user, error: dbError } = await supabase
+        .from("users")
+        .select(`id`)
+        .eq("email", email)
+        .maybeSingle();
+
+    if (dbError) {
+        console.error("Supabase reset lookup error:", dbError);
+        return res.status(500).json({ error: "A server error occurred during lookup." });
+    }
+
+    // 2. If user exists, simulate the email process.
+    // NOTE: In a real app, you would integrate a service like Nodemailer or use Supabase's native auth features here.
+    if (user) {
+        console.log(`[PASSWORD RESET] Simulated reset link sent to ${email}.`);
+        // If using Supabase Auth: await supabase.auth.resetPasswordForEmail(email, { redirectTo: CLIENT_ORIGIN + '/reset-password' });
+    } else {
+        console.log(`[PASSWORD RESET] Attempted reset for unknown email: ${email}.`);
+    }
+
+    // 3. Success message regardless of existence (for security against email enumeration)
+    res.status(200).json({
+        message: "If an account with that email exists, a password reset link has been sent. Check your inbox!"
+    });
+});
+
 
 // ------------------------------------------------------------------
 // NEW: GOOGLE OAUTH ROUTES 
 // ------------------------------------------------------------------
 
-// 1. Initiate Google Login
+// 1. Initiate Google Login (omitted for brevity)
 router.get('/google/login', (req, res) => {
     if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
         return res.redirect(`${CLIENT_ORIGIN}/#error=Google+Configuration+Missing`);
@@ -162,7 +192,7 @@ router.get('/google/login', (req, res) => {
 });
 
 
-// 2. Handle Google Callback
+// 2. Handle Google Callback (omitted for brevity)
 router.get('/google/callback', async(req, res) => {
     const code = req.query.code;
     const error = req.query.error;
@@ -258,7 +288,7 @@ router.get('/google/callback', async(req, res) => {
 });
 
 
-// GET: Fetch current user profile using JWT 
+// GET: Fetch current user profile using JWT (omitted for brevity)
 router.get("/me", protect, async(req, res) => {
     const userId = req.user.id;
     const { data, error } = await supabase
