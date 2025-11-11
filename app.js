@@ -226,7 +226,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     guideBody.innerHTML = step.body;
                     guideModal.style.display = 'block';
 
-                    guideNextBtn.textContent = (currentGuideStep === guideFlow.length - 1) ? 'Start Exploring!' : 'Next Tip &rarr;';
+                    // FIX: Removed the HTML entity &rarr;
+                    guideNextBtn.textContent = (currentGuideStep === guideFlow.length - 1) ? 'Start Exploring!' : 'Next Tip';
                     currentGuideStep++;
                 } else {
                     guideModal.style.display = 'none';
