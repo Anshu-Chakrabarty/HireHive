@@ -128,7 +128,7 @@ body {
 }
 
 
-/* FIX: Logo Replacement via CSS Background */
+/* FIX: Logo Replacement via CSS Background (Using Logo.jpg) */
 
 .logo h1 {
     /* Hide the text and icon, but keep the space */
@@ -147,13 +147,9 @@ body {
     padding: 0;
 }
 
-
-/* Ensure Logo link container behaves correctly */
-
-.logo {
-    width: 140px;
-    /* Should match H1 width */
-    height: 40px;
+.logo i {
+    color: var(--primary-color);
+    font-size: 1.6rem;
 }
 
 
@@ -253,11 +249,11 @@ body {
 }
 
 
-/* 2. HERO BACKGROUND FIX */
+/* 2. HERO BACKGROUND FIX - RESTORING HANDSHAKE IMAGE WITH DARK OVERLAY */
 
 .hero {
-    /* Opaque Background Image (Path corrected) */
-    background: url("Logo.jpg") center center no-repeat;
+    /* RESTORED: Original image with a dark gradient overlay for text legibility */
+    background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("https://images.unsplash.com/photo-1521791136064-7986c2920216?q=80&w=2069") center center no-repeat;
     background-size: cover;
     color: var(--white-color);
     height: 70vh;
