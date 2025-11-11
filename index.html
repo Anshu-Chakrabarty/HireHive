@@ -2,621 +2,711 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HireHive - All-in-One</title>
-    <meta name="description" content="HireHive - Your complete career ecosystem for job seekers and employers. Discover opportunities in IT, Sales, Management, and more.">
 
+    <meta name="description" content="HireHive - Your complete career ecosystem for job seekers and employers. Discover opportunities in IT, Sales, Management, and more.">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
 </head>
 
 <body>
+
     <header>
+    
         <nav class="navbar">
+        
             <a href="#home" class="logo" data-view="home">
+            
                 <h1><i class="fas fa-briefcase"></i> HireHive</h1>
-            </a>
+                </a>
+        
             <div class="nav-links" id="navLinks">
-                <a href="#home" data-view="home">Home</a>
-                <a href="#about" data-view="about">About Us</a>
-                <a href="#contact" data-view="contact">Contact Us</a>
-                <a href="#services" data-view="home-link">Domains</a>
-                <a href="#dashboard" id="dashboardLink" class="hidden" data-view="dashboard" aria-hidden="true">Dashboard</a>
-                <a href="#admin" id="adminLink" class="hidden" data-view="admin" aria-hidden="true">Admin</a>
-            </div>
+                <a href="#home" data-view="home">Home</a>                 <a href="#about" data-view="about">About Us</a>                 <a href="#contact" data-view="contact">Contact Us</a>                 <a href="#services" data-view="home-link">Domains</a>                                <a href="#dashboard" id="dashboardLink" class="hidden" data-view="dashboard" aria-hidden="true">Dashboard</a>                 <a href="#admin" id="adminLink" class="hidden" data-view="admin" aria-hidden="true">Admin</a>                            </div>
+        
             <div class="auth-buttons">
-                <span id="welcome-message" class="hidden"></span>
-                <button id="loginBtn" class="btn">Login</button>
-                <button id="signupBtn" class="btn btn-primary">Join the Hive</button>
-                <button id="logoutBtn" class="btn hidden">Logout</button>
-            </div>
+                <span id="welcome-message" class="hidden"></span>                 <button id="loginBtn" class="btn">Login</button>                 <button id="signupBtn" class="btn btn-primary">Join the Hive</button>
+                <button
+                    id="logoutBtn" class="btn hidden">Logout</button>
+                    </div>
             <button class="menu-toggle" id="menuToggle">
-                <i class="fas fa-bars"></i>
-            </button>
-        </nav>
-    </header>
+                <i class="fas fa-bars"></i>
+            </button>         </nav>
+        </header>
+
 
     <main id="app-main-content">
+    
         <div id="home-view" class="page-view">
+        
             <section class="hero">
+            
                 <div class="hero-content">
+                
                     <h2>Your Career Ecosystem Awaits</h2>
+                
                     <p>Discover opportunities, build your network, and find where you belong.</p>
-                </div>
-            </section>
+                    </div>
+                </section>
 
+        
             <section class="home-search-section">
+            
                 <form id="homeSearchBarForm" class="home-search-bar-form">
 
+                
                     <div class="search-field-wrapper">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text" id="home-search-keywords" placeholder="Skills, Designations, Companies">
-                    </div>
+                        <i class="fas fa-search search-icon"></i>                         <input type="text" id="home-search-keywords" placeholder="Skills, Designations, Companies">                     </div>
 
+                
                     <div class="search-field-wrapper">
-                        <i class="fas fa-briefcase search-icon"></i>
-                        <select id="home-search-experience">
-                            <option value="">Select experience</option>
-                            <option value="0">Fresher (0 years)</option>
-                            <option value="1">1+ Year</option>
-                            <option value="2">2+ Years</option>
-                            <option value="3">3+ Years</option>
-                            <option value="5">5+ Years</option>
-                            <option value="8">8+ Years</option>
-                            <option value="10">10+ Years</option>
-                        </select>
-                        <i class="fas fa-chevron-down select-arrow"></i>
-                    </div>
+                        <i class="fas fa-briefcase search-icon"></i>                         <select id="home-search-experience">
+                            <option value="">Select experience</option>
+                            <option value="0">Fresher (0 years)</option>
+                            <option value="1">1+ Year</option>
+                            <option value="2">2+ Years</option>
+                            <option value="3">3+ Years</option>
+                            <option value="5">5+ Years</option>
+                            <option value="8">8+ Years</option>
+                            <option value="10">10+ Years</option>
+                        </select>                         <i class="fas fa-chevron-down select-arrow"></i>                     </div>
 
+                
                     <div class="search-field-wrapper">
-                        <i class="fas fa-map-marker-alt search-icon"></i>
-                        <input type="text" id="home-search-location" placeholder="Enter location">
-                    </div>
+                        <i class="fas fa-map-marker-alt search-icon"></i>                         <input type="text" id="home-search-location" placeholder="Enter location">                     </div>
 
-                    <button type="submit" class="btn btn-home-search">Search</button>
-                </form>
-            </section>
+                    <button type="submit" class="btn btn-home-search">Search</button>                 </form>
+                </section>
+        
             <section id="services" class="services-section">
+            
                 <h2>Explore Our Hive of Opportunities (Click to Start)</h2>
+            
                 <div class="hive-container">
+                
                     <div class="hive-cell opportunity-link"><span><i class="fas fa-laptop-code"></i> IT & Tech</span></div>
+                
                     <div class="hive-cell opportunity-link"><span><i class="fas fa-bullhorn"></i> Marketing & Finance</span></div>
+                
                     <div class="hive-cell opportunity-link"><span><i class="fas fa-industry"></i> Manufacturing</span></div>
+                
                     <div class="hive-cell opportunity-link"><span><i class="fas fa-concierge-bell"></i> Hospitality</span></div>
+                
                     <div class="hive-cell opportunity-link"><span><i class="fas fa-chart-line"></i> Sales</span></div>
+                
                     <div class="hive-cell opportunity-link"><span><i class="fas fa-handshake"></i> Management</span></div>
-                </div>
-            </section>
+                    </div>
+                </section>
 
+        
             <section id="blog" class="blog-section">
+            
                 <h2>From the Hive: News & Insights</h2>
+            
                 <div class="blog-container">
+                
                     <div class="blog-card">
+                    
                         <div class="blog-card-image"><i class="fas fa-pen-to-square"></i></div>
+                    
                         <div class="blog-card-content">
+                        
                             <h3>How to Ace Your Next Tech Interview</h3>
+                        
                             <p>Discover the top 5 questions you'll likely face and how to answer them...</p><a href="#">Read More &rarr;</a></div>
-                    </div>
+                        </div>
+                
                     <div class="blog-card">
+                    
                         <div class="blog-card-image"><i class="fas fa-chart-pie"></i></div>
+                    
                         <div class="blog-card-content">
+                        
                             <h3>Market Trends: The Rise of Remote Work</h3>
+                        
                             <p>We dive into the data behind the remote work revolution...</p><a href="#">Read More &rarr;</a></div>
-                    </div>
+                        </div>
+                
                     <div class="blog-card">
+                    
                         <div class="blog-card-image"><i class="fas fa-lightbulb"></i></div>
+                    
                         <div class="blog-card-content">
+                        
                             <h3>Building a Standout Profile on HireHive</h3>
+                        
                             <p>Learn how to leverage our platform's features to catch the eye of top employers...</p><a href="#">Read More &rarr;</a></div>
+                        </div>
                     </div>
-                </div>
-            </section>
-        </div>
+                </section>
+            </div>
 
+    
         <div id="about-view" class="page-view hidden simple-content-page">
+        
             <section class="info-section">
+            
                 <h2 class="view-title">About HireHive: The Bridge Between Ambition and Achievement</h2>
 
+            
                 <p>In today’s fast-paced and competitive world, finding the right talent — or the right job — isn’t easy. That’s where **Hire Hive** comes in. We are a modern recruitment company built to simplify the hiring process for both employers and
-                    job seekers.</p>
+                                        job seekers.</p>
 
+            
                 <p>At Hire Hive, we believe that great organizations are powered by **great people**. Our goal is to connect talented individuals with companies that truly value their skills. Whether you’re a startup, an MNC, or an IT firm, we help you find
-                    the perfect candidates to fill your key roles quickly and efficiently.</p>
+                                        the perfect candidates to fill your key roles quickly and efficiently.</p>
 
+            
                 <h3>For Employers: Simplifying Recruitment</h3>
+            
                 <p>Hire Hive gives companies the flexibility to post job openings on our portal through **affordable subscription plans**. Each plan provides access to a large database of qualified and verified resumes, making it easy to shortlist candidates
-                    that match your exact requirements.</p>
+                                        that match your exact requirements.</p>
+            
                 <p>Our process is simple, transparent, and designed to **save your valuable time** while maintaining the highest standards of quality hiring. With Hire Hive, you’re not just hiring — you’re building the foundation of your company’s future
-                    growth.
-                </p>
+                                        growth.                 </p>
 
+            
                 <h3>For Job Seekers: Opening Doors to Opportunity</h3>
+            
                 <p>If you’re a job seeker looking to take the next step in your career, Hire Hive is your **gateway to countless opportunities**. Upload your resume, explore openings that fit your skills and interests, and apply for your dream job — all
-                    at minimal subscription costs.</p>
+                                        at minimal subscription costs.</p>
+            
                 <p>We ensure a smooth and genuine experience for every candidate, making job searching more **accessible, affordable, and reliable** than ever before.</p>
 
+            
                 <h3 class="view-title spaced-heading">Why Choose Hire Hive?</h3>
 
+            
                 <ul class="feature-list">
+                
                     <li><i class="fas fa-check-circle check-icon"></i> **Affordable Plans** for both companies and candidates</li>
+                
                     <li><i class="fas fa-check-circle check-icon"></i> **Verified Database** of genuine job postings and resumes</li>
+                
                     <li><i class="fas fa-check-circle check-icon"></i> **User-Friendly Portal** designed for efficiency and simplicity</li>
+                
                     <li><i class="fas fa-check-circle check-icon"></i> **Dedicated Support Team** ensuring smooth hiring and placement</li>
+                
                     <li><i class="fas fa-check-circle check-icon"></i> **Genuine Results** driven by honesty, hard work, and commitment</li>
-                </ul>
+                    </ul>
 
+            
                 <p class="center-text spaced-paragraph">Join the Hive today — where hiring meets opportunity!</p>
 
+            
                 <div class="return-home-container">
-                    <button class="btn btn-primary" data-view="home">Back to Home</button>
-                </div>
-            </section>
-        </div>
+                    <button class="btn btn-primary" data-view="home">Back to Home</button>                 </div>
+                </section>
+            </div>
+    
         <div id="career-growth-view" class="page-view hidden simple-content-page">
+        
             <section class="info-section">
+            
                 <h2 class="view-title">Career Growth with Hire Hive: Unlock Your True Potential</h2>
 
+            
                 <p>In today’s competitive world, **career growth is the cornerstone of professional success**. At Hire Hive, we are committed to helping both job seekers and recruiters achieve their goals through a platform designed to connect the right
-                    talent with the right opportunities.</p>
+                                        talent with the right opportunities.</p>
 
+            
                 <p>A successful organization thrives on the dedication and skill of its employees. We provide companies with access to a wide pool of **verified resumes**, making it easier than ever to find the right candidates who can become true growth
-                    partners for your business.</p>
+                                        partners for your business.</p>
 
+            
                 <h3>For Employers: Find Your Growth Partners</h3>
+            
                 <p>Whether you are a startup, an MNC, or an IT company, Hire Hive ensures that your hiring process is efficient, transparent, and **cost-effective**. With our platform, you can quickly shortlist qualified candidates who not only meet your
-                    requirements but also align with your company’s vision for growth.</p>
+                                        requirements but also align with your company’s vision for growth.</p>
 
+            
                 <h3>For Job Seekers: Shape Your Career Path</h3>
+            
                 <p>Career growth isn’t just about earning a good salary — it’s about developing your skills, gaining valuable experience, and finding the right opportunity. At Hire Hive, job aspirants can upload their resumes, explore job opportunities based
-                    on their skills, and apply for positions that help them **flourish professionally**.</p>
+                                        on their skills, and apply for positions that help them **flourish professionally**.</p>
+            
                 <p>Our pocket-friendly subscription plans make career development **accessible to everyone**. From entry-level roles to advanced positions, Hire Hive ensures that every job seeker gets a chance to grow, learn, and succeed in their chosen
-                    field.
-                </p>
+                                        field.                 </p>
+            
                 <p>Our goal is to connect talented individuals with companies that truly value their skills. Whether you’re a startup, an MNC, or an IT firm, we help you find the perfect candidates to fill your key roles quickly and efficiently.</p>
 
-                <h3 class="view-title spaced-heading">Why Choose Hire Hive for Career Growth?</h3>
+            
+                <h3 class="view-title spaced-heading">Why Choose Hire Hive?</h3>
 
+            
                 <ul class="feature-list">
+                
                     <li><i class="fas fa-check-circle check-icon"></i> Access to **verified and genuine resumes** for employers</li>
+                
                     <li><i class="fas fa-check-circle check-icon"></i> Opportunities to find **dream jobs** for candidates</li>
+                
                     <li><i class="fas fa-check-circle check-icon"></i> **Skill-based job matching** for better career progression</li>
+                
                     <li><i class="fas fa-check-circle check-icon"></i> Affordable subscription plans making hiring and job hunting easy</li>
+                
                     <li><i class="fas fa-check-circle check-icon"></i> A platform focused on **growth, learning, and success**</li>
-                </ul>
+                    </ul>
 
+            
                 <p class="center-text spaced-paragraph">Boost your career and business growth with Hire Hive today — where talent meets opportunity!</p>
 
+            
                 <div class="return-home-container">
-                    <button class="btn btn-primary" data-view="home">Back to Home</button>
-                </div>
-            </section>
-        </div>
+                    <button class="btn btn-primary" data-view="home">Back to Home</button>                 </div>
+                </section>
+            </div>
+    
         <div id="contact-view" class="page-view hidden simple-content-page">
+        
             <section class="info-section">
+            
                 <h2 class="view-title">Contact Us</h2>
+            
                 <p>We're here to help you succeed. Choose the best way to reach us:</p>
+            
                 <div class="contact-details">
+                
                     <p><i class="fas fa-envelope"></i> **General Support:** support@hirehive.com</p>
+                
                     <p><i class="fas fa-briefcase"></i> **Partnerships:** business@hirehive.com</p>
+                
                     <p><i class="fas fa-phone"></i> **Phone (India):** +91 98765 43210 (Mon-Fri, 9am-5pm IST)</p>
+                
                     <p><i class="fas fa-map-marker-alt"></i> **Registered Office:** Hive Tower, Bandra Kurla Complex, Mumbai, India</p>
-                </div>
+                    </div>
+            
                 <form class="contact-form">
-                    <label for="contact-name" class="hidden">Your Name</label>
-                    <input type="text" id="contact-name" name="contact-name" placeholder="Your Name" required>
-
-                    <label for="contact-email" class="hidden">Your Email</label>
-                    <input type="email" id="contact-email" name="contact-email" placeholder="Your Email" required>
-
-                    <label for="contact-message" class="hidden">Your Message</label>
-                    <textarea id="contact-message" name="contact-message" placeholder="Your Message" rows="4" required></textarea>
-                    <button type="submit" id="contactSubmitBtn" class="btn btn-primary">Send Message</button>
-                </form>
+                    <label for="contact-name" class="hidden">Your Name</label>                     <input type="text" id="contact-name" name="contact-name" placeholder="Your Name" required>                     <label for="contact-email"
+                        class="hidden">Your Email</label>                     <input type="email" id="contact-email" name="contact-email" placeholder="Your Email" required>                     <label for="contact-message" class="hidden">Your Message</label>                                        <textarea id="contact-message" name="contact-message" placeholder="Your Message" rows="4" required></textarea>                     <button type="submit" id="contactSubmitBtn" class="btn btn-primary">Send Message</button>                                    </form>
+            
                 <div class="return-home-container">
-                    <button class="btn btn-primary" data-view="home">Back to Home</button>
-                </div>
-            </section>
-        </div>
+                    <button class="btn btn-primary" data-view="home">Back to Home</button>                 </div>
+                </section>
+            </div>
 
+    
         <div id="dashboard-view" class="page-view hidden dashboard-container">
+        
             <h2>Your Dashboard</h2>
 
+        
             <div id="seeker-dashboard" class="role-view hidden seeker-layout">
+            
                 <div class="seeker-sidebar">
+                
                     <div class="card profile-completion-card">
+                    
                         <h3>Profile Health Check 🩺</h3>
+                    
                         <div class="progress-container">
+                        
                             <div id="profileCompletionBar" class="progress-bar" style="width: 0%;"></div>
-                        </div>
+                            </div>
+                    
                         <p id="profileCompletionText">0% Complete</p>
                         <button id="editProfileSidebarBtn" class="btn btn-primary btn-small">
-                            <i class="fas fa-user-edit"></i> Edit Profile
-                        </button>
+                            <i class="fas fa-user-edit"></i> Edit Profile
+                        </button>
                         <hr>
                         <p><a href="#contact" data-view="contact" class="sidebar-link"><i class="fas fa-comment-alt"></i> Send Feedback</a></p>
-                    </div>
+                        </div>
 
+                
                     <div class="card filter-widget">
+                    
                         <h3>Filter Jobs 🔎</h3>
+                    
                         <form id="jobFilterForm">
-                            <label for="filter-location">Job Location</label>
-                            <input type="text" id="filter-location" placeholder="e.g., Mumbai, Remote">
-
-                            <label for="filter-salary">Minimum Salary (LPA)</label>
-                            <input type="number" id="filter-salary" min="0" placeholder="e.g., 8">
-
-                            <label for="filter-experience">Min Experience (Years)</label>
-                            <select id="filter-experience">
-                                <option value="0">Any</option>
-                                <option value="1">1+ Year</option>
-                                <option value="2">2+ Years</option>
-                                <option value="3">3+ Years</option>
-                                <option value="5">5+ Years</option>
-                                <option value="8">8+ Years</option>
-                                <option value="10">10+ Years</option>
-                            </select>
-
-                            <label for="filter-category">Job Domain</label>
-                            <select id="filter-category">
-                                <option value="">All Domains</option>
-                                <option value="IT & Tech">IT & Tech</option>
-                                <option value="Marketing & Finance">Marketing & Finance</option>
-                                <option value="Manufacturing">Manufacturing</option>
-                                <option value="Hospitality">Hospitality</option>
-                                <option value="Sales">Sales</option>
-                                <option value="Management">Management</option>
-                            </select>
-
-                            <button type="submit" class="btn btn-primary" id="applyFiltersBtn">Apply Filters</button>
-                            <button type="button" class="btn" id="resetFiltersBtn">Reset</button>
-                        </form>
+                            <label for="filter-location">Job Location</label>                             <input type="text" id="filter-location" placeholder="e.g., Mumbai, Remote">             
+                                          <label for="filter-salary">Minimum Salary (LPA)</label>                             <input type="number" id="filter-salary" min="0" placeholder="e.g., 8">                             <label for="filter-experience">Min Experience (Years)</label>                                                        <select id="filter-experience">
+                                <option value="0">Any</option>
+                                <option value="1">1+ Year</option>
+                                <option value="2">2+ Years</option>
+                                <option value="3">3+ Years</option>
+                                <option value="5">5+ Years</option>
+                                <option value="8">8+ Years</option>
+                                <option value="10">10+ Years</option>
+                            </select>                             <label for="filter-category">Job Domain</label>                             <select id="filter-category">
+                                <option value="">All Domains</option>
+                                <option value="IT & Tech">IT & Tech</option>
+                                <option value="Marketing & Finance">Marketing & Finance</option>
+                                <option value="Manufacturing">Manufacturing</option>
+                                <option value="Hospitality">Hospitality</option>
+                                <option value="Sales">Sales</option>
+                                <option value="Management">Management</option>
+                            </select>                             <button type="submit" class="btn btn-primary" id="applyFiltersBtn">Apply Filters</button>                             <button type="button" class="btn" id="resetFiltersBtn">Reset</button>                                                    </form>
+                        </div>
                     </div>
-                </div>
 
+            
                 <div class="seeker-main-content">
+                
                     <div id="seeker-job-view" class="full-screen-view card">
+                    
                         <div class="seeker-job-header">
+                        
                             <h2>Job Opportunities</h2>
-                            <button id="editProfileBtn" class="btn">Edit Your Profile</button>
-                        </div>
+                            <button id="editProfileBtn" class="btn">Edit Your Profile</button>                         </div>
 
+                    
                         <div class="job-filter-nav">
-                            <button class="btn btn-primary job-filter-btn" data-filter="all">All Jobs</button>
-                            <button class="btn job-filter-btn" data-filter="shortlisted">Shortlisted Jobs</button>
-                            <button class="btn job-filter-btn" data-filter="applied">Applied Jobs</button>
-                        </div>
+                            <button class="btn btn-primary job-filter-btn" data-filter="all">All Jobs</button>                             <button class="btn job-filter-btn" data-filter="shortlisted">Shortlisted Jobs</button>                                                        <button class="btn job-filter-btn" data-filter="applied">Applied Jobs</button>                         </div>
 
+                    
                         <div id="job-list-content">
+                        
                             <div id="shortlisted-jobs" class="job-view-section">
+                            
                                 <h3><i class="fas fa-star"></i> Shortlisted Jobs</h3>
+                            
                                 <div id="shortlisted-jobs-list" class="job-list"></div>
-                            </div>
+                                </div>
+                        
                             <div id="all-jobs" class="job-view-section">
+                            
                                 <h3>All Available Jobs</h3>
+                            
                                 <div id="all-jobs-list" class="job-list"></div>
-                            </div>
+                                </div>
+                        
                             <div id="applied-jobs" class="job-view-section hidden">
+                            
                                 <h3><i class="fas fa-check-circle"></i> Your Applications</h3>
+                            
                                 <div id="applied-jobs-list" class="job-list"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                
+                    <div id="seeker-profile-view" class="full-screen-view card hidden">
+                    
+                        <div class="back-navigation-container">
+                            <button class="btn" id="backToJobsBtn"><i class="fas fa-arrow-left"></i> Back to Jobs</button>                         </div>
+
+                    
+                        <div class="profile-section">
+                        
+                            <h3>Edit My Profile</h3>
+                        
+                            <form id="profile-form">
+                                <label for="seeker-name">Name</label>                                 <input type="text" id="seeker-name" name="seeker-name" required>                                 <label for="seeker-email">Email</label>                                                                <input type="email" id="seeker-email" name="seeker-email" disabled>                                 <label for="seeker-skills">Skills (comma-separated)</label>                           
+                                    <input type="text" id="seeker-skills" name="seeker-skills" placeholder="e.g., HTML, CSS, JavaScript, React">                                 <label for="seeker-education">Education</label>                         
+                                      <input type="text" id="seeker-education" name="seeker-education" placeholder="e.g., B.Tech in Computer Science">                                 <label for="cv-upload">Upload CV (PDF, DOCX)</label>               
+                                                <input type="file" id="cv-upload" name="cv-upload" accept=".pdf,.doc,.docx">
+                                <p id="cv-filename" class="cv-status"></p>
+                                <button type="submit" class="btn btn-primary">Save Profile</button>                             </form>
                             </div>
                         </div>
                     </div>
 
-                    <div id="seeker-profile-view" class="full-screen-view card hidden">
-                        <div class="back-navigation-container">
-                            <button class="btn" id="backToJobsBtn"><i class="fas fa-arrow-left"></i> Back to Jobs</button>
-                        </div>
-
-                        <div class="profile-section">
-                            <h3>Edit My Profile</h3>
-                            <form id="profile-form">
-                                <label for="seeker-name">Name</label>
-                                <input type="text" id="seeker-name" name="seeker-name" required>
-
-                                <label for="seeker-email">Email</label>
-                                <input type="email" id="seeker-email" name="seeker-email" disabled>
-
-                                <label for="seeker-skills">Skills (comma-separated)</label>
-                                <input type="text" id="seeker-skills" name="seeker-skills" placeholder="e.g., HTML, CSS, JavaScript, React">
-
-                                <label for="seeker-education">Education</label>
-                                <input type="text" id="seeker-education" name="seeker-education" placeholder="e.g., B.Tech in Computer Science">
-
-                                <label for="cv-upload">Upload CV (PDF, DOCX)</label>
-                                <input type="file" id="cv-upload" name="cv-upload" accept=".pdf,.doc,.docx">
-
-                                <p id="cv-filename" class="cv-status"></p>
-                                <button type="submit" class="btn btn-primary">Save Profile</button>
-                            </form>
-                        </div>
-                    </div>
                 </div>
 
-            </div>
-
+        
             <div id="employer-dashboard" class="role-view hidden full-width-dashboard">
 
+            
                 <div id="employer-nav-tabs" class="job-filter-nav">
-                    <button id="postJobTab" class="btn employer-tab-btn" data-view-target="employer-post-view">Post Job</button>
-                    <button id="manageJobsTab" class="btn btn-primary employer-tab-btn" data-view-target="employer-management-view">Manage Posted Jobs</button>
-                    <button id="choosePlanTab" class="btn employer-tab-btn">Choose Hive Plan</button>
-                </div>
+                    <button id="postJobTab" class="btn employer-tab-btn" data-view-target="employer-post-view">Post Job</button>                     <button id="manageJobsTab" class="btn btn-primary employer-tab-btn" data-view-target="employer-management-view">Manage Posted Jobs</button>                                        <button id="choosePlanTab" class="btn employer-tab-btn">Choose Hive Plan</button>                 </div>
 
+            
                 <div id="employer-post-view" class="full-screen-view card hidden">
+                
                     <div class="employer-post-header">
+                    
                         <h2>Post a New Job</h2>
+                    
                         <div id="employer-subscription-status-small" class="employer-subscription-status-small"></div>
-                    </div>
+                        </div>
 
+                
                     <div id="job-post-form-content">
+                    
                         <div id="multi-step-job-form-container">
+                        
                             <form id="jobStep1Form" class="job-step-form">
+                            
                                 <h4>Step 1: Basic Information</h4>
-                                <label for="job-title" class="hidden">Job Title</label>
-                                <input type="text" id="job-title" name="job-title" placeholder="Job Title" required>
+                                <label for="job-title" class="hidden">Job Title</label>                                 <input type="text" id="job-title" name="job-title" placeholder="Job Title" required>             
+                                                  <label for="job-category" class="hidden">Job Category</label>                                 <select id="job-category" name="job-category" required>
+                                    <option value="" disabled selected>Select Job Branch/Category</option>
+                                    <option value="IT & Tech">IT & Tech</option>
+                                    <option value="Marketing & Finance">Marketing & Finance</option>
+                                    <option value="Manufacturing">Manufacturing</option>
+                                    <option value="Hospitality">Hospitality</option>
+                                    <option value="Sales">Sales</option>
+                                    <option value="Management">Management</option>
+                                </select>                                 <label for="job-location" class="hidden">Location</label>                                 <input type="text" id="job-location" name="job-location" placeholder="Location (e.g., Mumbai, India)"
+                                    required>                                 <button type="button" class="btn btn-primary next-step-btn" data-step="1">Next (Requirements)</button>                             </form>
 
-                                <label for="job-category" class="hidden">Job Category</label>
-                                <select id="job-category" name="job-category" required>
-                                    <option value="" disabled selected>Select Job Branch/Category</option>
-                                    <option value="IT & Tech">IT & Tech</option>
-                                    <option value="Marketing & Finance">Marketing & Finance</option>
-                                    <option value="Manufacturing">Manufacturing</option>
-                                    <option value="Hospitality">Hospitality</option>
-                                    <option value="Sales">Sales</option>
-                                    <option value="Management">Management</option>
-                                </select>
-
-                                <label for="job-location" class="hidden">Location</label>
-                                <input type="text" id="job-location" name="job-location" placeholder="Location (e.g., Mumbai, India)" required>
-                                <button type="button" class="btn btn-primary next-step-btn" data-step="1">Next (Requirements)</button>
-                            </form>
-
+                        
                             <form id="jobStep2Form" class="job-step-form hidden">
+                            
                                 <h4>Step 2: Requirements & Pay</h4>
-                                <label for="job-experience" class="hidden">Experience Required</label>
-                                <input type="text" id="job-experience" name="job-experience" placeholder="Experience Required (e.g., 2-4 years)" required>
-
-                                <label for="job-salary" class="hidden">Expected Salary</label>
-                                <input type="text" id="job-salary" name="job-salary" placeholder="Expected Salary (e.g., ₹8-12 LPA)">
-
-                                <label for="job-current-ctc" class="hidden">Current CTC</label>
-                                <input type="text" id="job-current-ctc" name="job-current-ctc" placeholder="Current CTC (Optional, e.g., ₹5 LPA)">
-
-                                <label for="job-skills" class="hidden">Required Skills</label>
-                                <input type="text" id="job-skills" name="job-skills" placeholder="Required Skills (comma-separated)" required>
-
+                                <label for="job-experience" class="hidden">Experience Required</label>                                 <input type="text" id="job-experience" name="job-experience" placeholder="Experience Required (e.g., 2-4 years)"
+                                    required>                                 <label for="job-salary" class="hidden">Expected Salary</label>                                 <input type="text" id="job-salary" name="job-salary" placeholder="Expected Salary (e.g., ₹8-12 LPA)">                                                                <label for="job-current-ctc" class="hidden">Current CTC</label>                                 <input type="text" id="job-current-ctc" name="job-current-ctc" placeholder="Current CTC (Optional, e.g., ₹5 LPA)">                                                                <label for="job-skills" class="hidden">Required Skills</label>                                 <input type="text" id="job-skills" name="job-skills" placeholder="Required Skills (comma-separated)"
+                                    required>
                                 <div class="form-actions">
-                                    <button type="button" class="btn prev-step-btn" data-step="2">Back</button>
-                                    <button type="button" class="btn btn-primary next-step-btn" data-step="2">Next (Description)</button>
-                                </div>
-                            </form>
+                                    <button type="button" class="btn prev-step-btn" data-step="2">Back</button>                                     <button type="button" class="btn btn-primary next-step-btn" data-step="2">Next (Description)</button>                                                                    </div>
+                                </form>
 
+                        
                             <form id="jobStep3Form" class="job-step-form hidden">
+                            
                                 <h4>Step 3: Final Details & Screening</h4>
-                                <label for="job-description" class="hidden">Job Description</label>
-                                <textarea id="job-description" name="job-description" placeholder="Full Job Description" required></textarea>
-
-                                <label for="job-notice-period" class="hidden">Notice Period</label>
-                                <input type="text" id="job-notice-period" name="job-notice-period" placeholder="Notice Period (e.g., 30 days)">
-
+                                <label for="job-description" class="hidden">Job Description</label>                                 <textarea id="job-description" name="job-description" placeholder="Full Job Description"
+                                    required></textarea>                                 <label for="job-notice-period" class="hidden">Notice Period</label>                                 <input type="text" id="job-notice-period" name="job-notice-period"
+                                    placeholder="Notice Period (e.g., 30 days)">
                                 <div class="form-group">
-                                    <label for="add-screening-questions">Want to add screening questions?</label>
-                                    <select id="add-screening-questions" name="add-screening-questions">
-                                        <option value="no">No</option>
-                                        <option value="yes">Yes</option>
-                                    </select>
-                                </div>
+                                    <label for="add-screening-questions">Want to add screening questions?</label>                                     <select id="add-screening-questions" name="add-screening-questions">
+                                        <option value="no">No</option>
+                                        <option value="yes">Yes</option>
+                                    </select>                                 </div>
 
+                            
                                 <div id="screening-questions-container" class="hidden">
+                                
                                     <h5 class="screening-title">Add up to 3 Mandatory Questions (Q1 & Q2 are highly recommended):</h5>
-                                    <label for="sq1" class="hidden">Screening Question 1</label>
-                                    <input type="text" id="sq1" name="sq1" placeholder="Question 1 (e.g., Min 2 years React experience?)">
+                                    <label for="sq1" class="hidden">Screening Question 1</label>                                     <input type="text" id="sq1" name="sq1" placeholder="Question 1 (e.g., Min 2 years React experience?)">                                                                        <label for="sq2" class="hidden">Screening Question 2</label>                                     <input type="text" id="sq2" name="sq2" placeholder="Question 2 (e.g., Notice Period less than 30 days?)">                                                                        <label for="sq3" class="hidden">Screening Question 3 (Optional)</label>                                     <input type="text" id="sq3" name="sq3" placeholder="Question 3 (Optional)">                                                                    </div>
 
-                                    <label for="sq2" class="hidden">Screening Question 2</label>
-                                    <input type="text" id="sq2" name="sq2" placeholder="Question 2 (e.g., Notice Period less than 30 days?)">
-
-                                    <label for="sq3" class="hidden">Screening Question 3 (Optional)</label>
-                                    <input type="text" id="sq3" name="sq3" placeholder="Question 3 (Optional)">
-                                </div>
-
+                            
                                 <div class="form-actions">
-                                    <button type="button" class="btn prev-step-btn" data-step="3">Back</button>
-                                    <button type="submit" id="postJobSubmitBtn" class="btn btn-primary">Review & Post Job</button>
-                                </div>
-                            </form>
+                                    <button type="button" class="btn prev-step-btn" data-step="3">Back</button>                                     <button type="submit" id="postJobSubmitBtn" class="btn btn-primary">Review & Post Job</button>                                                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
-                </div>
 
+            
                 <div id="employer-management-view" class="full-screen-view card">
+                
                     <div class="employer-management-header">
+                    
                         <h2>Manage Posted Jobs</h2>
-                        <button id="postNewJobBtn" class="btn btn-primary">Post New Job</button>
-                    </div>
+                        <button id="postNewJobBtn" class="btn btn-primary">Post New Job</button>                     </div>
+                
                     <div class="posted-jobs-section">
+                    
                         <h3>Your Posted Jobs (Click to View Applicants)</h3>
+                    
                         <div id="posted-jobs-list" class="job-list"></div>
+                        </div>
                     </div>
+
                 </div>
-
             </div>
-        </div>
 
+    
         <div id="admin-view" class="page-view hidden admin-container">
+        
             <h2>Admin Overview</h2>
+        
             <div class="stats-container">
+            
                 <div class="stat-card"><i class="fas fa-users"></i>
                     <h3>Total Job Seekers</h3>
+                
                     <p id="total-seekers">0</p>
-                </div>
+                    </div>
+            
                 <div class="stat-card"><i class="fas fa-building"></i>
                     <h3>Total Employers</h3>
+                
                     <p id="total-employers">0</p>
-                </div>
+                    </div>
+            
                 <div class="stat-card"><i class="fas fa-briefcase"></i>
                     <h3>Total Jobs Posted</h3>
+                
                     <p id="total-jobs">0</p>
-                </div>
+                    </div>
+            
                 <div class="stat-card"><i class="fas fa-rocket"></i>
                     <h3>Active Subscriptions</h3>
+                
                     <p id="total-subscriptions">0</p>
+                    </div>
+                </div>
+        
+            <div class="admin-lists card">
+            
+                <h2>Job Seeker Profiles</h2>
+            
+                <div id="job-seekers-list"></div>
+                </div>
+        
+            <div class="admin-lists card">
+            
+                <h2>Employer Profiles</h2>
+            
+                <div id="employer-profiles-list"></div>
                 </div>
             </div>
-            <div class="admin-lists card">
-                <h2>Job Seeker Profiles</h2>
-                <div id="job-seekers-list"></div>
-            </div>
-            <div class="admin-lists card">
-                <h2>Employer Profiles</h2>
-                <div id="employer-profiles-list"></div>
-            </div>
-        </div>
-    </main>
+        </main>
+
 
     <div id="design-globe-container">
+    
         <div class="globe-center-small">
-            <img src="honeycomb.webp" alt="HireHive Globe" class="honeycomb-globe-small" onerror="this.onerror=null;this.src='https://placehold.co/100x100/ffc107/343a40?text=Logo';">
-        </div>
+            <img src="honeycomb.webp" alt="HireHive Globe" class="honeycomb-globe-small" onerror="this.onerror=null;this.src='https://placehold.co/100x100/ffc107/343a40?text=Logo';">         </div>
+    
         <div class="opportunity-orbit-container-small">
+        
             <div class="hive-cell-small orbit-item-small item-1-small"><span><i class="fas fa-laptop-code"></i> IT</span></div>
+        
             <div class="hive-cell-small orbit-item-small item-2-small"><span><i class="fas fa-bullhorn"></i> Mktg</span></div>
+        
             <div class="hive-cell-small orbit-item-small item-3-small"><span><i class="fas fa-industry"></i> Mfg</span></div>
+        
             <div class="hive-cell-small orbit-item-small item-4-small"><span><i class="fas fa-concierge-bell"></i> Hosp</span></div>
+        
             <div class="hive-cell-small orbit-item-small item-5-small"><span><i class="fas fa-chart-line"></i> Sales</span></div>
+        
             <div class="hive-cell-small orbit-item-small item-6-small"><span><i class="fas fa-handshake"></i> Mgmt</span></div>
+            </div>
         </div>
-    </div>
+
     <footer>
+    
         <div class="footer-container">
+        
             <div class="footer-col">
+            
                 <h4>HireHive</h4>
+            
                 <p>Your ultimate destination for career opportunities and talent acquisition.</p>
+            
                 <p>&copy; 2025 HireHive. All rights reserved.</p>
-            </div>
+                </div>
+        
             <div class="footer-col">
+            
                 <h4>Quick Links</h4>
+            
                 <ul>
+                
                     <li><a href="#home" data-view="home">Home</a></li>
+                
                     <li><a href="#services" data-view="home-link">Domains</a></li>
-                </ul>
-            </div>
+                    </ul>
+                </div>
+        
             <div class="footer-col">
+            
                 <h4>Company</h4>
+            
                 <ul>
+                
                     <li><a href="#about" data-view="about">About Us</a></li>
+                
                     <li><a href="#contact" data-view="contact">Contact Us</a></li>
+                
                     <li><a href="#career-growth" data-view="career-growth">Career Growth at HireHive</a></li>
-                </ul>
-            </div>
+                    </ul>
+                </div>
+        
             <div class="footer-col social">
+            
                 <h4>Follow Us</h4>
-                <i class="fab fa-facebook-f" aria-label="Follow us on Facebook"></i>
-                <i class="fab fa-twitter" aria-label="Follow us on Twitter"></i>
-                <i class="fab fa-linkedin-in" aria-label="Connect on LinkedIn"></i>
-                <i class="fab fa-instagram" aria-label="Follow us on Instagram"></i>
+                <i class="fab fa-facebook-f" aria-label="Follow us on Facebook"></i>                 <i class="fab fa-twitter" aria-label="Follow us on Twitter"></i>                 <i class="fab fa-linkedin-in" aria-label="Connect on LinkedIn"></i>                                <i class="fab fa-instagram" aria-label="Follow us on Instagram"></i>             </div>
             </div>
-        </div>
-    </footer>
+        </footer>
+
 
     <div id="statusMessageModal" class="modal">
+    
         <div class="modal-content small-modal">
             <span class="close-btn status-close-btn">&times;</span>
             <h3 id="statusMessageTitle"></h3>
+        
             <p id="statusMessageBody"></p>
-            <button class="btn btn-primary status-close-btn">OK</button>
+            <button class="btn btn-primary status-close-btn">OK</button>         </div>
         </div>
-    </div>
+
 
     <div id="confirmationModal" class="modal">
+    
         <div class="modal-content small-modal">
+        
             <h3 id="confirmTitle"></h3>
+        
             <p id="confirmBody"></p>
             <input type="text" id="confirmInput" class="hidden" placeholder="Enter your answer">
             <div class="modal-actions" style="display: flex; justify-content: space-around; gap: 10px; margin-top: 1rem;">
-                <button class="btn" id="confirmCancelBtn">Cancel</button>
-                <button class="btn btn-primary" id="confirmOKBtn">OK</button>
+                <button class="btn" id="confirmCancelBtn">Cancel</button>                 <button class="btn btn-primary" id="confirmOKBtn">OK</button>             </div>
             </div>
         </div>
-    </div>
+
 
     <div id="authModal" class="modal">
+    
         <div class="modal-content">
             <span class="close-btn">&times;</span>
             <div id="login-form-container">
+            
                 <h3>Login to HireHive</h3>
+            
                 <form id="loginForm">
-                    <label for="loginEmail" class="hidden">Email</label>
-                    <input type="email" id="loginEmail" name="loginEmail" placeholder="Email" required />
+                    <label for="loginEmail" class="hidden">Email</label>                     <input type="email" id="loginEmail" name="loginEmail" placeholder="Email" required />                     <label for="loginPassword" class="hidden">Password</label>                                        <input type="password" id="loginPassword" name="loginPassword" placeholder="Password" required />                     <button type="submit" id="submitLoginBtn" class="btn btn-primary">Login</button>           
+                        </form>
 
-                    <label for="loginPassword" class="hidden">Password</label>
-                    <input type="password" id="loginPassword" name="loginPassword" placeholder="Password" required />
-
-                    <button type="submit" id="submitLoginBtn" class="btn btn-primary">Login</button>
-                </form>
-
+            
                 <div class="google-auth-separator" style="margin-top: 1rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; width: 100%;">
+                
                     <hr style="flex-grow: 1; border: 0; border-top: 1px solid #ccc;"><span style="padding: 0 10px; color: #666;">OR</span>
-                    <hr style="flex-grow: 1; border: 0; border-top: 1px solid #ccc;">
-                </div>
+                    <hr style="flex-grow: 1; border: 0; border-top: 1px solid #ccc;">                 </div>
                 <button id="googleLoginBtn" class="btn btn-primary btn-google" style="background-color: #4285F4; color: white; width: 100%;">
-                    <i class="fab fa-google"></i> Sign In with Google
-                </button>
+                    <i class="fab fa-google"></i> Sign In with Google
+                </button>             </div>
 
-            </div>
-
+        
             <div id="signup-form-container" class="hidden">
+            
                 <h3>Join the Hive</h3>
+            
                 <form id="signupForm">
-                    <label for="signupName" class="hidden">Full Name</label>
-                    <input type="text" id="signupName" name="signupName" placeholder="Full Name" required/>
+                    <label for="signupName" class="hidden">Full Name</label>                     <input type="text" id="signupName" name="signupName" placeholder="Full Name" required/>                     <label for="signupEmail" class="hidden">Email</label>                                        <input type="email" id="signupEmail" name="signupEmail" placeholder="Email" required />                     <label for="signupPassword" class="hidden">Password</label>                     <input type="password"
+                        id="signupPassword" name="signupPassword" placeholder="Password" required />                     <label for="signupPhone" class="hidden">Phone Number</label>                     <input type="tel" id="signupPhone" name="signupPhone"
+                        placeholder="Phone Number (10 digits)" pattern="[0-9]{10}" maxlength="10" required/>                     <label for="signupCompanyName" class="hidden">Company Name</label>                     <input type="text" id="signupCompanyName"
+                        name="signupCompanyName" placeholder="Company Name" class="hidden" />                     <label for="userType" class="hidden">I am a...</label>                     <select id="userType" name="userType" required>
+                        <option value="seeker">I'm a Job Seeker</option>
+                        <option value="employer">I'm an Employer</option>
+                    </select>                     <button type="submit" id="submitSignupBtn" class="btn btn-primary">Sign Up</button>                 </form>
+                </div>
 
-                    <label for="signupEmail" class="hidden">Email</label>
-                    <input type="email" id="signupEmail" name="signupEmail" placeholder="Email" required />
-
-                    <label for="signupPassword" class="hidden">Password</label>
-                    <input type="password" id="signupPassword" name="signupPassword" placeholder="Password" required />
-
-                    <label for="signupPhone" class="hidden">Phone Number</label>
-                    <input type="tel" id="signupPhone" name="signupPhone" placeholder="Phone Number (10 digits)" pattern="[0-9]{10}" maxlength="10" required/>
-
-                    <label for="signupCompanyName" class="hidden">Company Name</label>
-                    <input type="text" id="signupCompanyName" name="signupCompanyName" placeholder="Company Name" class="hidden" />
-
-                    <label for="userType" class="hidden">I am a...</label>
-                    <select id="userType" name="userType" required>
-                        <option value="seeker">I'm a Job Seeker</option>
-                        <option value="employer">I'm an Employer</option>
-                    </select>
-                    <button type="submit" id="submitSignupBtn" class="btn btn-primary">Sign Up</button>
-                </form>
-            </div>
-
+        
             <div id="otp-form-container" class="hidden">
-            </div>
+                </div>
 
+        
             <p><a href="#" class="switch-link" id="switch-form-link">Already have an account? Log In</a></p>
+            </div>
         </div>
-    </div>
+
 
     <div id="applicantsModal" class="modal">
+    
         <div class="modal-content large-modal">
             <span class="close-btn" id="close-applicants-modal">&times;</span>
             <h3>Applicants for <span id="applicants-job-title"></span></h3>
+        
             <div id="applicants-list">
+                </div>
             </div>
         </div>
-    </div>
+
 
     <div id="subscriptionModal" class="modal">
+    
         <div class="modal-content">
+            </div>
         </div>
-    </div>
+
 
     <script src="app.js"></script>
 </body>
-
-</html>
 
 </html>

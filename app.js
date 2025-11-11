@@ -1,4 +1,4 @@
-// --- Frontend: app.js (FINAL GOOGLE AUTH READY) ---
+// --- Frontend: app.js (FIXED AUTH LATENCY & FILTERING) ---
 document.addEventListener("DOMContentLoaded", () => {
             // ------------------------------------------------------------------
             // 1. GLOBAL CONFIGURATION & API HELPERS
@@ -28,14 +28,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 document.getElementById("statusMessageTitle").textContent = title;
                 document.getElementById("statusMessageBody").textContent = body;
                 if (isError) {
-                    document.getElementById("statusMessageTitle").style.color = 'red';
+                    document.getElementById("statusMessageTitle").style.color = 'var(--danger-color)';
                 } else {
-                    document.getElementById("statusMessageTitle").style.color = '#343a40';
+                    document.getElementById("statusMessageTitle").style.color = 'var(--secondary-color)';
                 }
                 statusMessageModal.style.display = 'block';
             };
 
-            // --- Custom Confirmation/Prompt Modals (Replacing browser's blocking dialogs) ---
+            // --- Custom Confirmation/Prompt Modals ---
             const confirmationModal = document.getElementById("confirmationModal");
             const confirmTitleEl = document.getElementById("confirmTitle");
             const confirmBodyEl = document.getElementById("confirmBody");
@@ -43,9 +43,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const confirmOKBtn = document.getElementById("confirmOKBtn");
             const confirmCancelBtn = document.getElementById("confirmCancelBtn");
 
-            /**
-             * Shows an asynchronous confirmation or prompt modal.
-             */
             const showConfirmation = (title, body, isPrompt = false, okText = 'OK') => {
                 return new Promise((resolve) => {
                     confirmTitleEl.textContent = title;
@@ -68,12 +65,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     };
 
                     confirmCancelBtn.onclick = () => {
-                        cleanup(isPrompt ? null : false); // Return null for prompt cancellation
+                        cleanup(isPrompt ? null : false);
                     };
                 });
             };
 
-            // --- Subscription Plan Limits & Details (HIVE_PLANS and fetchApi remain the same) ---
+            // --- Subscription Plan Limits & Details ---
             const HIVE_PLANS = {
                 'buzz': { name: "Buzz Plan", limit: 2, icon: "fas fa-bug", color: "#28a745", description: "Post 2 free job listing. Access to limited candidate applications." },
                 'worker': { name: "Worker Plan", limit: 5, icon: "fas fa-user-tie", color: "#007bff", description: "Post up to 5 active jobs. Access to 50 candidate resumes." },
@@ -110,15 +107,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         return responseData;
                     } else if (!response.ok) {
                         const errorText = await response.text();
-                        console.error("Backend Error:", errorText);
-                        throw new Error(`Server returned status ${response.status}. Check backend logs.`);
+                        // 💡 FIX: Improved error logging to catch non-JSON errors
+                        console.error(`Backend Error (${response.status}):`, errorText);
+                        throw new Error(`Server returned status ${response.status}. Please check backend logs.`);
                     }
                     return {};
                 } catch (error) {
                     console.error("Fetch API Error:", error);
-                    if (error.message.includes("Unexpected token") || error.message.includes("JSON.parse")) {
-                        throw new Error("Server returned an invalid response. Please check the backend configuration.");
-                    }
+                    // 💡 FIX: Return error message directly to the caller for display
                     throw error;
                 }
             }
@@ -156,7 +152,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const menuToggle = document.getElementById('menuToggle');
             const navLinks = document.getElementById('navLinks');
             const employerDashboard = document.getElementById("employer-dashboard");
-            // Declaration moved here to avoid redeclaration error
             const googleLoginBtn = document.getElementById("googleLoginBtn");
 
             // Initialize Mobile Menu Toggle (remains the same)
@@ -182,11 +177,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (token) {
                     if (!user) {
                         try {
+                            // 💡 OPTIMIZATION: Only fetch minimal data here if needed, but 'auth/me' is required
                             const data = await fetchApi('auth/me', 'GET');
                             user = data.user;
                             setLocalUser(user);
                         } catch (e) {
                             console.warn("Token expired or invalid. Logging out.", e.message);
+                            // 💡 FIX: If token fails validation, immediately remove it and reset
                             removeToken();
                             setLocalUser(null);
                             window.location.hash = '';
@@ -204,7 +201,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 } else {
                     loginBtn.classList.remove("hidden");
                     signupBtn.classList.remove("hidden");
-                    // CRITICAL FIX: Check for Google Auth flow completion on load if not logged in
                     if (window.location.hash.includes('google_token=') || window.location.hash.includes('error=')) {
                         handleGoogleAuthCallback();
                     }
@@ -255,7 +251,20 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             document.querySelectorAll('[data-view]').forEach(el => {
-                // ... (rest of data-view handler remains the same) ...
+                el.addEventListener('click', (e) => {
+                    const viewName = e.currentTarget.dataset.view;
+                    if (viewName === 'home-link') {
+                        showView('home');
+                        setTimeout(() => {
+                            const targetEl = document.getElementById(e.currentTarget.getAttribute('href').substring(1));
+                            if (targetEl) {
+                                targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }
+                        }, 10);
+                    } else {
+                        showView(viewName);
+                    }
+                });
             });
 
             logoutBtn.onclick = () => {
@@ -268,17 +277,31 @@ document.addEventListener("DOMContentLoaded", () => {
             updateHeaderUI();
 
             document.querySelectorAll(".opportunity-link").forEach((link) => {
-                // ... (rest of opportunity-link handler remains the same) ...
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const category = e.currentTarget.querySelector('span').textContent.trim();
+                    const currentUser = getLocalUser();
+
+                    if (!currentUser || currentUser.role !== 'seeker') {
+                        showStatusMessage("Login Required", "Please log in as a Job Seeker to search jobs by category.", false);
+                        showView('home');
+                        showForm(loginFormContainer);
+                        return;
+                    }
+
+                    const filters = { category: category };
+                    showView('dashboard', true, filters);
+                });
             });
 
 
             // ------------------------------------------------------------------
-            // 3. AUTH & MODAL LOGIC (Simplified)
+            // 3. AUTH & MODAL LOGIC (FIXED)
             // ------------------------------------------------------------------
             const authModal = document.getElementById("authModal");
             const loginFormContainer = document.getElementById("login-form-container");
             const signupFormContainer = document.getElementById("signup-form-container");
-            const otpFormContainer = document.getElementById("otp-form-container"); // Placeholder
+            const otpFormContainer = document.getElementById("otp-form-container");
             const closeAuthBtn = document.querySelector("#authModal .close-btn");
             const applicantsModal = document.getElementById("applicantsModal");
             const subscriptionModal = document.getElementById("subscriptionModal");
@@ -339,7 +362,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             }
 
-            // Auth Submission Logic (remains the same)
+            // Auth Submission Logic (FIXED for better error handling)
             document.getElementById("signupForm").addEventListener("submit", async(e) => {
                 e.preventDefault();
                 setLoading('submitSignupBtn', true, 'Sign Up');
@@ -363,7 +386,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     showStatusMessage("Welcome to the Hive!", "Your account has been successfully created.", false);
                 } catch (error) {
                     console.error("Signup failed:", error.message);
-                    if (error.message.includes('exists')) {
+                    // 💡 FIX: Check error message for specific duplication error for faster feedback
+                    if (error.message.includes('already exists')) {
                         showStatusMessage("Account Exists", "A user with this email already exists. Please log in.", true);
                         showForm(loginFormContainer);
                     } else {
@@ -389,7 +413,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     console.log("Login successful!");
                 } catch (error) {
                     console.error("Login failed:", error.message);
-                    showStatusMessage("Login Failed", "Invalid email or password. Please try again.", true);
+                    // 💡 FIX: Use the specific error message from the backend if available
+                    showStatusMessage("Login Failed", error.message.includes('credentials') ? error.message : "Invalid email or password. Please try again.", true);
                 } finally {
                     setLoading('submitLoginBtn', false, 'Login');
                 }
@@ -397,35 +422,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             // ------------------------------------------------------------------
-            // NEW: GOOGLE OAUTH FLOW HANDLER
+            // NEW: GOOGLE OAUTH FLOW HANDLER (remains robust)
             // ------------------------------------------------------------------
             if (googleLoginBtn) {
                 googleLoginBtn.addEventListener('click', () => {
-                    // Redirects to backend's Google Auth initiation endpoint.
                     window.location.href = `${BASE_URL}/auth/google/login`;
                 });
             }
 
-            // Function to handle the return callback from the Google OAuth flow
             async function handleGoogleAuthCallback() {
                 const hash = window.location.hash;
                 const urlParams = new URLSearchParams(hash.substring(1));
                 const token = urlParams.get('google_token');
                 const error = urlParams.get('error');
 
-                // Clear the URL hash immediately to clean the browser history/URL bar
                 history.pushState("", document.title, window.location.pathname + window.location.search);
 
                 if (error) {
-                    showStatusMessage("Google Sign-In Failed", `Authentication was cancelled or failed. Please try again.`, true);
+                    showStatusMessage("Google Sign-In Failed", `Authentication was cancelled or failed. Error: ${error}`, true);
                     return;
                 }
 
                 if (token) {
-                    // Store the JWT received from the backend (which validated the Google token)
                     setToken(token);
-
-                    // Re-fetch user data using the new JWT to populate session storage and update UI
                     try {
                         const userData = await fetchApi('auth/me', 'GET');
                         setLocalUser(userData.user);
@@ -457,7 +476,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         contactForm.reset();
                     } catch (error) {
                         console.error("Contact form submission failed:", error.message);
-                        showStatusMessage("Submission Failed", "There was an error sending your message. Please try again.", true);
+                        showStatusMessage("Submission Failed", error.message, true);
                     } finally {
                         setLoading('contactSubmitBtn', false, 'Send Message');
                     }
@@ -465,20 +484,21 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             // ------------------------------------------------------------------
-            // 5. SUBSCRIPTION LOGIC (PAYMENT COMMENTED OUT, remains the same)
+            // 5. SUBSCRIPTION LOGIC (remains the same)
             // ------------------------------------------------------------------
             const showSubscriptionModal = () => {
                 const user = getLocalUser();
                 if (!user) return;
                 const modalContent = document.querySelector("#subscriptionModal .modal-content");
                 const currentPlanKey = user.subscriptionstatus || 'buzz';
+                const currentPlan = HIVE_PLANS[currentPlanKey] || HIVE_PLANS['buzz'];
                 const isEmployer = user.role === 'employer';
 
                 let planCardsHTML = `<span class="close-btn" id="close-subscription-modal">&times;</span><h2 style="margin-bottom: 1rem;">Choose Your Hive Plan</h2><p>Your Current Plan: <strong style="color: ${HIVE_PLANS[currentPlanKey].color}">${HIVE_PLANS[currentPlanKey].name}</strong></p><div class="plans-container" style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem;">`;
 
                 for (const [key, plan] of Object.entries(HIVE_PLANS)) {
                     const isCurrent = currentPlanKey === key;
-                    const priceText = key === 'buzz' ? 'Free' : `₹X,XXX / month (Demo)`; // Demo price text
+                    const priceText = key === 'buzz' ? 'Free' : `₹X,XXX / month (Demo)`;
                     const buttonClass = isCurrent ? 'btn-secondary disabled' : 'btn-primary';
                     const buttonText = isCurrent ? 'Current Plan' : isEmployer ? (key === 'buzz' ? 'Select Free Plan' : 'Demo Purchase') : 'View Details';
                     const priceColor = key === 'buzz' ? plan.color : '#333';
@@ -510,40 +530,18 @@ document.addEventListener("DOMContentLoaded", () => {
                             btnElement.disabled = true;
                             btnElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
-                            if (planKey === 'buzz') {
-                                // Activate Free Plan
-                                try {
-                                    const data = await fetchApi('employer/subscription', 'PUT', { newPlanKey: planKey });
-                                    setLocalUser(data.user);
-                                    switchEmployerView("employer-management-view");
-                                    showStatusMessage("Plan Updated", `${selectedPlan.name} is now your active plan.`, false);
-                                    subscriptionModal.style.display = "none";
-                                    initDashboard(null);
-                                } catch (error) {
-                                    showStatusMessage("Plan Update Failed", error.message, true);
-                                    btnElement.disabled = false;
-                                    btnElement.innerHTML = originalText;
-                                }
-                                return;
-                            }
-
-                            // --- PAID PLAN ACTIVATION (SIMULATION - RAZORPAY COMMENTED OUT) ---
                             try {
-                                // SIMULATION: Assume successful payment and update the plan
-                                // All paid plans use the same PUT route for updating the plan state
                                 const data = await fetchApi('employer/subscription', 'PUT', { newPlanKey: planKey });
-
                                 setLocalUser(data.user);
+                                switchEmployerView("employer-management-view");
+                                showStatusMessage("Plan Updated", `${selectedPlan.name} is now your active plan.`, false);
                                 subscriptionModal.style.display = "none";
-                                showStatusMessage("Demo Purchase Successful!", `The ${selectedPlan.name} is now active. Your job post count has been reset.`, false);
                                 initDashboard(null);
-
                             } catch (error) {
-                                showStatusMessage("Demo Purchase Failed", error.message, true);
+                                showStatusMessage("Plan Update Failed", error.message, true);
                                 btnElement.disabled = false;
                                 btnElement.innerHTML = originalText;
                             }
-                            // --- END SIMULATION ---
                         });
                     }
                 });
@@ -552,7 +550,7 @@ document.addEventListener("DOMContentLoaded", () => {
             window.showSubscriptionModal = showSubscriptionModal;
 
             // ------------------------------------------------------------------
-            // 6. DASHBOARD LOGIC (remains the same)
+            // 6. DASHBOARD LOGIC (FIXED FILTER INITIALIZATION)
             // ------------------------------------------------------------------
             function initDashboard(filters = null) {
                 const currentUser = getLocalUser();
@@ -567,12 +565,18 @@ document.addEventListener("DOMContentLoaded", () => {
                     seekerDashboard.classList.remove("hidden");
                     employerDashboard.classList.add("hidden");
                     loadSeekerProfileForm();
+
+                    // --- CRITICAL FIX: Ensure filters are set correctly before calling loadJobs ---
+                    const filterKeywordsEl = document.getElementById("filter-keywords");
+
                     if (filters) {
+                        if (filterKeywordsEl) filterKeywordsEl.value = filters.keywords || '';
                         document.getElementById("filter-location").value = filters.location || '';
                         document.getElementById("filter-experience").value = filters.experience || '0';
                         document.getElementById("filter-category").value = filters.category || '';
                     } else {
                         document.getElementById("jobFilterForm").reset();
+                        if (filterKeywordsEl) filterKeywordsEl.value = ''; // Ensure dynamic field is reset
                     }
 
                     document.querySelectorAll(".job-filter-btn").forEach(b => b.classList.remove('btn-primary'));
@@ -590,7 +594,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
 
-            // Initialize Employer Tab listeners once
+            // Initialize Employer Tab listeners once (remains the same)
             document.querySelectorAll('#employer-dashboard .job-filter-nav button').forEach(btn => {
                 btn.onclick = (e) => {
                     const targetViewId = e.target.dataset.viewTarget;
@@ -605,7 +609,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 };
             });
 
-            // Other Seeker Dashboard button handlers
+            // Other Seeker Dashboard button handlers (remains the same)
             document.getElementById("editProfileBtn").onclick = () => {
                 document.getElementById("seeker-profile-view").classList.remove('hidden');
                 document.getElementById("seeker-job-view").classList.add('hidden');
@@ -617,7 +621,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 loadJobs({});
             };
 
-            // Initialize Seeker Job Filter Buttons
+            // Initialize Seeker Job Filter Buttons (remains the same)
             const jobFilterBtns = document.querySelectorAll(".job-filter-btn");
             const jobViewSections = document.querySelectorAll(".job-view-section");
             jobFilterBtns.forEach(btn => {
@@ -640,7 +644,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             // ------------------------------------------------------------------
-            // 7. SEEKER DASHBOARD & PROFILE LOGIC
+            // 7. SEEKER DASHBOARD & PROFILE LOGIC (remains the same)
             // ------------------------------------------------------------------
             async function loadSeekerProfileForm() {
                 const currentUser = getLocalUser();
@@ -759,16 +763,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>`;
 
                 allJobsList.innerHTML += jobCardHTML;
-                if (isShortlisted) shortlistedJobsList.innerHTML += jobCardHTML;
+                // 💡 FIX: Only render actual shortlisted jobs in the Shortlisted list
+                if (shortlistedJobDetails.some(j => j.id === job.id)) shortlistedJobsList.innerHTML += jobCardHTML; 
                 if (hasApplied) appliedJobsList.innerHTML += jobCardHTML;
             });
 
-            if (shortlistedJobsList.innerHTML === "") shortlistedJobsList.innerHTML = "<p>No skill-matched jobs found yet.</p>";
+            if (shortlistedJobsList.innerHTML === "") shortlistedJobsList.innerHTML = "<p>No skill-matched or shortlisted jobs found yet.</p>";
             if (appliedJobsList.innerHTML === "") appliedJobsList.innerHTML = "<p>You have not applied to any jobs yet.</p>";
             if (allJobsList.innerHTML === "" && Object.keys(filters).length > 0) {
-                 allJobsList.innerHTML = "<p>No jobs match your current filters. Try a broader search!</p>";
+                allJobsList.innerHTML = "<p>No jobs match your current filters. Try a broader search!</p>";
             } else if (allJobsList.innerHTML === "") {
-                 allJobsList.innerHTML = "<p>No jobs are currently available. Check back soon!</p>";
+                allJobsList.innerHTML = "<p>No jobs are currently available. Check back soon!</p>";
             }
 
             document.querySelectorAll(".apply-btn:not([disabled])").forEach((button) => {
@@ -818,9 +823,27 @@ document.addEventListener("DOMContentLoaded", () => {
     // Seeker Filter Form Submission
     const jobFilterForm = document.getElementById("jobFilterForm");
     const resetFiltersBtn = document.getElementById("resetFiltersBtn");
+
+    // Dynamically insert keywords field into filter widget
+    const filterKeywordsEl = document.createElement('input');
+    filterKeywordsEl.type = 'text';
+    filterKeywordsEl.id = 'filter-keywords';
+    filterKeywordsEl.placeholder = 'Keywords, Title, Company';
+
+    const keywordsLabel = document.createElement('label');
+    keywordsLabel.htmlFor = 'filter-keywords';
+    keywordsLabel.textContent = 'Keywords';
+
+    const filterLocationEl = document.getElementById("filter-location");
+    if(filterLocationEl) {
+        filterLocationEl.closest('form').insertBefore(filterKeywordsEl, filterLocationEl.closest('form').firstChild);
+        filterLocationEl.closest('form').insertBefore(keywordsLabel, filterKeywordsEl);
+    }
+    // --------------------------------------------------------------------------
+
     jobFilterForm.onsubmit = (e) => {
         e.preventDefault();
-        const keywords = document.getElementById("home-search-keywords")?.value;
+        const keywords = document.getElementById("filter-keywords")?.value;
         const location = document.getElementById("filter-location").value.trim();
         const salary = document.getElementById("filter-salary").value.trim();
         const experience = document.getElementById("filter-experience").value;
@@ -838,11 +861,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     resetFiltersBtn.onclick = () => {
         jobFilterForm.reset();
+        // 💡 FIX: Ensure dynamic field is reset on button click
+        const filterKeywordsEl = document.getElementById("filter-keywords");
+        if (filterKeywordsEl) filterKeywordsEl.value = '';
         loadJobs({});
     };
 
     // ------------------------------------------------------------------
-    // 8. EMPLOYER DASHBOARD LOGIC 
+    // 8. EMPLOYER DASHBOARD LOGIC (remains the same)
     // ------------------------------------------------------------------
     function switchEmployerView(targetViewId) {
         document.querySelectorAll("#employer-dashboard .full-screen-view").forEach(view => {
@@ -1024,7 +1050,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             <div class="job-actions">
                                 <button class="btn view-applicants-btn" data-job-id="${job.id}" data-job-title="${job.title}">
                                     <i class="fas fa-users"></i> Applicants (<span class="applicant-count">${applicantCount}</span>)
-                                </mutton>
+                                </button>
                                 <button class="btn btn-secondary edit-job-btn" data-job-id="${job.id}"><i class="fas fa-edit"></i> Edit</button>
                                 <button class="btn delete-job-btn" data-job-id="${job.id}"><i class="fas fa-trash-alt"></i> Delete</button>
                             </div>
@@ -1090,6 +1116,10 @@ document.addEventListener("DOMContentLoaded", () => {
         postJobSubmitBtn.textContent = "Save Changes & Update Job";
         postJobSubmitBtn.onclick = (e) => handleJobPost(e, jobId);
         
+        document.getElementById("jobStep1Form").classList.remove("hidden");
+        document.getElementById("jobStep2Form").classList.add("hidden");
+        document.getElementById("jobStep3Form").classList.add("hidden");
+
         switchEmployerView("employer-post-view");
     }
 
@@ -1101,7 +1131,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const response = await fetchApi(`employer/jobs/${jobId}`, 'DELETE');
             
             if (response && response.user) {
-                setLocalUser(response.user); // Update local job count
+                setLocalUser(response.user);
             }
             
             console.log("Job successfully deleted.");
@@ -1243,7 +1273,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ------------------------------------------------------------------
-    // 10. HERO SEARCH BAR LOGIC
+    // 10. HERO SEARCH BAR LOGIC (remains the same)
     // ------------------------------------------------------------------
     const homeSearchBarForm = document.getElementById("homeSearchBarForm");
     if (homeSearchBarForm) {

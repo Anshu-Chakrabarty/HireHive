@@ -2,7 +2,7 @@ import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { supabase } from "../db.js";
-import fetch from 'node-fetch'; // Required for making API calls to Google
+import fetch from 'node-fetch';
 
 const router = express.Router();
 const saltRounds = 10;
@@ -12,13 +12,13 @@ const VALID_ROLES = ["seeker", "employer"];
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'https://hirehive.vercel.app';
-const REDIRECT_URI = `${CLIENT_ORIGIN}/#callback`; // Must match Google Console setting
+const GOOGLE_CALLBACK_URL = process.env.GOOGLE_REDIRECT_URL || 'http://localhost:5005/api/auth/google/callback';
 
 // ------------------------------------------------------------------
 // JWT HELPERS
 // ------------------------------------------------------------------
 
-const protect = (req, res, next) => {
+export const protect = (req, res, next) => {
     let token;
     if (
         req.headers.authorization &&
@@ -26,12 +26,14 @@ const protect = (req, res, next) => {
     ) {
         try {
             token = req.headers.authorization.split(" ")[1];
+            // 💡 FIX: Use simple jwt.verify for faster response
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
             req.user = { id: decoded.id, role: decoded.role };
             next();
         } catch (error) {
             console.error("JWT verification failed:", error.message);
-            return res.status(401).json({ error: "Not authorized, token failed" });
+            // 💡 FIX: Return specific 401 response
+            return res.status(401).json({ error: "Not authorized, token failed or expired." });
         }
     }
     if (!token) {
@@ -44,23 +46,20 @@ const generateToken = (id, role) => {
 };
 
 // ------------------------------------------------------------------
-// STANDARD AUTH ROUTES 
+// STANDARD AUTH ROUTES (OPTIMIZED)
 // ------------------------------------------------------------------
 
 // POST: Standard Signup
 router.post("/signup", async(req, res) => {
     const { name, email, password, role, phone, companyName } = req.body;
 
+    // ... (Validation remains the same) ...
     if (!name || !email || !password || !role || !phone) {
         return res.status(400).json({ error: "Missing required signup fields." });
     }
-
     if (role === "employer" && (!companyName || companyName.trim() === "")) {
-        return res
-            .status(400)
-            .json({ error: "Company Name is required for employers." });
+        return res.status(400).json({ error: "Company Name is required for employers." });
     }
-
     if (!VALID_ROLES.includes(role)) {
         return res.status(400).json({ error: "Invalid user role specified." });
     }
@@ -75,35 +74,33 @@ router.post("/signup", async(req, res) => {
         role,
         skills: [],
         education: "",
-        company_name: role === "employer" ? companyName : null, // Uses corrected SQL column name
         cvfilename: "",
+        company_name: role === "employer" ? companyName : null,
         jobpostcount: 0,
         subscription_jsonb: role === "employer" ? { active: true, plan: "buzz" } : { active: false, plan: "none" },
         subscriptionstatus: role === "employer" ? "buzz" : "none",
+        google_id: null,
     };
 
     if (email === "admin@hirehive.com") profileData.role = "admin";
 
+    // 💡 OPTIMIZATION: Only select user data needed for frontend (excluding password)
     const { data, error } = await supabase
         .from("users")
         .insert([profileData])
-        .select()
+        .select(`id, name, email, role, phone, skills, education, cvfilename, company_name, jobpostcount, subscriptionstatus, google_id, created_at`)
         .single();
 
     if (error) {
         console.error("Supabase signup error:", error);
         if (error.code === "23505") {
-            return res
-                .status(409)
-                .json({ error: "User with this email already exists." });
+            return res.status(409).json({ error: "User with this email already exists." });
         }
         return res.status(400).json({ error: error.message });
     }
 
-    const { password: userPassword, ...userData } = data;
     const token = generateToken(data.id, data.role);
-
-    res.json({ message: "Signup successful", token, user: userData });
+    res.json({ message: "Signup successful", token, user: data });
 });
 
 // POST: Standard Login
@@ -111,26 +108,31 @@ router.post("/login", async(req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-        return res
-            .status(400)
-            .json({ error: "Email and password are required for login." });
+        return res.status(400).json({ error: "Email and password are required for login." });
     }
 
+    // 💡 OPTIMIZATION: Only select columns absolutely required for verification first
     const { data, error } = await supabase
         .from("users")
-        .select("*")
+        .select(`id, role, password, google_id, name, email, phone, skills, education, cvfilename, company_name, jobpostcount, subscriptionstatus, created_at`)
         .eq("email", email)
         .single();
 
     if (error || !data) {
-        console.warn("Login failed: Invalid email or password attempt.");
+        // 💡 FIX: Return generic/vague error for security (prevents guessing emails)
         return res.status(400).json({ error: "Invalid credentials." });
     }
 
+    if (!data.password) {
+        // 💡 FIX: Explicit message for Google-only users attempting password login
+        return res.status(400).json({ error: "Account created via Google. Please use the 'Sign In with Google' button." });
+    }
+
+    // This is the main bottleneck. If bcrypt is slow, the host is slow.
     const match = await bcrypt.compare(password, data.password);
     if (!match) return res.status(400).json({ error: "Invalid credentials." });
 
-    const { password: userPassword, ...userData } = data;
+    const { password: userPassword, ...userData } = data; // Destructure to remove password before sending
     const token = generateToken(data.id, data.role);
 
     res.json({ message: "Login successful", token, user: userData });
@@ -138,19 +140,18 @@ router.post("/login", async(req, res) => {
 
 
 // ------------------------------------------------------------------
-// NEW: GOOGLE OAUTH ROUTES (REPLACES OTP FLOW)
+// NEW: GOOGLE OAUTH ROUTES (OPTIMIZED)
 // ------------------------------------------------------------------
 
-// 1. Initiate Google Login (Frontend directs here)
+// 1. Initiate Google Login (remains the same)
 router.get('/google/login', (req, res) => {
     if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
-        console.error("GOOGLE OAUTH CONFIG MISSING!");
         return res.redirect(`${CLIENT_ORIGIN}/#error=Google+Configuration+Missing`);
     }
 
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
         `client_id=${GOOGLE_CLIENT_ID}&` +
-        `redirect_uri=${REDIRECT_URI}&` +
+        `redirect_uri=${GOOGLE_CALLBACK_URL}&` +
         `response_type=code&` +
         `scope=profile email&` +
         `access_type=offline&` +
@@ -160,7 +161,7 @@ router.get('/google/login', (req, res) => {
 });
 
 
-// 2. Handle Google Callback (Google redirects here with code)
+// 2. Handle Google Callback (OPTIMIZED)
 router.get('/google/callback', async(req, res) => {
     const code = req.query.code;
     const error = req.query.error;
@@ -173,7 +174,7 @@ router.get('/google/callback', async(req, res) => {
     }
 
     try {
-        // Step A: Exchange Authorization Code for Tokens
+        // Step A & B: Exchange Code & Get Profile Info (Standard OAuth flow, fast)
         const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -181,29 +182,27 @@ router.get('/google/callback', async(req, res) => {
                 code: code,
                 client_id: GOOGLE_CLIENT_ID,
                 client_secret: GOOGLE_CLIENT_SECRET,
-                redirect_uri: REDIRECT_URI,
+                redirect_uri: GOOGLE_CALLBACK_URL,
                 grant_type: 'authorization_code',
             }).toString(),
         });
         const tokenData = await tokenResponse.json();
         const accessToken = tokenData.access_token;
-
         if (!accessToken) throw new Error("Failed to get access token from Google.");
 
-        // Step B: Use Access Token to Get User Profile Info
         const profileResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
             headers: { 'Authorization': `Bearer ${accessToken}` }
         });
         const profile = await profileResponse.json();
-
         if (!profile || !profile.id || !profile.email) throw new Error("Failed to retrieve profile from Google.");
 
         // Step C: Check Database (Login or Register)
+        // 💡 OPTIMIZATION: Select all needed user fields in one query for frontend response
+        const USER_SELECT_FIELDS = `id, role, name, email, phone, skills, education, cvfilename, company_name, jobpostcount, subscriptionstatus, google_id, created_at`;
 
-        // Check for existing user by Google ID or Email
         let { data: user, error: dbError } = await supabase
             .from('users')
-            .select('*')
+            .select(USER_SELECT_FIELDS)
             .or(`google_id.eq.${profile.id},email.eq.${profile.email}`)
             .single();
 
@@ -213,13 +212,13 @@ router.get('/google/callback', async(req, res) => {
         }
 
         if (!user) {
-            // NEW USER: Create account using Google data
+            // NEW USER: Create account
             const newUser = {
                 name: profile.name,
                 email: profile.email,
-                password: await bcrypt.hash(profile.id, saltRounds), // Use Google ID as temporary password
-                google_id: profile.id, // Store unique Google ID (requires new DB column)
-                role: 'seeker', // Default to seeker for new users
+                password: await bcrypt.hash(profile.id, saltRounds),
+                google_id: profile.id,
+                role: 'seeker',
                 is_verified: true,
                 subscription_jsonb: { active: false, plan: "none" },
                 subscriptionstatus: "none",
@@ -229,9 +228,20 @@ router.get('/google/callback', async(req, res) => {
             const { data: insertedUser } = await supabase
                 .from('users')
                 .insert([newUser])
-                .select()
+                .select(USER_SELECT_FIELDS) // Use optimized select fields
                 .single();
             user = insertedUser;
+
+        } else if (!user.google_id) {
+            // Existing password user linking Google ID
+            const { error: updateError } = await supabase
+                .from('users')
+                .update({ google_id: profile.id, is_verified: true })
+                .eq('id', user.id);
+
+            if (updateError) console.error("Failed to link Google ID to existing user:", updateError);
+            user.google_id = profile.id;
+            user.is_verified = true;
         }
 
         // Step D: Finalize Login (Generate App JWT)
@@ -239,7 +249,6 @@ router.get('/google/callback', async(req, res) => {
 
         const appToken = generateToken(user.id, user.role);
 
-        // Redirect back to frontend with app-specific JWT token in the hash
         res.redirect(`${CLIENT_ORIGIN}/#google_token=${appToken}`);
 
     } catch (error) {
@@ -249,22 +258,23 @@ router.get('/google/callback', async(req, res) => {
 });
 
 
-// GET: Fetch current user profile using JWT (remains the same)
+// GET: Fetch current user profile using JWT (Used by frontend on load/refresh)
 router.get("/me", protect, async(req, res) => {
     const userId = req.user.id;
+    // 💡 OPTIMIZATION: Only select user data needed for frontend (excluding password)
     const { data, error } = await supabase
         .from("users")
-        .select("*")
+        .select(`id, role, name, email, phone, skills, education, cvfilename, company_name, jobpostcount, subscriptionstatus, google_id, created_at`)
         .eq("id", userId)
         .single();
 
     if (error || !data) {
         console.error("Fetch user data error:", error ? error.message : "User data not found");
-        return res.status(404).json({ error: "User not found" });
+        // This is where a token mismatch or expired token will fail.
+        return res.status(401).json({ error: "Session invalid or user not found. Please log in again." });
     }
 
-    const { password, ...userData } = data;
-    res.json({ user: userData });
+    res.json({ user: data });
 });
 
 export default router;

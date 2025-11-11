@@ -1,12 +1,12 @@
 import express from 'express';
 import { supabase } from '../db.js';
 import jwt from 'jsonwebtoken';
-// import Razorpay from 'razorpay'; // RAZORPAY COMMENTED OUT
-// import crypto from 'crypto'; // RAZORPAY COMMENTED OUT
+// import Razorpay from 'razorpay'; 
+// import crypto from 'crypto'; 
 
 const router = express.Router();
 
-// --- Subscription Plan Limits & Prices (SIMPLIFIED/COMMENTED OUT) ---
+// --- Subscription Plan Limits & Prices ---
 const HIVE_PLANS = {
     'buzz': { limit: 2, name: "Buzz Plan" },
     'worker': { limit: 5, name: "Worker Plan" },
@@ -15,16 +15,7 @@ const HIVE_PLANS = {
     'hive_master': { limit: Infinity, name: "Hive Master Plan" },
 };
 
-// RAZORPAY COMMENTED OUT
-// const razorpay = new Razorpay({
-//     key_id: process.env.RAZORPAY_KEY_ID,
-//     key_secret: process.env.RAZORPAY_KEY_SECRET,
-// });
-
-
-// ------------------------------------------------------------------
-// 1. MIDDLEWARE 
-// ------------------------------------------------------------------
+// --- MIDDLEWARE (Imported from auth.js, using local definition for completeness) ---
 const auth = (req, res, next) => {
     let token;
     if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
@@ -192,15 +183,19 @@ router.delete('/jobs/:jobId', auth, isEmployer, async(req, res) => {
 
     if (userError || !user) {
         console.error("Failed to retrieve user count for decrement:", userError);
-        return res.status(500).json({ error: 'Failed to delete job due to user data issue.' });
+        return res.status(500).json({ error: 'Failed to retrieve user data for deletion check.' });
     }
 
     const currentPlanKey = user.subscriptionstatus || 'buzz';
     const plan = HIVE_PLANS[currentPlanKey];
     const isUnlimited = !plan || plan.limit === Infinity;
 
-    // 2. Delete all related applications (Cascading Delete Simulation)
-    await supabase.from('applications').delete().eq('jobid', jobId);
+    // 2. Delete all related applications (Added check for robustness)
+    const { error: appDeleteError } = await supabase.from('applications').delete().eq('jobid', jobId);
+
+    if (appDeleteError) {
+        console.error("Failed to delete related applications:", appDeleteError);
+    }
 
     // 3. Delete Job
     const { error: jobDeleteError } = await supabase
@@ -324,15 +319,13 @@ router.put('/applicants/status', auth, isEmployer, async(req, res) => {
 
 
 // ------------------------------------------------------------------
-// 4. SUBSCRIPTION & PAYMENT (RAZORPAY COMMENTED OUT)
+// 4. SUBSCRIPTION & PAYMENT (SIMULATED)
 // ------------------------------------------------------------------
 
-// PUT: Update the employer's subscription (Used for FREE plan and simulated PAID plans)
+// PUT: Update the employer's subscription
 router.put('/subscription', auth, isEmployer, async(req, res) => {
     const { newPlanKey } = req.body;
     const employerId = req.user.id;
-
-    // COMMENTED OUT: if (newPlanKey !== 'buzz') { return res.status(400).json({ error: "Paid plans must be activated via payment." }); }
 
     if (!HIVE_PLANS[newPlanKey]) {
         return res.status(400).json({ error: "Invalid subscription plan provided." });
@@ -363,16 +356,5 @@ router.put('/subscription', auth, isEmployer, async(req, res) => {
         user: userData
     });
 });
-
-// POST: Create Razorpay Order - COMMENTED OUT
-// router.post('/payment/create-order', auth, isEmployer, async(req, res) => {
-//     return res.status(501).json({ error: "Payment is currently disabled." }); 
-// });
-
-// POST: Verify Razorpay Payment - COMMENTED OUT
-// router.post('/payment/verify-payment', auth, isEmployer, async(req, res) => {
-//     return res.status(501).json({ error: "Payment is currently disabled." });
-// });
-
 
 export default router;

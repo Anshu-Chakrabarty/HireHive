@@ -4,30 +4,10 @@ import { supabase } from '../db.js';
 import jwt from 'jsonwebtoken';
 
 const router = express.Router();
-// Set file size limit to 5MB
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
-// ------------------------------------------------------------------
-// 1. MIDDLEWARE 
-// ------------------------------------------------------------------
-
-// General Authentication Middleware
-const auth = (req, res, next) => {
-    let token;
-    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
-        try {
-            token = req.headers.authorization.split(' ')[1];
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            req.user = { id: decoded.id, role: decoded.role };
-            next();
-        } catch (error) {
-            return res.status(401).json({ error: 'Not authorized, token failed' });
-        }
-    }
-    if (!token) {
-        return res.status(401).json({ error: 'Not authorized, no token' });
-    }
-};
+// --- MIDDLEWARE IMPORT from auth.js ---
+import { protect as auth } from "./auth.js"; // Import protect middleware from auth route
 
 // Seeker/Admin Role Check Middleware
 const checkRole = (roles) => (req, res, next) => {
@@ -53,7 +33,6 @@ router.put('/profile', auth, isSeeker, upload.single('cvFile'), async(req, res) 
         return res.status(400).json({ error: 'Name, education, and skills are required.' });
     }
 
-    // Convert skills string to array
     let updateData = {
         name,
         education,
@@ -62,10 +41,8 @@ router.put('/profile', auth, isSeeker, upload.single('cvFile'), async(req, res) 
 
     if (req.file) {
         const file = req.file;
-        // Generate a unique filename using userId and timestamp
         const cvfilename = `cvs/${userId}_${Date.now()}_${file.originalname.replace(/[^a-z0-9.]/gi, '_')}`;
 
-        // Upload to Supabase Storage in the 'cvs' bucket
         const { error: uploadError } = await supabase.storage
             .from('cvs')
             .upload(cvfilename, file.buffer, {
@@ -81,18 +58,16 @@ router.put('/profile', auth, isSeeker, upload.single('cvFile'), async(req, res) 
         updateData.cvfilename = cvfilename;
     }
 
-    // Update user record in the 'users' table
     const { data: updatedUser, error: updateError } = await supabase
         .from('users')
         .update(updateData)
         .eq('id', userId)
-        .select()
+        .select(`id, role, name, email, phone, skills, education, cvfilename, company_name, jobpostcount, subscriptionstatus, google_id, created_at`)
         .single();
 
     if (updateError) return res.status(400).json({ error: updateError.message });
 
-    const { password: userPassword, ...userData } = updatedUser;
-    res.json({ message: 'Profile updated successfully', user: userData });
+    res.json({ message: 'Profile updated successfully', user: updatedUser });
 });
 
 
@@ -122,11 +97,26 @@ router.get('/jobs', auth, isSeeker, async(req, res) => {
         query = query.ilike('salary', `%${salary}%`);
     }
 
+    // 💡 FIX: Apply Experience Filter (Fuzzy Search for text column)
+    if (experience && experience !== '0') {
+        const minYears = parseInt(experience, 10);
+        if (!isNaN(minYears)) {
+            // Find jobs where the experience string contains the min year or is a range
+            // e.g., if minYears is 5, look for '5+ Years' or '5-8 Years'
+            query = query.or(`experience.ilike.%${minYears}+%`, `experience.ilike.%${minYears}-%`);
+        }
+    }
+
+
     // Apply keyword filter across job title and description
     if (keywords) {
         const searchTerms = keywords.split(' ').map(term => term.trim()).filter(Boolean);
-        const searchConditions = searchTerms.map(term => `title.ilike.%${term}%,description.ilike.%${term}%`).join(',');
-        query = query.or(searchConditions);
+        if (searchTerms.length > 0) {
+            const conditions = searchTerms.map(term =>
+                `or(title.ilike.%${term}%,description.ilike.%${term}%,required_skills.cs.%${term}%)`
+            ).join(',');
+            query = query.or(conditions);
+        }
     }
 
     // Order and execute
@@ -142,8 +132,6 @@ router.get('/jobs', auth, isSeeker, async(req, res) => {
 router.get('/applications', auth, isSeeker, async(req, res) => {
     const seekerId = req.user.id;
 
-    // --- CRITICAL FIX: Replaced complex join with two simpler queries ---
-
     // 1. Fetch Application History (Only IDs and Status)
     const { data: applicationRecords, error: historyError } = await supabase
         .from('applications')
@@ -156,27 +144,34 @@ router.get('/applications', auth, isSeeker, async(req, res) => {
     }
 
     const appliedJobIds = applicationRecords.map(app => app.jobid);
+    const shortlistedJobIds = applicationRecords
+        .filter(app => app.status === 'Shortlisted')
+        .map(app => app.jobid);
 
-    // 2. Fetch Job Details based on IDs and Status
+    // 2. Fetch all jobs
     const { data: jobsData, error: jobsError } = await supabase
         .from('jobs')
         .select('*, employer:employerid (name)');
 
     if (jobsError) {
         console.error("Supabase job data fetch error:", jobsError);
-        // This usually wouldn't crash but protects against a missing table
-        return res.status(500).json({ error: 'Failed to retrieve application history.' });
+        return res.status(500).json({ error: 'Failed to retrieve job data for suggestions.' });
     }
+
+    const allJobs = jobsData || [];
 
     // 3. Separate applied jobs and fetch user skills for suggestions
     const appliedJobs = [];
-    const allJobs = jobsData || [];
+    const shortlistedJobs = [];
 
-    // Map the fetched job data to the application records
     applicationRecords.forEach(app => {
         const jobDetail = allJobs.find(job => job.id === app.jobid);
         if (jobDetail) {
-            appliedJobs.push({...jobDetail, status: app.status });
+            const jobWithStatus = {...jobDetail, status: app.status };
+            appliedJobs.push(jobWithStatus);
+            if (app.status === 'Shortlisted') {
+                shortlistedJobs.push(jobDetail);
+            }
         }
     });
 
@@ -189,20 +184,25 @@ router.get('/applications', auth, isSeeker, async(req, res) => {
     }
 
     const suggestedJobs = allJobs
-        .filter(job => !appliedJobIds.includes(job.id)) // Not already applied
+        .filter(job => !appliedJobIds.includes(job.id))
         .filter(job => {
             const jobSkills = (job.required_skills || []).map(s => s.toLowerCase());
-            return jobSkills.some(skill => seekerSkills.includes(skill)); // Skill match
+            return jobSkills.some(skill => seekerSkills.includes(skill));
         });
+
+    const suggestedAndShortlistedCombined = [
+        ...shortlistedJobs,
+        ...suggestedJobs.filter(job => !shortlistedJobIds.includes(job.id))
+    ];
 
     res.json({
         applied: appliedJobs,
-        shortlisted: suggestedJobs
+        shortlisted: suggestedAndShortlistedCombined
     });
 });
 
 
-// POST: Apply for a specific job
+// POST: Apply for a specific job (remains the same)
 router.post('/apply/:jobId', auth, isSeeker, async(req, res) => {
     const { jobId } = req.params;
     const { answers } = req.body;
