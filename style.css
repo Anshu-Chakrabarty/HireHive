@@ -68,7 +68,6 @@ body {
 }
 
 .spaced-paragraph {
-    margin-top: 2rem;
     font-weight: bold;
 }
 
@@ -129,17 +128,17 @@ body {
 }
 
 .logo h1 {
-    color: var(--secondary-color);
-    font-size: 1.5rem;
-    display: flex;
-    /* Vertically align icon and text */
-    align-items: center;
-    gap: 8px;
+    display: none;
+    /* Hide H1 structure if image is present */
 }
 
-.logo i {
-    color: var(--primary-color);
-    font-size: 1.6rem;
+
+/* New Image Logo Styles */
+
+#siteLogoImage {
+    height: 40px;
+    width: auto;
+    display: block;
 }
 
 
@@ -244,7 +243,8 @@ body {
 
 .hero {
     /* Opaque Background Image (No color overlay) */
-    background: url("https://images.unsplash.com/photo-1521791136064-7986c2920216?q=80&w=2069") center center no-repeat;
+    background: url("Logo.png") center center no-repeat;
+    /* Updated to use your local logo file name for consistency */
     background-size: cover;
     color: var(--white-color);
     height: 70vh;

@@ -1,4 +1,4 @@
-// --- Frontend: app.js (FINAL CODE WITH CHATBOT AND FORGOT PASSWORD) ---
+// --- Frontend: app.js (FINAL CODE WITH CHATBOT, FORGOT PASSWORD, & GUIDE SYSTEM) ---
 document.addEventListener("DOMContentLoaded", () => {
             // ------------------------------------------------------------------
             // 1. GLOBAL CONFIGURATION & API HELPERS
@@ -397,7 +397,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const authModal = document.getElementById("authModal");
             const loginFormContainer = document.getElementById("login-form-container");
             const signupFormContainer = document.getElementById("signup-form-container");
-            const forgotFormContainer = document.getElementById("forgot-form-container"); // NEW
+            const forgotFormContainer = document.getElementById("forgot-form-container");
             const otpFormContainer = document.getElementById("otp-form-container");
             const closeAuthBtn = document.querySelector("#authModal .close-btn");
             const applicantsModal = document.getElementById("applicantsModal");
@@ -406,8 +406,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const userTypeSelect = document.getElementById("userType");
             const companyNameInput = document.getElementById("signupCompanyName");
             const switchFormLink = document.getElementById("switch-form-link");
-            const forgotPasswordLink = document.getElementById("forgotPasswordLink"); // NEW
-            const backToLoginLink = document.getElementById("backToLoginLink"); // NEW
+            const forgotPasswordLink = document.getElementById("forgotPasswordLink");
+            const backToLoginLink = document.getElementById("backToLoginLink");
 
 
             const showForm = (formToShow) => {
@@ -422,7 +422,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         const isLogin = formToShow === loginFormContainer;
                         switchFormLink.textContent = isLogin ? "Need an account? Sign Up" : "Already have an account? Log In";
                     }
-                    if (forgotPasswordLink) forgotPasswordLink.style.display = 'block';
+                    if (forgotPasswordLink) forgotPasswordLink.style.display = (formToShow === loginFormContainer) ? 'block' : 'none';
                 } else {
                     if (switchFormLink) switchFormLink.style.display = 'none';
                     if (forgotPasswordLink) forgotPasswordLink.style.display = 'none';
@@ -792,68 +792,68 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (editProfileSidebarBtn) {
                     editProfileSidebarBtn.onclick = () => {
                         document.getElementById("seeker-profile-view").classList.remove('hidden');
-                        document.getElementById("seeker-job-view").classList.add('hidden');
-                        loadSeekerProfileForm();
+                        document.getElementById("seeker-job-view').classList.add('hidden');
+                            loadSeekerProfileForm();
+                        };
+                    }
+
+                    document.getElementById("profile-form").onsubmit = async(e) => {
+                        e.preventDefault();
+                        const saveBtn = e.target.querySelector('button[type="submit"]');
+                        setLoading(saveBtn.id || 'profileSaveBtn', true, 'Save Profile');
+
+                        const name = document.getElementById("seeker-name").value;
+                        const skills = document.getElementById("seeker-skills").value;
+                        const education = document.getElementById("seeker-education").value;
+                        const cvFile = document.getElementById("cv-upload").files[0];
+
+                        const formData = new FormData();
+                        formData.append('name', name);
+                        formData.append('education', education);
+                        formData.append('skills', skills);
+                        if (cvFile) {
+                            formData.append('cvFile', cvFile);
+                        }
+
+                        try {
+                            const data = await fetchApi('seeker/profile', 'PUT', formData, true);
+                            setLocalUser(data.user);
+                            console.log("Profile updated!");
+                            showStatusMessage("Profile Updated", "Your profile has been saved successfully.", false);
+                            seekerJobView.classList.remove('hidden');
+                            seekerProfileView.classList.add('hidden');
+                            loadSeekerProfileForm();
+                        } catch (error) {
+                            console.error("Profile update failed:", error.message);
+                            showStatusMessage("Profile Update Failed", error.message, true);
+                        } finally {
+                            setLoading(saveBtn.id || 'profileSaveBtn', false, 'Save Profile');
+                        }
                     };
                 }
 
-                document.getElementById("profile-form").onsubmit = async(e) => {
-                    e.preventDefault();
-                    const saveBtn = e.target.querySelector('button[type="submit"]');
-                    setLoading(saveBtn.id || 'profileSaveBtn', true, 'Save Profile');
-
-                    const name = document.getElementById("seeker-name").value;
-                    const skills = document.getElementById("seeker-skills").value;
-                    const education = document.getElementById("seeker-education").value;
-                    const cvFile = document.getElementById("cv-upload").files[0];
-
-                    const formData = new FormData();
-                    formData.append('name', name);
-                    formData.append('education', education);
-                    formData.append('skills', skills);
-                    if (cvFile) {
-                        formData.append('cvFile', cvFile);
-                    }
+                async function loadJobs(filters = {}) {
+                    const allJobsList = document.getElementById("all-jobs-list");
+                    const shortlistedJobsList = document.getElementById("shortlisted-jobs-list");
+                    const appliedJobsList = document.getElementById("applied-jobs-list");
+                    allJobsList.innerHTML = shortlistedJobsList.innerHTML = appliedJobsList.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Loading jobs...</p>';
 
                     try {
-                        const data = await fetchApi('seeker/profile', 'PUT', formData, true);
-                        setLocalUser(data.user);
-                        console.log("Profile updated!");
-                        showStatusMessage("Profile Updated", "Your profile has been saved successfully.", false);
-                        seekerJobView.classList.remove('hidden');
-                        seekerProfileView.classList.add('hidden');
-                        loadSeekerProfileForm();
-                    } catch (error) {
-                        console.error("Profile update failed:", error.message);
-                        showStatusMessage("Profile Update Failed", error.message, true);
-                    } finally {
-                        setLoading(saveBtn.id || 'profileSaveBtn', false, 'Save Profile');
-                    }
-                };
-            }
+                        const filterParams = new URLSearchParams(filters).toString();
+                        const jobs = await fetchApi(`seeker/jobs?${filterParams}`, 'GET');
+                        const applicationData = await fetchApi('seeker/applications', 'GET');
 
-            async function loadJobs(filters = {}) {
-                const allJobsList = document.getElementById("all-jobs-list");
-                const shortlistedJobsList = document.getElementById("shortlisted-jobs-list");
-                const appliedJobsList = document.getElementById("applied-jobs-list");
-                allJobsList.innerHTML = shortlistedJobsList.innerHTML = appliedJobsList.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Loading jobs...</p>';
+                        const appliedJobIds = applicationData.applied.map(job => job.id);
+                        const shortlistedJobDetails = applicationData.shortlisted;
 
-                try {
-                    const filterParams = new URLSearchParams(filters).toString();
-                    const jobs = await fetchApi(`seeker/jobs?${filterParams}`, 'GET');
-                    const applicationData = await fetchApi('seeker/applications', 'GET');
+                        allJobsList.innerHTML = shortlistedJobsList.innerHTML = appliedJobsList.innerHTML = "";
 
-                    const appliedJobIds = applicationData.applied.map(job => job.id);
-                    const shortlistedJobDetails = applicationData.shortlisted;
+                        jobs.forEach((job) => {
+                                    const hasApplied = appliedJobIds.includes(job.id);
+                                    const isDisabled = hasApplied;
+                                    const applyButtonText = hasApplied ? "Applied" : "Apply Now";
 
-                    allJobsList.innerHTML = shortlistedJobsList.innerHTML = appliedJobsList.innerHTML = "";
-
-                    jobs.forEach((job) => {
-                                const hasApplied = appliedJobIds.includes(job.id);
-                                const isDisabled = hasApplied;
-                                const applyButtonText = hasApplied ? "Applied" : "Apply Now";
-
-                                const jobCardHTML = `
+                                    const jobCardHTML = `
                     <div class="job-card" data-job-id="${job.id}">
                         <h4>${job.title} (${job.employer?.name || 'Unknown Company'})</h4> 
                         <p><i class="fas fa-map-marker-alt"></i> ${job.location} | <i class="fas fa-briefcase"></i> ${job.experience} | <i class="fas fa-money-bill-wave"></i> ${job.salary}</p>
@@ -1374,33 +1374,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ------------------------------------------------------------------
     // 10. HERO SEARCH BAR LOGIC (REMOVED FROM HOME PAGE)
     // ------------------------------------------------------------------
-    const homeSearchBarForm = document.getElementById("homeSearchBarForm");
-    if (homeSearchBarForm) {
-        homeSearchBarForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const currentUser = getLocalUser();
-            if (!currentUser) {
-                showStatusMessage("Login Required", "Please log in as a Job Seeker to search jobs.", false);
-                showForm(loginFormContainer);
-                return;
-            }
-            if (currentUser.role !== 'seeker') {
-                showView('dashboard', true, null);
-                return;
-            }
-
-            const keywords = document.getElementById("home-search-keywords")?.value;
-            const experience = document.getElementById("home-search-experience").value;
-            const location = document.getElementById("home-search-location").value;
-
-            const filters = {};
-            if (keywords) filters.keywords = keywords;
-            if (location) filters.location = location;
-            if (experience && experience !== '0') filters.experience = experience;
-            
-            showView('dashboard', true, filters);
-        });
-    }
+    // Removed homeSearchBarForm logic since the element is no longer in index.html
 
     // ------------------------------------------------------------------
     // 11. CHATBOT INTERFACE LOGIC (SIMULATED & FULLY FUNCTIONAL)
