@@ -1,4 +1,4 @@
-// --- Frontend: app.js (FIXED AUTH LATENCY & FILTERING) ---
+// --- Frontend: app.js (FINAL CODE WITH CHATBOT AND FULL DASHBOARD LOGIC) ---
 document.addEventListener("DOMContentLoaded", () => {
             // ------------------------------------------------------------------
             // 1. GLOBAL CONFIGURATION & API HELPERS
@@ -107,14 +107,12 @@ document.addEventListener("DOMContentLoaded", () => {
                         return responseData;
                     } else if (!response.ok) {
                         const errorText = await response.text();
-                        // 💡 FIX: Improved error logging to catch non-JSON errors
                         console.error(`Backend Error (${response.status}):`, errorText);
                         throw new Error(`Server returned status ${response.status}. Please check backend logs.`);
                     }
                     return {};
                 } catch (error) {
                     console.error("Fetch API Error:", error);
-                    // 💡 FIX: Return error message directly to the caller for display
                     throw error;
                 }
             }
@@ -177,13 +175,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (token) {
                     if (!user) {
                         try {
-                            // 💡 OPTIMIZATION: Only fetch minimal data here if needed, but 'auth/me' is required
                             const data = await fetchApi('auth/me', 'GET');
                             user = data.user;
                             setLocalUser(user);
                         } catch (e) {
                             console.warn("Token expired or invalid. Logging out.", e.message);
-                            // 💡 FIX: If token fails validation, immediately remove it and reset
                             removeToken();
                             setLocalUser(null);
                             window.location.hash = '';
@@ -339,6 +335,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (event.target == subscriptionModal) subscriptionModal.style.display = "none";
                 if (event.target == statusMessageModal) statusMessageModal.style.display = "none";
                 if (event.target == confirmationModal) confirmationModal.style.display = "none";
+
+                // Chatbot specific global click logic
+                if (chatWindow && !chatWindow.classList.contains('hidden') &&
+                    !chatWindow.contains(event.target) && event.target !== chatBtn && !chatBtn.contains(event.target)) {
+                    // No action here, close behavior managed by chatCloseBtn
+                }
             };
 
             // Switch links logic (remains the same)
@@ -386,7 +388,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     showStatusMessage("Welcome to the Hive!", "Your account has been successfully created.", false);
                 } catch (error) {
                     console.error("Signup failed:", error.message);
-                    // 💡 FIX: Check error message for specific duplication error for faster feedback
                     if (error.message.includes('already exists')) {
                         showStatusMessage("Account Exists", "A user with this email already exists. Please log in.", true);
                         showForm(loginFormContainer);
@@ -413,7 +414,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     console.log("Login successful!");
                 } catch (error) {
                     console.error("Login failed:", error.message);
-                    // 💡 FIX: Use the specific error message from the backend if available
                     showStatusMessage("Login Failed", error.message.includes('credentials') ? error.message : "Invalid email or password. Please try again.", true);
                 } finally {
                     setLoading('submitLoginBtn', false, 'Login');
@@ -566,7 +566,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     employerDashboard.classList.add("hidden");
                     loadSeekerProfileForm();
 
-                    // --- CRITICAL FIX: Ensure filters are set correctly before calling loadJobs ---
                     const filterKeywordsEl = document.getElementById("filter-keywords");
 
                     if (filters) {
@@ -576,7 +575,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         document.getElementById("filter-category").value = filters.category || '';
                     } else {
                         document.getElementById("jobFilterForm").reset();
-                        if (filterKeywordsEl) filterKeywordsEl.value = ''; // Ensure dynamic field is reset
+                        if (filterKeywordsEl) filterKeywordsEl.value = '';
                     }
 
                     document.querySelectorAll(".job-filter-btn").forEach(b => b.classList.remove('btn-primary'));
@@ -594,57 +593,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
 
-            // Initialize Employer Tab listeners once (remains the same)
-            document.querySelectorAll('#employer-dashboard .job-filter-nav button').forEach(btn => {
-                btn.onclick = (e) => {
-                    const targetViewId = e.target.dataset.viewTarget;
-                    if (e.target.id === 'choosePlanTab') {
-                        e.preventDefault();
-                        document.querySelectorAll('#employer-dashboard .job-filter-nav button').forEach(b => b.classList.remove('btn-primary'));
-                        e.target.classList.add('btn-primary');
-                        showSubscriptionModal();
-                    } else if (targetViewId) {
-                        switchEmployerView(targetViewId);
-                    }
-                };
-            });
-
-            // Other Seeker Dashboard button handlers (remains the same)
-            document.getElementById("editProfileBtn").onclick = () => {
-                document.getElementById("seeker-profile-view").classList.remove('hidden');
-                document.getElementById("seeker-job-view").classList.add('hidden');
-                loadSeekerProfileForm();
-            };
-            document.getElementById("backToJobsBtn").onclick = () => {
-                document.getElementById("seeker-job-view").classList.remove('hidden');
-                document.getElementById("seeker-profile-view").classList.add('hidden');
-                loadJobs({});
-            };
-
-            // Initialize Seeker Job Filter Buttons (remains the same)
-            const jobFilterBtns = document.querySelectorAll(".job-filter-btn");
-            const jobViewSections = document.querySelectorAll(".job-view-section");
-            jobFilterBtns.forEach(btn => {
-                btn.onclick = (e) => {
-                    const filter = e.target.dataset.filter;
-                    jobFilterBtns.forEach(b => b.classList.remove('btn-primary'));
-                    e.target.classList.add('btn-primary');
-                    jobViewSections.forEach(section => section.classList.add('hidden'));
-
-                    if (filter === 'all') {
-                        document.getElementById('shortlisted-jobs').classList.remove('hidden');
-                        document.getElementById('all-jobs').classList.remove('hidden');
-                    } else if (filter === 'shortlisted') {
-                        document.getElementById('shortlisted-jobs').classList.remove('hidden');
-                    } else if (filter === 'applied') {
-                        document.getElementById('applied-jobs').classList.remove('hidden');
-                    }
-                };
-            });
-
-
             // ------------------------------------------------------------------
-            // 7. SEEKER DASHBOARD & PROFILE LOGIC (remains the same)
+            // 7. SEEKER DASHBOARD & PROFILE LOGIC 
             // ------------------------------------------------------------------
             async function loadSeekerProfileForm() {
                 const currentUser = getLocalUser();
@@ -734,9 +684,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 try {
                     const filterParams = new URLSearchParams(filters).toString();
-                    // Fetch jobs first
                     const jobs = await fetchApi(`seeker/jobs?${filterParams}`, 'GET');
-                    // Fetch application/suggestion data (uses the stable two-query method)
                     const applicationData = await fetchApi('seeker/applications', 'GET');
 
                     const appliedJobIds = applicationData.applied.map(job => job.id);
@@ -746,8 +694,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     jobs.forEach((job) => {
                                 const hasApplied = appliedJobIds.includes(job.id);
-                                const isShortlisted = shortlistedJobDetails.some(j => j.id === job.id);
-
                                 const isDisabled = hasApplied;
                                 const applyButtonText = hasApplied ? "Applied" : "Apply Now";
 
@@ -763,7 +709,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>`;
 
                 allJobsList.innerHTML += jobCardHTML;
-                // 💡 FIX: Only render actual shortlisted jobs in the Shortlisted list
                 if (shortlistedJobDetails.some(j => j.id === job.id)) shortlistedJobsList.innerHTML += jobCardHTML; 
                 if (hasApplied) appliedJobsList.innerHTML += jobCardHTML;
             });
@@ -839,7 +784,6 @@ document.addEventListener("DOMContentLoaded", () => {
         filterLocationEl.closest('form').insertBefore(filterKeywordsEl, filterLocationEl.closest('form').firstChild);
         filterLocationEl.closest('form').insertBefore(keywordsLabel, filterKeywordsEl);
     }
-    // --------------------------------------------------------------------------
 
     jobFilterForm.onsubmit = (e) => {
         e.preventDefault();
@@ -861,14 +805,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     resetFiltersBtn.onclick = () => {
         jobFilterForm.reset();
-        // 💡 FIX: Ensure dynamic field is reset on button click
         const filterKeywordsEl = document.getElementById("filter-keywords");
         if (filterKeywordsEl) filterKeywordsEl.value = '';
         loadJobs({});
     };
 
     // ------------------------------------------------------------------
-    // 8. EMPLOYER DASHBOARD LOGIC (remains the same)
+    // 8. EMPLOYER DASHBOARD LOGIC 
     // ------------------------------------------------------------------
     function switchEmployerView(targetViewId) {
         document.querySelectorAll("#employer-dashboard .full-screen-view").forEach(view => {
@@ -1258,7 +1201,7 @@ document.addEventListener("DOMContentLoaded", () => {
             };
         });
     }
-    
+
     // ------------------------------------------------------------------
     // 9. ADMIN LOGIC (SIMULATED)
     // ------------------------------------------------------------------
@@ -1302,5 +1245,104 @@ document.addEventListener("DOMContentLoaded", () => {
             showView('dashboard', true, filters);
         });
     }
+
+
+    // ------------------------------------------------------------------
+    // 11. CHATBOT INTERFACE LOGIC (SIMULATED & FULLY FUNCTIONAL)
+    // ------------------------------------------------------------------
+    const chatBtn = document.getElementById('chat-icon-btn');
+    const chatWindow = document.getElementById('chat-window');
+    const chatCloseBtn = document.getElementById('chat-close-btn');
+    const chatBody = document.getElementById('chat-body');
+    const chatInputField = document.getElementById('chat-input-field');
+    const chatSendBtn = document.getElementById('chat-send-btn');
+
+    const appendMessage = (text, sender) => {
+        const messageDiv = document.createElement('p');
+        messageDiv.classList.add('chat-message');
+        messageDiv.classList.add(sender === 'bot' ? 'bot-message' : 'user-message');
+        messageDiv.innerHTML = text; // Use innerHTML for links/bold text
+        chatBody.appendChild(messageDiv);
+        chatBody.scrollTop = chatBody.scrollHeight;
+    };
+    
+    // Function to guide user and scroll to section (made globally accessible via window)
+    const guideUser = (viewName, sectionId) => {
+        chatWindow.classList.add('hidden');
+        showView(viewName);
+        if (sectionId) {
+            setTimeout(() => {
+                const targetEl = document.getElementById(sectionId);
+                if (targetEl) {
+                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 100);
+        }
+    };
+
+    const handleChatInput = () => {
+        const message = chatInputField.value.trim();
+        if (message === '') return;
+
+        appendMessage(message, 'user');
+        chatInputField.value = '';
+
+        setTimeout(() => {
+            const lowerMsg = message.toLowerCase();
+            let botResponse = `I'm sorry, I couldn't process that query. I can help with **Domains**, **About Us**, **Dashboard guidance**, or general **Support**.`;
+
+            if (lowerMsg.includes('domain') || lowerMsg.includes('job categories')) {
+                botResponse = `HireHive features opportunities in **IT & Tech**, **Sales**, and **Management**. <a href="#" onclick="window.guideUser('home', 'services'); return false;">Click here to view all domains on the page.</a>`;
+            } else if (lowerMsg.includes('about') || lowerMsg.includes('who are you')) {
+                botResponse = `We are HireHive, a modern career ecosystem connecting top talent with employers through affordable plans. <a href="#" onclick="window.guideUser('about', null); return false;">Learn more about our mission.</a>`;
+            } else if (lowerMsg.includes('support') || lowerMsg.includes('help') || lowerMsg.includes('contact')) {
+                botResponse = `For dedicated support or business inquiries, please visit our <a href="#" onclick="window.guideUser('contact', null); return false;">**Contact Us**</a> page.`;
+            } else if (lowerMsg.includes('dashboard') || lowerMsg.includes('portal') || lowerMsg.includes('jobs')) {
+                const user = getLocalUser();
+                if (user) {
+                    botResponse = `You are logged in as a **${user.role}**. <a href="#" onclick="window.guideUser('dashboard', null); return false;">Click here to jump straight to your Dashboard!</a>`;
+                } else {
+                    botResponse = `To access your dashboard, you need to log in first. Please use the **Login** or **Join the Hive** buttons.`;
+                }
+            } else if (lowerMsg.includes('login') || lowerMsg.includes('sign up')) {
+                botResponse = `Sure! You can find the login and sign-up buttons in the top right corner.`;
+            }
+
+            appendMessage(botResponse, 'bot');
+        }, 1000);
+    };
+
+    if (chatBtn) {
+        chatBtn.onclick = () => {
+            chatWindow.classList.toggle('hidden');
+            if (!chatWindow.classList.contains('hidden')) {
+                chatInputField.focus();
+                chatBody.scrollTop = chatBody.scrollHeight;
+            }
+        };
+    }
+
+    if (chatCloseBtn) {
+        chatCloseBtn.onclick = () => {
+            chatWindow.classList.add('hidden');
+        };
+    }
+
+    if (chatSendBtn) {
+        chatSendBtn.onclick = handleChatInput;
+    }
+
+    if (chatInputField) {
+        chatInputField.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleChatInput();
+            }
+        });
+    }
+
+    // Make guide functions globally available for inline HTML clicks (e.g., from bot links)
+    window.guideUser = guideUser;
+    window.showView = showView;
+    window.getLocalUser = getLocalUser; 
 
 });

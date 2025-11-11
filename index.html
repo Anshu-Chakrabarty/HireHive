@@ -804,7 +804,29 @@
         </div>
     </div>
 
+    <button id="chat-icon-btn" class="btn btn-primary">
+        <i class="fas fa-comment-dots"></i>
+    </button>
 
+    <div id="chat-window" class="hidden">
+        <div class="chat-header">
+            <h4 style="margin: 0;">HireHive Assistant</h4>
+            <button id="chat-close-btn" class="btn btn-small">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="chat-body" id="chat-body">
+            <p class="chat-message bot-message">
+                Welcome to HireHive! I can answer questions about job domains, guide you to the dashboard, or explain our pricing. How can I help?
+            </p>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="chat-input-field" placeholder="Ask me anything...">
+            <button id="chat-send-btn" class="btn btn-primary">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
     <script src="app.js"></script>
 </body>
 
