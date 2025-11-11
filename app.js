@@ -254,11 +254,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             }
 
-            // 💡 FIX: Close Navbar Menu when clicking outside (on main content area)
+            // 💡 NEW FIX: Close Navbar Menu when clicking outside (on main content area)
             if (appMainContent && navLinks) {
                 appMainContent.addEventListener('click', (event) => {
                     if (window.innerWidth < 992 && navLinks.classList.contains('active')) {
-                        // Ensure the click didn't originate from inside the navbar or the toggle itself
                         if (!navLinks.contains(event.target) && event.target !== menuToggle && !menuToggle.contains(event.target)) {
                             navLinks.classList.remove('active');
                         }
@@ -793,7 +792,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (editProfileSidebarBtn) {
                     editProfileSidebarBtn.onclick = () => {
                         document.getElementById("seeker-profile-view").classList.remove('hidden');
-                        document.getElementById("seeker-job-view").classList.add('hidden'); // Corrected syntax here
+                        document.getElementById("seeker-job-view").classList.add('hidden');
                         loadSeekerProfileForm();
                     };
                 }

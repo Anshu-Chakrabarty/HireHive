@@ -128,19 +128,32 @@ body {
 }
 
 
-/* FIX: Logo now uses the generic H1/I structure from index.html */
+/* FIX: Logo Replacement via CSS Background */
 
 .logo h1 {
-    color: var(--secondary-color);
-    font-size: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    /* Hide the text and icon, but keep the space */
+    text-indent: -9999px;
+    overflow: hidden;
+    /* Set the logo image as background */
+    background: url('Logo.jpg') no-repeat center center;
+    background-size: contain;
+    /* Define the size based on the new image dimensions */
+    width: 140px;
+    /* Adjust as necessary for aspect ratio */
+    height: 40px;
+    line-height: 40px;
+    margin: 0;
+    /* Remove default margin */
+    padding: 0;
 }
 
-.logo i {
-    color: var(--primary-color);
-    font-size: 1.6rem;
+
+/* Ensure Logo link container behaves correctly */
+
+.logo {
+    width: 140px;
+    /* Should match H1 width */
+    height: 40px;
 }
 
 
@@ -182,7 +195,6 @@ body {
 #welcome-message {
     font-weight: 500;
     color: var(--secondary-color);
-    margin-right: 0.5rem;
     white-space: nowrap;
 }
 
