@@ -112,7 +112,7 @@ body {
 }
 
 
-/* 1. NAVBAR ALIGNMENT FIX */
+/* 1. NAVBAR ALIGNMENT & SPACING FIX */
 
 .navbar {
     display: flex;
@@ -131,17 +131,14 @@ body {
     color: var(--secondary-color);
     font-size: 1.5rem;
     display: flex;
-    /* Make logo a flex container */
-    align-items: center;
     /* Vertically align icon and text */
+    align-items: center;
     gap: 8px;
-    /* Space between icon and text */
 }
 
 .logo i {
     color: var(--primary-color);
     font-size: 1.6rem;
-    /* Slightly larger icon */
 }
 
 
@@ -351,14 +348,14 @@ body {
     color: var(--secondary-color);
     border: 1px solid var(--primary-color);
     padding: 10px 25px;
-    /* Reduced padding */
+    /* Reduced padding for smaller size */
     border-radius: 8px;
     cursor: pointer;
     font-weight: 600;
     transition: background-color 0.3s ease, box-shadow 0.3s ease;
     flex-shrink: 0;
     height: 48px;
-    /* Fixed height to match fields */
+    /* Fixed height to align with fields */
 }
 
 .btn-home-search:hover {
@@ -1390,7 +1387,7 @@ footer {
 /* ------------------------------------------------------------------ */
 
 
-/* 6. CHATBOT STYLING */
+/* 6. CHATBOT STYLING & GUIDE POPUP */
 
 
 /* ------------------------------------------------------------------ */
@@ -1516,17 +1513,36 @@ footer {
 }
 
 
-/* Mobile Adjustments for Chat Window */
+/* Guide Popup */
 
-@media (max-width: 400px) {
-    #chat-window {
-        width: 95%;
-        /* Make it fill most of the screen */
-        height: 80%;
-        right: 2.5%;
-        bottom: 10%;
-        max-width: none;
-    }
+#guideModal .modal-content {
+    border-top: 5px solid var(--success-color);
+}
+
+.guide-close-btn {
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+#guideNextBtn {
+    margin-top: 1rem;
+    width: 100%;
+}
+
+
+/* Confetti/Balloon Container (Visual Effect Overlay) */
+
+#success-effect-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    /* Allows clicks to pass through */
+    z-index: 9998;
+    /* Below modals, above everything else */
+    overflow: hidden;
 }
 
 
@@ -1548,7 +1564,8 @@ footer {
     .return-home-container,
     .modal,
     #chat-icon-btn,
-    #chat-window {
+    #chat-window,
+    #success-effect-container {
         display: none !important;
     }
     .page-view,

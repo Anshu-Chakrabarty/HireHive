@@ -152,6 +152,92 @@ document.addEventListener("DOMContentLoaded", () => {
             const employerDashboard = document.getElementById("employer-dashboard");
             const googleLoginBtn = document.getElementById("googleLoginBtn");
 
+            // NEW GUIDE ELEMENTS
+            const guideModal = document.getElementById('guideModal');
+            const guideTitle = document.getElementById('guideTitle');
+            const guideBody = document.getElementById('guideBody');
+            const guideNextBtn = document.getElementById('guideNextBtn');
+            const guideCloseBtns = document.querySelectorAll('.guide-close-btn');
+
+            // --- Balloon/Confetti Burst Helper ---
+            const triggerSuccessEffect = () => {
+                const colors = ['#ffc107', '#007bff', '#dc3545', '#28a745', '#ffffff'];
+                const container = document.createElement('div');
+                container.id = 'success-effect-container';
+                document.body.appendChild(container);
+
+                for (let i = 0; i < 50; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.style.width = '10px';
+                    confetti.style.height = '10px';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.position = 'absolute';
+                    confetti.style.left = `${Math.random() * 100}vw`;
+                    confetti.style.top = `${-10 - Math.random() * 20}vh`;
+                    confetti.style.opacity = 1;
+                    confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+
+                    confetti.animate([
+                        { transform: `translateY(0) rotate(0deg)`, opacity: 1 },
+                        { transform: `translateY(${window.innerHeight * 1.5}px) rotate(720deg)`, opacity: 0.1 }
+                    ], {
+                        duration: 2500 + Math.random() * 1000,
+                        easing: 'ease-in-out',
+                        delay: Math.random() * 500
+                    });
+
+                    container.appendChild(confetti);
+                }
+
+                setTimeout(() => {
+                    container.remove();
+                }, 4000);
+            };
+
+            // --- Guide System Logic ---
+            const GUIDE_STEPS = (role) => {
+                if (role === 'employer') {
+                    return [
+                        { title: "Welcome, New Employer! 🎉", body: "We're excited to have you! Your next step is managing your job postings. Click 'Next Tip' to see your new Dashboard." },
+                        { title: "Post a Job", body: "Use the **'Post Job'** tab to easily list new openings. Remember to check your **Hive Plan** limits!" },
+                        { title: "Manage Applicants", body: "The **'Manage Posted Jobs'** tab lets you track applications, view seeker profiles, and shortlist candidates." },
+                    ];
+                }
+                return [ // Seeker flow
+                    { title: "Welcome to the Hive! 🐝", body: "Your career journey starts here! First, let's complete your profile for the best job matching." },
+                    { title: "Complete Your Profile", body: "Click **'Edit Profile'** to add your skills, education, and upload your CV. A complete profile gets noticed faster!" },
+                    { title: "Search & Apply", body: "Use the search bar or domain links to find jobs. Your skill-matched opportunities will appear under **Shortlisted Jobs**." }
+                ];
+            };
+
+            let currentGuideStep = 0;
+            let guideFlow = [];
+
+            const showGuidePopup = (userRole) => {
+                guideFlow = GUIDE_STEPS(userRole);
+                currentGuideStep = 0;
+                showNextGuideStep();
+            };
+
+            const showNextGuideStep = () => {
+                if (currentGuideStep < guideFlow.length) {
+                    const step = guideFlow[currentGuideStep];
+                    guideTitle.textContent = step.title;
+                    guideBody.innerHTML = step.body;
+                    guideModal.style.display = 'block';
+
+                    guideNextBtn.textContent = (currentGuideStep === guideFlow.length - 1) ? 'Start Exploring!' : 'Next Tip &rarr;';
+                    currentGuideStep++;
+                } else {
+                    guideModal.style.display = 'none';
+                }
+            };
+
+            guideNextBtn.onclick = showNextGuideStep;
+            guideCloseBtns.forEach(btn => btn.onclick = () => { guideModal.style.display = 'none'; });
+            // END Guide System Logic
+
+
             // Initialize Mobile Menu Toggle (remains the same)
             if (menuToggle && navLinks) {
                 menuToggle.addEventListener('click', () => {
@@ -292,7 +378,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             // ------------------------------------------------------------------
-            // 3. AUTH & MODAL LOGIC (FIXED)
+            // 3. AUTH & MODAL LOGIC (SUCCESS CONFETTI INTEGRATED)
             // ------------------------------------------------------------------
             const authModal = document.getElementById("authModal");
             const loginFormContainer = document.getElementById("login-form-container");
@@ -385,7 +471,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     authModal.style.display = "none";
                     document.getElementById("signupForm").reset();
                     updateHeaderUI();
-                    showStatusMessage("Welcome to the Hive!", "Your account has been successfully created.", false);
+
+                    triggerSuccessEffect(); // 🎉 Balloon Burst on Signup Success
+                    showGuidePopup(data.user.role); // 💡 Start Guide for new users
+
                 } catch (error) {
                     console.error("Signup failed:", error.message);
                     if (error.message.includes('already exists')) {
@@ -411,7 +500,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     authModal.style.display = "none";
                     document.getElementById("loginForm").reset();
                     updateHeaderUI();
-                    console.log("Login successful!");
+
+                    triggerSuccessEffect(); // 🎉 Balloon Burst on Login Success
+
                 } catch (error) {
                     console.error("Login failed:", error.message);
                     showStatusMessage("Login Failed", error.message.includes('credentials') ? error.message : "Invalid email or password. Please try again.", true);
@@ -449,7 +540,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         const userData = await fetchApi('auth/me', 'GET');
                         setLocalUser(userData.user);
                         updateHeaderUI();
-                        showStatusMessage("Welcome Back!", "Successfully signed in with Google.", false);
+                        triggerSuccessEffect(); // 🎉 Balloon Burst on Google Login Success
                     } catch (e) {
                         removeToken();
                         showStatusMessage("Sign In Error", "Could not retrieve user data after Google authentication.", true);
@@ -460,7 +551,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             // ------------------------------------------------------------------
-            // 4. CONTACT FORM LOGIC (remains the same)
+            // 4. CONTACT FORM LOGIC (omitted for brevity)
             // ------------------------------------------------------------------
             const contactForm = document.querySelector(".contact-form");
             if (contactForm) {
@@ -484,7 +575,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             // ------------------------------------------------------------------
-            // 5. SUBSCRIPTION LOGIC (remains the same)
+            // 5. SUBSCRIPTION LOGIC (omitted for brevity)
             // ------------------------------------------------------------------
             const showSubscriptionModal = () => {
                 const user = getLocalUser();
@@ -1246,7 +1337,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-
     // ------------------------------------------------------------------
     // 11. CHATBOT INTERFACE LOGIC (SIMULATED & FULLY FUNCTIONAL)
     // ------------------------------------------------------------------
@@ -1266,7 +1356,7 @@ document.addEventListener("DOMContentLoaded", () => {
         chatBody.scrollTop = chatBody.scrollHeight;
     };
     
-    // Function to guide user and scroll to section (made globally accessible via window)
+    // Function to guide user and scroll to section
     const guideUser = (viewName, sectionId) => {
         chatWindow.classList.add('hidden');
         showView(viewName);
