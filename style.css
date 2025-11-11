@@ -139,17 +139,10 @@ body {
     background-size: contain;
     /* Define the size based on the new image dimensions */
     width: 140px;
-    /* Adjust as necessary for aspect ratio */
     height: 40px;
     line-height: 40px;
     margin: 0;
-    /* Remove default margin */
     padding: 0;
-}
-
-.logo i {
-    color: var(--primary-color);
-    font-size: 1.6rem;
 }
 
 
@@ -253,7 +246,7 @@ body {
 
 .hero {
     /* RESTORED: Original image with a dark gradient overlay for text legibility */
-    background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("https://images.unsplash.com/photo-1521791136064-7986c2920216?q=80&w=2069") center center no-repeat;
+    background: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url("https://images.unsplash.com/photo-1521791136064-7986c2920216?q=80&w=2069") center center no-repeat;
     background-size: cover;
     color: var(--white-color);
     height: 70vh;
@@ -273,8 +266,30 @@ body {
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
+.hero-content p {
+    /* Subtle color contrast and animation visibility for the smaller text */
+    color: var(--light-color);
+    font-size: 1.2rem;
+    animation: slideUpFadeIn 1s ease-out 0.5s forwards;
+    /* Animation added */
+    opacity: 0;
+    /* Start invisible */
+    transform: translateY(10px);
+    /* Start slightly below */
+}
+
+@keyframes slideUpFadeIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 
 /* 3. PROMINENT & DARK SEARCH BAR (STYLED FOR SEEKER DASHBOARD FILTER) */
+
+
+/* (This section is kept for the Seeker Dashboard filter widget styling) */
 
 .home-search-section {
     position: relative;
@@ -867,7 +882,6 @@ form select {
 
 .employer-post-header .employer-subscription-status-small {
     font-size: 0.9rem;
-    font-weight: 600;
     color: var(--primary-color);
     cursor: pointer;
 }
@@ -902,7 +916,6 @@ form select {
 }
 
 .screening-title {
-    margin-top: 1rem;
     color: var(--secondary-color);
     font-size: 1rem;
 }
@@ -929,10 +942,8 @@ form select {
 
 .job-card:hover {
     border-color: var(--accent-color);
-    /* Highlight on hover */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     transform: translateY(-2px);
-    /* Slight lift */
 }
 
 .job-card h4 {
@@ -1164,7 +1175,6 @@ form select {
 
 #applicants-list .cv-link {
     color: var(--primary-color);
-    font-weight: 500;
     text-decoration: underline;
     cursor: pointer;
 }
@@ -1608,9 +1618,6 @@ footer {
     .menu-toggle,
     .auth-buttons,
     .home-search-section,
-    #design-globe-container,
-    .job-filter-nav,
-    .return-home-container,
     .modal,
     #chat-icon-btn,
     #chat-window,
