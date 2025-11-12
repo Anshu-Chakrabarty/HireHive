@@ -254,7 +254,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             }
 
-            // 💡 FIX: Close Navbar Menu when clicking outside (on main content area)
+            // 💡 NEW FIX: Close Navbar Menu when clicking outside (on main content area)
             if (appMainContent && navLinks) {
                 appMainContent.addEventListener('click', (event) => {
                     if (window.innerWidth < 992 && navLinks.classList.contains('active')) {
