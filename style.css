@@ -18,7 +18,7 @@ body {
     /* Dark Gray/Text */
     --accent-color: #007bff;
     /* Blue for links/info */
-    --light-color: #f8f-b9fa;
+    --light-color: #f8f9fa;
     /* Near White/Content Background */
     --soft-bg: #f4f4f7;
     /* Soft off-white background for pages */
@@ -233,7 +233,7 @@ body {
 }
 
 .btn-secondary {
-    /* Dark background, Light text (Yellow/Black combo) */
+    /* Dark background, Yellow text on hover (Yellow/Black combo) */
     background-color: var(--secondary-color);
     border-color: var(--secondary-color);
     color: var(--white-color);
@@ -243,7 +243,6 @@ body {
     background-color: #212529;
     border-color: #212529;
     color: var(--primary-color);
-    /* Yellow text on hover for attractive combination */
 }
 
 .btn:disabled {
@@ -263,7 +262,7 @@ body {
 
 .hero {
     /* RESTORED: Original image with a strong dark gradient overlay for text legibility */
-    background: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url("https://images.unsplash.com/photo-1521791136064-7986c2920216?q=80&w=2069") center center no-repeat;
+    background: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url("https://images.unsplash.com/photo-1521791136064-7986c2920216?q=80&w=2069") center center no-repeat;
     background-size: cover;
     color: var(--white-color);
     height: 70vh;
@@ -284,11 +283,15 @@ body {
 }
 
 .hero-content p {
+    /* Subtle color contrast and animation visibility for the smaller text */
     color: var(--light-color);
     font-size: 1.2rem;
     animation: slideUpFadeIn 1s ease-out 0.5s forwards;
+    /* Animation added */
     opacity: 0;
+    /* Start invisible */
     transform: translateY(10px);
+    /* Start slightly below */
 }
 
 @keyframes slideUpFadeIn {
@@ -865,9 +868,9 @@ form select {
     padding: 2rem 5%;
     /* FIX: Attractive Black/Yellow Gradient Background */
     background-color: var(--secondary-color);
-    background-image: linear-gradient(145deg, var(--dark-bg) 0%, var(--secondary-color) 40%, #1a1a1a 100%);
+    background-image: linear-gradient(145deg, var(--dark-bg) 0%, #303030 40%, #1a1a1a 100%);
     color: var(--light-color);
-    /* Ensure text is readable against dark background */
+    /* Ensure top-level text is visible */
     border-radius: 10px;
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
 }
@@ -879,10 +882,17 @@ form select {
 }
 
 
-/* Revert text color for contents inside card (forms/lists) */
+/* Revert text and element backgrounds inside dashboard views/cards */
 
-.full-width-dashboard .card,
-.full-width-dashboard .job-card,
+.full-width-dashboard .full-screen-view {
+    background: var(--white-color);
+    /* Inner content blocks should be white */
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.full-width-dashboard .job-detail-header h3,
 .full-width-dashboard h4,
 .full-width-dashboard p,
 .full-width-dashboard span,
