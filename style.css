@@ -15,10 +15,10 @@ body {
     --primary-hover-color: #e0a800;
     /* Darker Amber */
     --secondary-color: #343a40;
-    /* Dark Gray/Text (Black) */
+    /* Dark Gray/Text */
     --accent-color: #007bff;
     /* Blue for links/info */
-    --light-color: #f8f9fa;
+    --light-color: #f8f-b9fa;
     /* Near White/Content Background */
     --soft-bg: #f4f4f7;
     /* Soft off-white background for pages */
@@ -201,7 +201,7 @@ body {
 }
 
 
-/* Buttons (General and Primary) */
+/* Buttons (Unchanged) */
 
 .btn {
     padding: 0.6rem 1.2rem;
@@ -262,6 +262,7 @@ body {
 /* 2. HERO BACKGROUND FIX */
 
 .hero {
+    /* RESTORED: Original image with a strong dark gradient overlay for text legibility */
     background: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url("https://images.unsplash.com/photo-1521791136064-7986c2920216?q=80&w=2069") center center no-repeat;
     background-size: cover;
     color: var(--white-color);
@@ -862,8 +863,32 @@ form select {
 
 .full-width-dashboard {
     padding: 2rem 5%;
-    /* FIX: Added background for attractiveness */
-    background-color: var(--soft-bg);
+    /* FIX: Attractive Black/Yellow Gradient Background */
+    background-color: var(--secondary-color);
+    background-image: linear-gradient(145deg, var(--dark-bg) 0%, var(--secondary-color) 40%, #1a1a1a 100%);
+    color: var(--light-color);
+    /* Ensure text is readable against dark background */
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+}
+
+.employer-dashboard h2 {
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 10px;
+}
+
+
+/* Revert text color for contents inside card (forms/lists) */
+
+.full-width-dashboard .card,
+.full-width-dashboard .job-card,
+.full-width-dashboard h4,
+.full-width-dashboard p,
+.full-width-dashboard span,
+.full-width-dashboard label {
+    color: var(--secondary-color);
+    /* Dark text on white/light card */
 }
 
 
@@ -879,6 +904,18 @@ form select {
 .employer-tab-btn {
     flex-grow: 1;
     text-align: center;
+    /* Ensuring all buttons use the yellow/black primary theme */
+    background-color: var(--light-color);
+    border-color: #ccc;
+    color: var(--secondary-color);
+    transition: all 0.3s ease;
+}
+
+.employer-tab-btn.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-hover-color);
+    color: var(--secondary-color);
+    font-weight: 600;
 }
 
 .employer-post-header,
@@ -888,7 +925,8 @@ form select {
     align-items: center;
     margin-bottom: 1.5rem;
     padding-bottom: 0.5rem;
-    border-bottom: 2px solid var(--light-color);
+    border-bottom: 2px solid var(--primary-color);
+    /* Ensure border is visible */
 }
 
 .employer-post-header .employer-subscription-status-small {
