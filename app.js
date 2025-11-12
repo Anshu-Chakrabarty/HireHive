@@ -275,7 +275,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (token) {
                     if (!user) {
                         try {
-                            // FIX: This section is key for session persistence. It fetches the user if the token is present but the session storage is cleared.
                             const data = await fetchApi('auth/me', 'GET');
                             user = data.user;
                             setLocalUser(user);
@@ -344,18 +343,12 @@ document.addEventListener("DOMContentLoaded", () => {
             window.addEventListener('hashchange', () => {
                 const hash = window.location.hash.replace('#', '');
                 const viewName = hash || 'home';
-
-                // FIX: The hashchange event itself updates the view, which triggers updateHeaderUI 
-                // to re-check login status if necessary. We explicitly call showView here.
                 showView(viewName, false, null);
             });
 
             document.querySelectorAll('[data-view]').forEach(el => {
                 el.addEventListener('click', (e) => {
                     const viewName = e.currentTarget.dataset.view;
-
-                    // FIX: Ensure clicking main navigation links doesn't trigger redundant checks 
-                    // but simply renders the view as intended by the SPA design.
                     if (viewName === 'home-link') {
                         showView('home');
                         setTimeout(() => {

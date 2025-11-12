@@ -240,6 +240,7 @@ body {
 .btn-secondary:hover {
     background-color: #212529;
     border-color: #212529;
+    color: var(--primary-color);
 }
 
 .btn:disabled {
