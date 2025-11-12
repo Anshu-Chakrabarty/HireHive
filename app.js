@@ -76,7 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 'worker': { name: "Worker Plan", limit: 5, icon: "fas fa-user-tie", color: "#007bff", description: "Post up to 5 active jobs. Access to 50 candidate resumes." },
                 'colony': { name: "Colony Plan", limit: 15, icon: "fas fa-industry", color: "#fd7e14", description: "Post up to 15 active jobs. Access to unlimited resume downloads." },
                 'queen': { name: "Queen Plan", limit: 30, icon: "fas fa-crown", color: "#6f42c1", description: "Post up to 30 active jobs. Access to premium candidate database." },
-                'hive_master': { name: "Hive Master Plan", limit: Infinity, icon: "fas fa-trophy", color: "#dc3545", description: "Unlimited job postings. Full candidate database access." },
+                'hive_master': { limit: Infinity, name: "Hive Master Plan", icon: "fas fa-trophy", color: "#dc3545", description: "Unlimited job postings. Full candidate database access." },
             };
 
             async function fetchApi(endpoint, method = 'GET', data = null, isFormData = false) {
@@ -161,7 +161,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const guideNextBtn = document.getElementById('guideNextBtn');
             const guideCloseBtns = document.querySelectorAll('.guide-close-btn');
 
-            // --- Balloon/Confetti Burst Helper (omitted for brevity) ---
+            // --- Balloon/Confetti Burst Helper ---
             const triggerSuccessEffect = () => {
                 const colors = ['#ffc107', '#007bff', '#dc3545', '#28a745', '#ffffff'];
                 const container = document.createElement('div');
@@ -196,7 +196,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }, 4000);
             };
 
-            // --- Guide System Logic (omitted for brevity) ---
+            // --- Guide System Logic ---
             const GUIDE_STEPS = (role) => {
                 if (role === 'employer') {
                     return [
@@ -378,13 +378,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     const category = e.currentTarget.querySelector('span').textContent.trim();
                     const currentUser = getLocalUser();
 
-                    if (!currentUser || currentUser.role !== 'seeker') {
-                        showStatusMessage("Login Required", "Please log in as a Job Seeker to search jobs by category.", false);
+                    // 💡 FIX 1: Check if the user is NOT logged in FIRST.
+                    if (!currentUser) {
+                        showStatusMessage("Login Required", "Please log in as a Job Seeker to view and search jobs.", false);
                         showView('home');
                         showForm(loginFormContainer);
                         return;
                     }
 
+                    // If logged in, route them to their dashboard with filters, regardless of role.
+                    // If they are an employer, initDashboard handles routing them to the employer view.
                     const filters = { category: category };
                     showView('dashboard', true, filters);
                 });
@@ -995,10 +998,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     document.getElementById("postNewJobBtn").onclick = () => switchEmployerView("employer-post-view");
 
-    // 💡 FIX: Wires up the main navigation buttons in the dashboard header
     document.getElementById("postJobTab").onclick = () => switchEmployerView("employer-post-view");
     document.getElementById("manageJobsTab").onclick = () => switchEmployerView("employer-management-view");
-    document.getElementById("choosePlanTab").onclick = () => showSubscriptionModal(); // Calls modal directly
+    document.getElementById("choosePlanTab").onclick = () => showSubscriptionModal(); 
 
 
     function loadEmployerPostForm() {
@@ -1206,66 +1208,6 @@ document.addEventListener("DOMContentLoaded", () => {
             postedJobsList.innerHTML = `<p style='color:red;'>Failed to load posted jobs: ${error.message}</p>`;
         }
     }
-    
-    // 💡 NEW FUNCTION: Display Job Details for Employer
-    function showJobDetailsView(job) {
-        const detailView = document.getElementById("employer-job-view-details");
-        const managementView = document.getElementById("employer-management-view");
-        const jobManagementTab = document.getElementById("manageJobsTab");
-
-        // Hide management view
-        managementView.classList.add("hidden");
-        
-        // Show detail view
-        detailView.classList.remove("hidden");
-        
-        const screeningQ = (job.screening_questions || []).map((q, index) => 
-            `<p><strong>Q${index + 1}:</strong> ${q}</p>`).join('');
-
-        detailView.innerHTML = `
-            <div class="job-detail-header">
-                <button class="btn btn-secondary" id="backToManagementBtn" style="margin-right: 15px;">
-                    <i class="fas fa-arrow-left"></i> Back to Management
-                </button>
-                <h3 class="view-title">${job.title}</h3>
-            </div>
-            
-            <div class="job-meta-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-                <p><i class="fas fa-map-marker-alt"></i> Location: <strong>${job.location}</strong></p>
-                <p><i class="fas fa-briefcase"></i> Experience: <strong>${job.experience}</strong></p>
-                <p><i class="fas fa-money-bill-wave"></i> Salary: <strong>${job.salary}</strong></p>
-                <p><i class="fas fa-clock"></i> Notice Period: <strong>${job.notice_period || 'N/A'}</strong></p>
-            </div>
-            
-            <h4>Job Description:</h4>
-            <p style="white-space: pre-wrap; margin-bottom: 20px;">${job.description}</p>
-            
-            <h4>Required Skills:</h4>
-            <div class="skills" style="margin-bottom: 20px;">
-                ${(job.required_skills || []).map((s) => `<span>${s}</span>`).join("")}
-            </div>
-
-            <h4>Screening Questions:</h4>
-            ${screeningQ ? screeningQ : '<p>No specific screening questions were added.</p>'}
-            
-            <button class="btn btn-primary" onclick="showApplicantsModal(${job.id});">
-                <i class="fas fa-users"></i> View Applicants for this Job
-            </button>
-        `;
-        
-        // Listener to go back
-        document.getElementById("backToManagementBtn").onclick = () => {
-            detailView.classList.add("hidden");
-            managementView.classList.remove("hidden");
-            loadPostedJobs(); 
-            // Ensure the tab highlighting goes back to Manage Jobs
-            document.querySelectorAll('#employer-dashboard .job-filter-nav button').forEach(btn => btn.classList.remove('btn-primary'));
-            jobManagementTab.classList.add('btn-primary');
-        };
-        
-        switchEmployerView("employer-job-view-details"); // Ensure the tab highlight is set, though usually it's set by the button click itself
-    }
-
 
     async function editJob(jobId, jobToEdit) {
         const result = await showConfirmation(`Edit Job: ${jobToEdit.title}`, "Are you sure you want to edit this job? This will pre-fill the posting form.", false, 'Edit Now');
