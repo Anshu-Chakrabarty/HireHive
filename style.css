@@ -15,7 +15,7 @@ body {
     --primary-hover-color: #e0a800;
     /* Darker Amber */
     --secondary-color: #343a40;
-    /* Dark Gray/Text */
+    /* Dark Gray/Text (Black) */
     --accent-color: #007bff;
     /* Blue for links/info */
     --light-color: #f8f9fa;
@@ -201,7 +201,7 @@ body {
 }
 
 
-/* Buttons (Unchanged) */
+/* Buttons (General and Primary) */
 
 .btn {
     padding: 0.6rem 1.2rem;
@@ -217,6 +217,7 @@ body {
 }
 
 .btn-primary {
+    /* Yellow background, Dark text (Yellow/Black combo) */
     background-color: var(--primary-color);
     border-color: var(--primary-color);
     color: var(--secondary-color);
@@ -232,6 +233,7 @@ body {
 }
 
 .btn-secondary {
+    /* Dark background, Light text (Yellow/Black combo) */
     background-color: var(--secondary-color);
     border-color: var(--secondary-color);
     color: var(--white-color);
@@ -241,6 +243,7 @@ body {
     background-color: #212529;
     border-color: #212529;
     color: var(--primary-color);
+    /* Yellow text on hover for attractive combination */
 }
 
 .btn:disabled {
@@ -259,7 +262,6 @@ body {
 /* 2. HERO BACKGROUND FIX */
 
 .hero {
-    /* RESTORED: Original image with a strong dark gradient overlay for text legibility */
     background: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url("https://images.unsplash.com/photo-1521791136064-7986c2920216?q=80&w=2069") center center no-repeat;
     background-size: cover;
     color: var(--white-color);
@@ -281,15 +283,11 @@ body {
 }
 
 .hero-content p {
-    /* Subtle color contrast and animation visibility for the smaller text */
     color: var(--light-color);
     font-size: 1.2rem;
     animation: slideUpFadeIn 1s ease-out 0.5s forwards;
-    /* Animation added */
     opacity: 0;
-    /* Start invisible */
     transform: translateY(10px);
-    /* Start slightly below */
 }
 
 @keyframes slideUpFadeIn {
@@ -864,6 +862,8 @@ form select {
 
 .full-width-dashboard {
     padding: 2rem 5%;
+    /* FIX: Added background for attractiveness */
+    background-color: var(--soft-bg);
 }
 
 

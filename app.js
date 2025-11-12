@@ -161,7 +161,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const guideNextBtn = document.getElementById('guideNextBtn');
             const guideCloseBtns = document.querySelectorAll('.guide-close-btn');
 
-            // --- Balloon/Confetti Burst Helper ---
+            // --- Balloon/Confetti Burst Helper (omitted for brevity) ---
             const triggerSuccessEffect = () => {
                 const colors = ['#ffc107', '#007bff', '#dc3545', '#28a745', '#ffffff'];
                 const container = document.createElement('div');
@@ -196,7 +196,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }, 4000);
             };
 
-            // --- Guide System Logic ---
+            // --- Guide System Logic (omitted for brevity) ---
             const GUIDE_STEPS = (role) => {
                 if (role === 'employer') {
                     return [
@@ -254,7 +254,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             }
 
-            // 💡 NEW FIX: Close Navbar Menu when clicking outside (on main content area)
+            // 💡 FIX: Close Navbar Menu when clicking outside (on main content area)
             if (appMainContent && navLinks) {
                 appMainContent.addEventListener('click', (event) => {
                     if (window.innerWidth < 992 && navLinks.classList.contains('active')) {
@@ -440,18 +440,10 @@ document.addEventListener("DOMContentLoaded", () => {
             if (closeApplicantsModalBtn) { closeApplicantsModalBtn.onclick = () => { applicantsModal.style.display = "none"; }; }
 
             // Navigation for Forgot Password
-            if (forgotPasswordLink) {
-                forgotPasswordLink.onclick = (e) => {
-                    e.preventDefault();
-                    showForm(forgotFormContainer);
-                };
-            }
-            if (backToLoginLink) {
-                backToLoginLink.onclick = (e) => {
-                    e.preventDefault();
-                    showForm(loginFormContainer);
-                };
-            }
+            if (forgotPasswordLink) { forgotPasswordLink.onclick = (e) => { e.preventDefault();
+                    showForm(forgotFormContainer); }; }
+            if (backToLoginLink) { backToLoginLink.onclick = (e) => { e.preventDefault();
+                    showForm(loginFormContainer); }; }
 
 
             // Global modal close logic (remains the same)
@@ -1003,6 +995,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     document.getElementById("postNewJobBtn").onclick = () => switchEmployerView("employer-post-view");
 
+    // 💡 FIX: Wires up the main navigation buttons in the dashboard header
+    document.getElementById("postJobTab").onclick = () => switchEmployerView("employer-post-view");
+    document.getElementById("manageJobsTab").onclick = () => switchEmployerView("employer-management-view");
+    document.getElementById("choosePlanTab").onclick = () => showSubscriptionModal(); // Calls modal directly
+
+
     function loadEmployerPostForm() {
         const user = getLocalUser();
         const currentPlanKey = user.subscriptionstatus || 'buzz';
@@ -1213,6 +1211,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function showJobDetailsView(job) {
         const detailView = document.getElementById("employer-job-view-details");
         const managementView = document.getElementById("employer-management-view");
+        const jobManagementTab = document.getElementById("manageJobsTab");
 
         // Hide management view
         managementView.classList.add("hidden");
@@ -1225,7 +1224,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         detailView.innerHTML = `
             <div class="job-detail-header">
-                <button class="btn btn-secondary" id="backToManagementBtn">
+                <button class="btn btn-secondary" id="backToManagementBtn" style="margin-right: 15px;">
                     <i class="fas fa-arrow-left"></i> Back to Management
                 </button>
                 <h3 class="view-title">${job.title}</h3>
@@ -1259,9 +1258,12 @@ document.addEventListener("DOMContentLoaded", () => {
             detailView.classList.add("hidden");
             managementView.classList.remove("hidden");
             loadPostedJobs(); 
+            // Ensure the tab highlighting goes back to Manage Jobs
+            document.querySelectorAll('#employer-dashboard .job-filter-nav button').forEach(btn => btn.classList.remove('btn-primary'));
+            jobManagementTab.classList.add('btn-primary');
         };
         
-        switchEmployerView("employer-job-view-details"); // Ensure the tab highlight is on the correct element
+        switchEmployerView("employer-job-view-details"); // Ensure the tab highlight is set, though usually it's set by the button click itself
     }
 
 
