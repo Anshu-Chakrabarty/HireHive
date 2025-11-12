@@ -275,6 +275,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (token) {
                     if (!user) {
                         try {
+                            // FIX: This section is key for session persistence. It fetches the user if the token is present but the session storage is cleared.
                             const data = await fetchApi('auth/me', 'GET');
                             user = data.user;
                             setLocalUser(user);
@@ -343,12 +344,18 @@ document.addEventListener("DOMContentLoaded", () => {
             window.addEventListener('hashchange', () => {
                 const hash = window.location.hash.replace('#', '');
                 const viewName = hash || 'home';
+
+                // FIX: The hashchange event itself updates the view, which triggers updateHeaderUI 
+                // to re-check login status if necessary. We explicitly call showView here.
                 showView(viewName, false, null);
             });
 
             document.querySelectorAll('[data-view]').forEach(el => {
                 el.addEventListener('click', (e) => {
                     const viewName = e.currentTarget.dataset.view;
+
+                    // FIX: Ensure clicking main navigation links doesn't trigger redundant checks 
+                    // but simply renders the view as intended by the SPA design.
                     if (viewName === 'home-link') {
                         showView('home');
                         setTimeout(() => {
@@ -440,10 +447,18 @@ document.addEventListener("DOMContentLoaded", () => {
             if (closeApplicantsModalBtn) { closeApplicantsModalBtn.onclick = () => { applicantsModal.style.display = "none"; }; }
 
             // Navigation for Forgot Password
-            if (forgotPasswordLink) { forgotPasswordLink.onclick = (e) => { e.preventDefault();
-                    showForm(forgotFormContainer); }; }
-            if (backToLoginLink) { backToLoginLink.onclick = (e) => { e.preventDefault();
-                    showForm(loginFormContainer); }; }
+            if (forgotPasswordLink) {
+                forgotPasswordLink.onclick = (e) => {
+                    e.preventDefault();
+                    showForm(forgotFormContainer);
+                };
+            }
+            if (backToLoginLink) {
+                backToLoginLink.onclick = (e) => {
+                    e.preventDefault();
+                    showForm(loginFormContainer);
+                };
+            }
 
 
             // Global modal close logic (remains the same)
@@ -967,7 +982,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // ------------------------------------------------------------------
-    // 8. EMPLOYER DASHBOARD LOGIC (omitted for brevity)
+    // 8. EMPLOYER DASHBOARD LOGIC 
     // ------------------------------------------------------------------
     function switchEmployerView(targetViewId) {
         document.querySelectorAll("#employer-dashboard .full-screen-view").forEach(view => {
@@ -987,6 +1002,10 @@ document.addEventListener("DOMContentLoaded", () => {
             targetView.classList.remove("hidden");
             if (targetViewId === "employer-post-view") loadEmployerPostForm();
             if (targetViewId === "employer-management-view") loadPostedJobs();
+            // Show applicants detail view if needed (job view details)
+            if (targetViewId === "employer-job-view-details") { 
+                document.getElementById("employer-management-view").classList.add("hidden");
+            }
         }
     }
     document.getElementById("postNewJobBtn").onclick = () => switchEmployerView("employer-post-view");
@@ -1162,6 +1181,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 `;
             });
 
+            // --- FIX: View Job Details Listener ---
+            document.querySelectorAll(".job-card").forEach((card) => {
+                card.onclick = (e) => {
+                    // Only trigger if the click wasn't on an action button
+                    if (!e.target.closest('.job-actions')) {
+                        const jobId = parseInt(card.dataset.jobId);
+                        const jobDetails = myJobs.find(j => j.id === jobId);
+                        if (jobDetails) {
+                            showJobDetailsView(jobDetails);
+                        }
+                    }
+                };
+            });
+            // END FIX
+
             document.querySelectorAll(".view-applicants-btn").forEach((button) => {
                 button.onclick = (e) => { e.preventDefault(); showApplicantsModal(parseInt(e.currentTarget.dataset.jobId)); };
             });
@@ -1181,6 +1215,62 @@ document.addEventListener("DOMContentLoaded", () => {
             postedJobsList.innerHTML = `<p style='color:red;'>Failed to load posted jobs: ${error.message}</p>`;
         }
     }
+    
+    // 💡 NEW FUNCTION: Display Job Details for Employer
+    function showJobDetailsView(job) {
+        const detailView = document.getElementById("employer-job-view-details");
+        const managementView = document.getElementById("employer-management-view");
+
+        // Hide management view
+        managementView.classList.add("hidden");
+        
+        // Show detail view
+        detailView.classList.remove("hidden");
+        
+        const screeningQ = (job.screening_questions || []).map((q, index) => 
+            `<p><strong>Q${index + 1}:</strong> ${q}</p>`).join('');
+
+        detailView.innerHTML = `
+            <div class="job-detail-header">
+                <button class="btn btn-secondary" id="backToManagementBtn">
+                    <i class="fas fa-arrow-left"></i> Back to Management
+                </button>
+                <h3 class="view-title">${job.title}</h3>
+            </div>
+            
+            <div class="job-meta-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                <p><i class="fas fa-map-marker-alt"></i> Location: <strong>${job.location}</strong></p>
+                <p><i class="fas fa-briefcase"></i> Experience: <strong>${job.experience}</strong></p>
+                <p><i class="fas fa-money-bill-wave"></i> Salary: <strong>${job.salary}</strong></p>
+                <p><i class="fas fa-clock"></i> Notice Period: <strong>${job.notice_period || 'N/A'}</strong></p>
+            </div>
+            
+            <h4>Job Description:</h4>
+            <p style="white-space: pre-wrap; margin-bottom: 20px;">${job.description}</p>
+            
+            <h4>Required Skills:</h4>
+            <div class="skills" style="margin-bottom: 20px;">
+                ${(job.required_skills || []).map((s) => `<span>${s}</span>`).join("")}
+            </div>
+
+            <h4>Screening Questions:</h4>
+            ${screeningQ ? screeningQ : '<p>No specific screening questions were added.</p>'}
+            
+            <button class="btn btn-primary" onclick="showApplicantsModal(${job.id});">
+                <i class="fas fa-users"></i> View Applicants for this Job
+            </button>
+        `;
+        
+        // Listener to go back
+        document.getElementById("backToManagementBtn").onclick = () => {
+            detailView.classList.add("hidden");
+            managementView.classList.remove("hidden");
+            loadPostedJobs(); 
+        };
+        
+        switchEmployerView("employer-job-view-details"); // Ensure the tab highlight is on the correct element
+    }
+
 
     async function editJob(jobId, jobToEdit) {
         const result = await showConfirmation(`Edit Job: ${jobToEdit.title}`, "Are you sure you want to edit this job? This will pre-fill the posting form.", false, 'Edit Now');

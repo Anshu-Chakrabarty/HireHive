@@ -131,18 +131,31 @@ body {
 /* FIX: Logo Replacement via CSS Background (Using Logo.jpg) */
 
 .logo h1 {
-    /* Hide the text and icon, but keep the space */
+    /* Hide the text and icon, but set background/border */
     text-indent: -9999px;
     overflow: hidden;
     /* Set the logo image as background */
     background: url('Logo.jpg') no-repeat center center;
     background-size: contain;
-    /* Define the size based on the new image dimensions */
-    width: 140px;
-    height: 40px;
-    line-height: 40px;
+    /* Define the size and border for prominent look */
+    width: 160px;
+    /* Increased size for visibility on big screens */
+    height: 50px;
+    /* Increased size */
+    line-height: 50px;
     margin: 0;
-    padding: 0;
+    /* Remove default margin */
+    padding: 2px;
+    /* Attractive Border Combination */
+    border: 2px solid var(--secondary-color);
+    border-radius: 5px;
+    outline: 2px solid var(--primary-color);
+    outline-offset: -4px;
+}
+
+.logo i {
+    color: var(--primary-color);
+    font-size: 1.6rem;
 }
 
 
@@ -242,10 +255,10 @@ body {
 }
 
 
-/* 2. HERO BACKGROUND FIX - RESTORING HANDSHAKE IMAGE WITH DARK OVERLAY */
+/* 2. HERO BACKGROUND FIX */
 
 .hero {
-    /* RESTORED: Original image with a dark gradient overlay for text legibility */
+    /* RESTORED: Original image with a strong dark gradient overlay for text legibility */
     background: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url("https://images.unsplash.com/photo-1521791136064-7986c2920216?q=80&w=2069") center center no-repeat;
     background-size: cover;
     color: var(--white-color);
@@ -287,9 +300,6 @@ body {
 
 
 /* 3. PROMINENT & DARK SEARCH BAR (STYLED FOR SEEKER DASHBOARD FILTER) */
-
-
-/* (This section is kept for the Seeker Dashboard filter widget styling) */
 
 .home-search-section {
     position: relative;
@@ -942,8 +952,10 @@ form select {
 
 .job-card:hover {
     border-color: var(--accent-color);
+    /* Highlight on hover */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     transform: translateY(-2px);
+    /* Slight lift */
 }
 
 .job-card h4 {
@@ -1354,6 +1366,12 @@ footer {
     }
     .logo {
         order: 1;
+    }
+    /* Logo size adjustment for smaller devices */
+    .logo h1 {
+        width: 120px;
+        height: 35px;
+        line-height: 35px;
     }
     /* Search Bar Collapse (styles kept for integrity, though element removed) */
     .home-search-bar-form {
