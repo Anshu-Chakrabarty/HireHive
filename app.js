@@ -2,24 +2,44 @@
 document.addEventListener("DOMContentLoaded", () => {       // ------------------------------------------------------------------
                    // 1. GLOBAL CONFIGURATION & API HELPERS
                    // ------------------------------------------------------------------
-                   const BASE_URL = "https://hirehive-api.onrender.com/api";
+                  
+            const BASE_URL = "https://hirehive-api.onrender.com/api";
 
                    // Reusable token and user storage helpers (using localStorage for token, sessionStorage for user cache)
-                   const getToken = () => localStorage.getItem("hirehiveToken");       const setToken = (token) => localStorage.setItem("hirehiveToken", token);       const removeToken = () => localStorage.removeItem("hirehiveToken");
+                  
+            const getToken = () => localStorage.getItem("hirehiveToken");      
+            const setToken = (token) => localStorage.setItem("hirehiveToken", token);      
+            const removeToken = () => localStorage.removeItem("hirehiveToken");
 
-                   const getLocalUser = () => JSON.parse(sessionStorage.getItem("localUser"));       const setLocalUser = (user) => {         if (user) {           sessionStorage.setItem("localUser", JSON.stringify(user));         } else {           sessionStorage.removeItem("localUser");         }       };
+                  
+            const getLocalUser = () => JSON.parse(sessionStorage.getItem("localUser"));      
+            const setLocalUser = (user) => {         if (user) {           sessionStorage.setItem("localUser", JSON.stringify(user));         } else {           sessionStorage.removeItem("localUser");         }       };
 
-                   const statusMessageModal = document.getElementById("statusMessageModal");      
+                  
+            const statusMessageModal = document.getElementById("statusMessageModal");      
             document.querySelectorAll('.status-close-btn').forEach(btn => {         btn.onclick = () => { statusMessageModal.style.display = 'none'; };       });
 
-                   const showStatusMessage = (title, body, isError = false) => {         document.getElementById("statusMessageTitle").textContent = title;        
-                document.getElementById("statusMessageBody").textContent = body;         if (isError) {           document.getElementById("statusMessageTitle").style.color = 'var(--danger-color)';         } else {           document.getElementById("statusMessageTitle").style.color = 'var(--secondary-color)';         }        
-                statusMessageModal.style.display = 'block';       };
+                  
+            const showStatusMessage = (title, body, isError = false) => {        
+                document.getElementById("statusMessageTitle").textContent = title;        
+                document.getElementById("statusMessageBody").textContent = body;        
+                if (isError) {           document.getElementById("statusMessageTitle").style.color = 'var(--danger-color)';         } else {           document.getElementById("statusMessageTitle").style.color = 'var(--secondary-color)';         }        
+                statusMessageModal.style.display = 'block';      
+            };
 
                    // --- Custom Confirmation/Prompt Modals ---
-                   const confirmationModal = document.getElementById("confirmationModal");       const confirmTitleEl = document.getElementById("confirmTitle");       const confirmBodyEl = document.getElementById("confirmBody");       const confirmInputEl = document.getElementById("confirmInput");       const confirmOKBtn = document.getElementById("confirmOKBtn");       const confirmCancelBtn = document.getElementById("confirmCancelBtn");
+                  
+            const confirmationModal = document.getElementById("confirmationModal");      
+            const confirmTitleEl = document.getElementById("confirmTitle");      
+            const confirmBodyEl = document.getElementById("confirmBody");      
+            const confirmInputEl = document.getElementById("confirmInput");      
+            const confirmOKBtn = document.getElementById("confirmOKBtn");      
+            const confirmCancelBtn = document.getElementById("confirmCancelBtn");
 
-                   const showConfirmation = (title, body, isPrompt = false, okText = 'OK') => {         return new Promise((resolve) => {           confirmTitleEl.textContent = title;          
+                  
+            const showConfirmation = (title, body, isPrompt = false, okText = 'OK') => {        
+                return new Promise((resolve) => {          
+                    confirmTitleEl.textContent = title;          
                     confirmBodyEl.textContent = body;          
                     confirmInputEl.classList.toggle('hidden', !isPrompt);          
                     confirmInputEl.value = '';          
@@ -27,45 +47,102 @@ document.addEventListener("DOMContentLoaded", () => {       // -----------
                     confirmCancelBtn.textContent = isPrompt ? 'Cancel Application' : 'Cancel';          
                     confirmationModal.style.display = 'block';
 
-                               const cleanup = (result) => {             confirmationModal.style.display = 'none';            
+                              
+                    const cleanup = (result) => {            
+                        confirmationModal.style.display = 'none';            
                         confirmOKBtn.onclick = null;            
                         confirmCancelBtn.onclick = null;            
-                        resolve(result);           };
+                        resolve(result);          
+                    };
 
                               
                     confirmOKBtn.onclick = () => {             cleanup(isPrompt ? confirmInputEl.value.trim() : true);           };
 
                               
-                    confirmCancelBtn.onclick = () => {             cleanup(isPrompt ? null : false);           };         });       };
+                    confirmCancelBtn.onclick = () => {             cleanup(isPrompt ? null : false);           };        
+                });      
+            };
 
                    // --- Subscription Plan Limits & Details ---
-                   const HIVE_PLANS = {         'buzz': {           name: "Buzz Plan",           limit: 2,           icon: "fas fa-bug",           color: "#28a745",           price: "Free",           description: "Post 2 free job listing. Access to limited candidate applications (up to 30 resumes). Basic employer dashboard access. Email notifications for job applicants. Standard listing visibility for 7 days. Community support via email."         },          'worker': {           name: "Worker Plan",           limit: 5,           icon: "fas fa-user-tie",           color: "#007bff",           price: "₹1,999 / month",           description: "Post up to 5 active jobs. Access to 50 candidate resumes. Basic resume search filters (location, experience). Branded company profile page. Job promotion on HireHive social channels. 15-day visibility on job board. Email & chat support."         },          'colony': {           name: "Colony Plan",           limit: 15,           icon: "fas fa-industry",           color: "#fd7e14",           price: "₹4,999 / month",           description: "Post up to 15 active jobs. Access to unlimited resume downloads. Advanced candidate filtering (skills, education, salary range). Access to 'Featured Candidates' pool. Company logo on all job posts. Weekly job performance analytics. Priority placement in search results. Dedicated account manager (email only)."         },          'queen': {           name: "Queen Plan",           limit: 30,           icon: "fas fa-crown",           color: "#6f42c1",           price: "₹8,999 / month",           description: "Post up to 30 active jobs. Access to premium candidate database. AI-powered candidate recommendations. Smart applicant tracking system (ATS) dashboard. Job posts featured on partner platforms (LinkedIn, Indeed sync optional). Video interview scheduling feature. Custom career page integration (for your website). Dedicated account manager (chat & call support)."         },          'hive_master': {           name: "Hive Master Plan",           limit: Infinity,           icon: "fas fa-trophy",           color: "#dc3545",           price: "₹14,999 / month",           description: "Unlimited job postings. Full candidate database access with export/download. AI-based shortlisting & skill-matching automation. Team sub-accounts (multi-user login for HR teams). Monthly performance & hiring analytics report. Priority listing on home page & social promotions. API access for job posting integration. 24x7 premium support (call, chat & WhatsApp). Access to future beta tools (AI Resume Scoring, Auto Interview Bot)."         },        };
+                  
+            const HIVE_PLANS = {         'buzz': {           name: "Buzz Plan",           limit: 2,           icon: "fas fa-bug",           color: "#28a745",           price: "Free",           description: "Post 2 free job listing. Access to limited candidate applications (up to 30 resumes). Basic employer dashboard access. Email notifications for job applicants. Standard listing visibility for 7 days. Community support via email."         },          'worker': {           name: "Worker Plan",           limit: 5,           icon: "fas fa-user-tie",           color: "#007bff",           price: "₹1,999 / month",           description: "Post up to 5 active jobs. Access to 50 candidate resumes. Basic resume search filters (location, experience). Branded company profile page. Job promotion on HireHive social channels. 15-day visibility on job board. Email & chat support."         },          'colony': {           name: "Colony Plan",           limit: 15,           icon: "fas fa-industry",           color: "#fd7e14",           price: "₹4,999 / month",           description: "Post up to 15 active jobs. Access to unlimited resume downloads. Advanced candidate filtering (skills, education, salary range). Access to 'Featured Candidates' pool. Company logo on all job posts. Weekly job performance analytics. Priority placement in search results. Dedicated account manager (email only)."         },          'queen': {           name: "Queen Plan",           limit: 30,           icon: "fas fa-crown",           color: "#6f42c1",           price: "₹8,999 / month",           description: "Post up to 30 active jobs. Access to premium candidate database. AI-powered candidate recommendations. Smart applicant tracking system (ATS) dashboard. Job posts featured on partner platforms (LinkedIn, Indeed sync optional). Video interview scheduling feature. Custom career page integration (for your website). Dedicated account manager (chat & call support)."         },          'hive_master': {           name: "Hive Master Plan",           limit: Infinity,           icon: "fas fa-trophy",           color: "#dc3545",           price: "₹14,999 / month",           description: "Unlimited job postings. Full candidate database access with export/download. AI-based shortlisting & skill-matching automation. Team sub-accounts (multi-user login for HR teams). Monthly performance & hiring analytics report. Priority listing on home page & social promotions. API access for job posting integration. 24x7 premium support (call, chat & WhatsApp). Access to future beta tools (AI Resume Scoring, Auto Interview Bot)."         },        };
 
                   
-            async function fetchApi(endpoint, method = 'GET', data = null, isFormData = false) {         const token = getToken();         const url = `${BASE_URL}/${endpoint}`;         const headers = {};         if (token) {           headers['Authorization'] = `Bearer ${token}`;         }         const config = { method, headers };         if (data) {           if (isFormData) {             config.body = data;           } else {             headers['Content-Type'] = 'application/json';            
-                        config.body = JSON.stringify(data);           }         }         try {           const response = await fetch(url, config);           const contentType = response.headers.get("content-type");           if (contentType && contentType.includes("application/json")) {             const responseData = await response.json();             if (!response.ok) {               const errorMessage = responseData.error || `Request failed with status ${response.status}`;               throw new Error(errorMessage);             }             return responseData;           } else if (!response.ok) {             const errorText = await response.text();            
-                        console.error(`Backend Error (${response.status}):`, errorText);             throw new Error(`Server returned status ${response.status}. Please check backend logs.`);           }           return {};         } catch (error) {           console.error("Fetch API Error:", error);           throw error;         }       }
+            async function fetchApi(endpoint, method = 'GET', data = null, isFormData = false) {        
+                const token = getToken();        
+                const url = `${BASE_URL}/${endpoint}`;        
+                const headers = {};        
+                if (token) {           headers['Authorization'] = `Bearer ${token}`;         }        
+                const config = { method, headers };        
+                if (data) {          
+                    if (isFormData) {             config.body = data;           } else {            
+                        headers['Content-Type'] = 'application/json';            
+                        config.body = JSON.stringify(data);          
+                    }        
+                }        
+                try {          
+                    const response = await fetch(url, config);          
+                    const contentType = response.headers.get("content-type");          
+                    if (contentType && contentType.includes("application/json")) {             const responseData = await response.json();             if (!response.ok) {               const errorMessage = responseData.error || `Request failed with status ${response.status}`;               throw new Error(errorMessage);             }             return responseData;           } else if (!response.ok) {            
+                        const errorText = await response.text();            
+                        console.error(`Backend Error (${response.status}):`, errorText);            
+                        throw new Error(`Server returned status ${response.status}. Please check backend logs.`);          
+                    }          
+                    return {};        
+                } catch (error) {           console.error("Fetch API Error:", error);           throw error;         }      
+            }
 
-                   const setLoading = (buttonId, isLoading, defaultText = 'Submit') => {         const btn = document.getElementById(buttonId);         if (!btn) return;         if (isLoading) {           btn.disabled = true;          
-                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';         } else {           btn.disabled = false;          
-                    btn.textContent = defaultText;         }       };
+                  
+            const setLoading = (buttonId, isLoading, defaultText = 'Submit') => {        
+                const btn = document.getElementById(buttonId);        
+                if (!btn) return;        
+                if (isLoading) {          
+                    btn.disabled = true;          
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';        
+                } else {          
+                    btn.disabled = false;          
+                    btn.textContent = defaultText;        
+                }      
+            };
 
                    // ------------------------------------------------------------------
                    // 2. DOM ELEMENTS & SPA ROUTER
                    // ------------------------------------------------------------------
-                   const views = {         'home': document.getElementById("home-view"),          'dashboard': document.getElementById("dashboard-view"),          'admin': document.getElementById("admin-view"),          'about': document.getElementById("about-view"),          'contact': document.getElementById("contact-view"),          'career-growth': document.getElementById("career-growth-view"),          'plans': document.getElementById("plans-view"),        };
+                  
+            const views = {         'home': document.getElementById("home-view"),          'dashboard': document.getElementById("dashboard-view"),          'admin': document.getElementById("admin-view"),          'about': document.getElementById("about-view"),          'contact': document.getElementById("contact-view"),          'career-growth': document.getElementById("career-growth-view"),          'plans': document.getElementById("plans-view"),        };
 
-                   const dashboardLink = document.getElementById("dashboardLink");       const adminLink = document.getElementById("adminLink");       const loginBtn = document.getElementById("loginBtn");       const signupBtn = document.getElementById("signupBtn");       const logoutBtn = document.getElementById("logoutBtn");       const welcomeMessage = document.getElementById("welcome-message");       const menuToggle = document.getElementById('menuToggle');       const navLinks = document.getElementById('navLinks');       const employerDashboard = document.getElementById("employer-dashboard");       const googleLoginBtn = document.getElementById("googleLoginBtn");       const appMainContent = document.getElementById('app-main-content');
+                  
+            const dashboardLink = document.getElementById("dashboardLink");      
+            const adminLink = document.getElementById("adminLink");      
+            const loginBtn = document.getElementById("loginBtn");      
+            const signupBtn = document.getElementById("signupBtn");      
+            const logoutBtn = document.getElementById("logoutBtn");      
+            const welcomeMessage = document.getElementById("welcome-message");      
+            const menuToggle = document.getElementById('menuToggle');      
+            const navLinks = document.getElementById('navLinks');      
+            const employerDashboard = document.getElementById("employer-dashboard");      
+            const googleLoginBtn = document.getElementById("googleLoginBtn");      
+            const appMainContent = document.getElementById('app-main-content');
 
                    // NEW GUIDE ELEMENTS
-                   const guideModal = document.getElementById('guideModal');       const guideTitle = document.getElementById('guideTitle');       const guideBody = document.getElementById('guideBody');       const guideNextBtn = document.getElementById('guideNextBtn');       const guideCloseBtns = document.querySelectorAll('.guide-close-btn');
+                  
+            const guideModal = document.getElementById('guideModal');      
+            const guideTitle = document.getElementById('guideTitle');      
+            const guideBody = document.getElementById('guideBody');      
+            const guideNextBtn = document.getElementById('guideNextBtn');      
+            const guideCloseBtns = document.querySelectorAll('.guide-close-btn');
 
                    // --- Balloon/Confetti Burst Helper ---
-                   const triggerSuccessEffect = () => {         const colors = ['#ffc107', '#007bff', '#dc3545', '#28a745', '#ffffff'];         const container = document.createElement('div');        
+                  
+            const triggerSuccessEffect = () => {        
+                const colors = ['#ffc107', '#007bff', '#dc3545', '#28a745', '#ffffff'];        
+                const container = document.createElement('div');        
                 container.id = 'success-effect-container';        
                 document.body.appendChild(container);
 
-                         for (let i = 0; i < 50; i++) {           const confetti = document.createElement('div');          
+                        
+                for (let i = 0; i < 50; i++) {          
+                    const confetti = document.createElement('div');          
                     confetti.style.width = '10px';          
                     confetti.style.height = '10px';          
                     confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];          
@@ -79,30 +156,46 @@ document.addEventListener("DOMContentLoaded", () => {       // -----------
                     confetti.animate([            { transform: `translateY(0) rotate(0deg)`, opacity: 1 },              { transform: `translateY(${window.innerHeight * 1.5}px) rotate(720deg)`, opacity: 0.1 }          ], {             duration: 2500 + Math.random() * 1000,             easing: 'ease-in-out',             delay: Math.random() * 500           });
 
                               
-                    container.appendChild(confetti);         }
+                    container.appendChild(confetti);        
+                }
 
                         
-                setTimeout(() => {           container.remove();         }, 4000);       };
+                setTimeout(() => {           container.remove();         }, 4000);      
+            };
 
                    // --- Guide System Logic ---
-                   const GUIDE_STEPS = (role) => {         if (role === 'employer') {           return [            { title: "Welcome, New Employer! 🎉", body: "We're excited to have you! Your next step is managing your job postings. Click 'Next Tip' to see your new Dashboard." },              { title: "Post a Job", body: "Use the **'Post Job'** tab to easily list new openings. Remember to check your **Hive Plan** limits!" },              { title: "Manage Applicants", body: "The **'Manage Posted Jobs'** tab lets you track applications, view seeker profiles, and shortlist candidates." },           ];         }         return [ // Seeker flow
+                  
+            const GUIDE_STEPS = (role) => {        
+                if (role === 'employer') {           return [            { title: "Welcome, New Employer! 🎉", body: "We're excited to have you! Your next step is managing your job postings. Click 'Next Tip' to see your new Dashboard." },              { title: "Post a Job", body: "Use the **'Post Job'** tab to easily list new openings. Remember to check your **Hive Plan** limits!" },              { title: "Manage Applicants", body: "The **'Manage Posted Jobs'** tab lets you track applications, view seeker profiles, and shortlist candidates." },           ];         }        
+                return [ // Seeker flow
                               { title: "Welcome to the Hive! 🐝", body: "Your career journey starts here! First, let's complete your profile for the best job matching." },            { title: "Complete Your Profile", body: "Click **'Edit Profile'** to add your skills, education, and upload your CV. A complete profile gets noticed faster!" },            { title: "Search & Apply", body: "Use the search bar or domain links to find jobs. Your skill-matched opportunities will appear under **Shortlisted Jobs**." }        
-                ];       };
+                ];      
+            };
 
-                   let currentGuideStep = 0;       let guideFlow = [];
+                  
+            let currentGuideStep = 0;      
+            let guideFlow = [];
 
-                   const showGuidePopup = (userRole) => {         guideFlow = GUIDE_STEPS(userRole);        
+                  
+            const showGuidePopup = (userRole) => {        
+                guideFlow = GUIDE_STEPS(userRole);        
                 currentGuideStep = 0;        
-                showNextGuideStep();       };
+                showNextGuideStep();      
+            };
 
-                   const showNextGuideStep = () => {         if (currentGuideStep < guideFlow.length) {           const step = guideFlow[currentGuideStep];          
+                  
+            const showNextGuideStep = () => {        
+                if (currentGuideStep < guideFlow.length) {          
+                    const step = guideFlow[currentGuideStep];          
                     guideTitle.textContent = step.title;          
                     guideBody.innerHTML = step.body;          
                     guideModal.style.display = 'block';
 
                               
                     guideNextBtn.textContent = (currentGuideStep === guideFlow.length - 1) ? 'Start Exploring!' : 'Next Tip';          
-                    currentGuideStep++;         } else {           guideModal.style.display = 'none';         }       };
+                    currentGuideStep++;        
+                } else {           guideModal.style.display = 'none';         }      
+            };
 
                   
             guideNextBtn.onclick = showNextGuideStep;      
@@ -110,107 +203,206 @@ document.addEventListener("DOMContentLoaded", () => {       // -----------
 
 
                    // Initialize Mobile Menu Toggle (remains the same)
-                   if (menuToggle && navLinks) {         menuToggle.addEventListener('click', () => {           navLinks.classList.toggle('active');         });        
-                navLinks.querySelectorAll('a').forEach(link => {           link.addEventListener('click', () => {             if (navLinks.classList.contains('active')) {               navLinks.classList.remove('active');             }           });         });       }
+                  
+            if (menuToggle && navLinks) {        
+                menuToggle.addEventListener('click', () => {           navLinks.classList.toggle('active');         });        
+                navLinks.querySelectorAll('a').forEach(link => {           link.addEventListener('click', () => {             if (navLinks.classList.contains('active')) {               navLinks.classList.remove('active');             }           });         });      
+            }
 
                    // 💡 NEW FIX: Close Navbar Menu when clicking outside (on main content area)
-                   if (appMainContent && navLinks) {         appMainContent.addEventListener('click', (event) => {           if (window.innerWidth < 992 && navLinks.classList.contains('active')) {             if (!navLinks.contains(event.target) && event.target !== menuToggle && !menuToggle.contains(event.target)) {               navLinks.classList.remove('active');             }           }         });       }
+                  
+            if (appMainContent && navLinks) {         appMainContent.addEventListener('click', (event) => {           if (window.innerWidth < 992 && navLinks.classList.contains('active')) {             if (!navLinks.contains(event.target) && event.target !== menuToggle && !menuToggle.contains(event.target)) {               navLinks.classList.remove('active');             }           }         });       }
 
 
                   
-            async function updateHeaderUI() {         let user = getLocalUser();         const token = getToken();        
+            async function updateHeaderUI() {        
+                let user = getLocalUser();        
+                const token = getToken();        
                 [loginBtn, signupBtn, logoutBtn, dashboardLink, adminLink, welcomeMessage].forEach(el => el.classList.add("hidden"));        
                 welcomeMessage.textContent = "";
 
-                         if (token) {           if (!user) {             try {               const data = await fetchApi('auth/me', 'GET');              
+                        
+                if (token) {          
+                    if (!user) {            
+                        try {              
+                            const data = await fetchApi('auth/me', 'GET');              
                             user = data.user;              
-                            setLocalUser(user);             } catch (e) {               console.warn("Token expired or invalid. Logging out.", e.message);              
+                            setLocalUser(user);            
+                        } catch (e) {              
+                            console.warn("Token expired or invalid. Logging out.", e.message);              
                             removeToken();              
                             setLocalUser(null);              
                             window.location.hash = '';              
-                            updateHeaderUI();               return;             }           }          
+                            updateHeaderUI();              
+                            return;            
+                        }          
+                    }          
                     logoutBtn.classList.remove("hidden");          
                     dashboardLink.classList.remove("hidden");          
                     welcomeMessage.classList.remove("hidden");          
-                    welcomeMessage.textContent = `Welcome, ${user.name.split(' ')[0]}`;           if (user.role === 'admin') {             adminLink.classList.remove("hidden");           }         } else {           loginBtn.classList.remove("hidden");          
-                    signupBtn.classList.remove("hidden");           if (window.location.hash.includes('google_token=') || window.location.hash.includes('error=')) {             handleGoogleAuthCallback();           }         }
-
-                         const hash = window.location.hash.replace('#', '');         let targetView = hash || 'home';         if (token && user && (targetView === 'home' || targetView === '')) {           targetView = (user.role === 'admin') ? 'admin' : 'dashboard';         } else if (!token && (targetView === 'dashboard' || targetView === 'admin')) {           targetView = 'home';         }
+                    welcomeMessage.textContent = `Welcome, ${user.name.split(' ')[0]}`;          
+                    if (user.role === 'admin') {             adminLink.classList.remove("hidden");           }        
+                } else {          
+                    loginBtn.classList.remove("hidden");          
+                    signupBtn.classList.remove("hidden");          
+                    if (window.location.hash.includes('google_token=') || window.location.hash.includes('error=')) {             handleGoogleAuthCallback();           }        
+                }
 
                         
-                showView(targetView, false, null);       }
+                const hash = window.location.hash.replace('#', '');        
+                let targetView = hash || 'home';        
+                if (token && user && (targetView === 'home' || targetView === '')) {           targetView = (user.role === 'admin') ? 'admin' : 'dashboard';         } else if (!token && (targetView === 'dashboard' || targetView === 'admin')) {           targetView = 'home';         }
 
-                   const showView = (viewName, updateHash = true, filters = null) => {         Object.values(views).forEach(v => v.classList.add("hidden"));         let viewToShow = views[viewName];
+                        
+                showView(targetView, false, null);      
+            }
 
-                         if (!viewToShow) {           viewToShow = views['home'];          
-                    viewName = 'home';         }
+                  
+            const showView = (viewName, updateHash = true, filters = null) => {        
+                Object.values(views).forEach(v => v.classList.add("hidden"));        
+                let viewToShow = views[viewName];
+
+                        
+                if (!viewToShow) {          
+                    viewToShow = views['home'];          
+                    viewName = 'home';        
+                }
 
                         
                 viewToShow.classList.remove("hidden");
 
-                         if (viewName === 'dashboard') initDashboard(filters);         if (viewName === 'admin') initAdmin();
+                        
+                if (viewName === 'dashboard') initDashboard(filters);        
+                if (viewName === 'admin') initAdmin();
 
-                         if (viewName === 'plans') loadPlansView(); // NEW: Load Plans View
+                        
+                if (viewName === 'plans') loadPlansView(); // NEW: Load Plans View
 
-                         if (updateHash) {           const hash = (viewName === 'home') ? '' : `#${viewName}`;           if (window.location.hash !== hash) {             history.pushState(null, '', hash);           }         }
+                        
+                if (updateHash) {           const hash = (viewName === 'home') ? '' : `#${viewName}`;           if (window.location.hash !== hash) {             history.pushState(null, '', hash);           }         }
 
-                         if (!viewName.includes('home-link')) {           window.scrollTo({ top: 0, behavior: 'smooth' });         }       };
+                        
+                if (!viewName.includes('home-link')) {           window.scrollTo({ top: 0, behavior: 'smooth' });         }      
+            };
 
                   
-            window.addEventListener('hashchange', () => {         const hash = window.location.hash.replace('#', '');         const viewName = hash || 'home';        
+            window.addEventListener('hashchange', () => {        
+                const hash = window.location.hash.replace('#', '');        
+                const viewName = hash || 'home';        
                 updateHeaderUI(); // Re-run header update on hashchange to re-route authenticated users
-                       });
+                      
+            });
 
                   
-            document.querySelectorAll('[data-view]').forEach(el => {         el.addEventListener('click', (e) => {           const viewName = e.currentTarget.dataset.view;           if (viewName === 'home-link') {             showView('home');            
-                        setTimeout(() => {               const targetEl = document.getElementById(e.currentTarget.getAttribute('href').substring(1));               if (targetEl) {                 targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });               }             }, 10);           } else {             showView(viewName);           }         });       });
+            document.querySelectorAll('[data-view]').forEach(el => {        
+                el.addEventListener('click', (e) => {          
+                    const viewName = e.currentTarget.dataset.view;          
+                    if (viewName === 'home-link') {            
+                        showView('home');            
+                        setTimeout(() => {               const targetEl = document.getElementById(e.currentTarget.getAttribute('href').substring(1));               if (targetEl) {                 targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });               }             }, 10);          
+                    } else {             showView(viewName);           }        
+                });      
+            });
 
                   
-            logoutBtn.onclick = () => {         removeToken();        
+            logoutBtn.onclick = () => {        
+                removeToken();        
                 setLocalUser(null);        
                 window.location.hash = '';        
-                updateHeaderUI();       };
+                updateHeaderUI();      
+            };
 
                   
             updateHeaderUI();
 
                   
-            document.querySelectorAll(".opportunity-link").forEach((link) => {         link.addEventListener('click', (e) => {           e.preventDefault();           const category = e.currentTarget.querySelector('span').textContent.trim();           const currentUser = getLocalUser();
+            document.querySelectorAll(".opportunity-link").forEach((link) => {        
+                link.addEventListener('click', (e) => {          
+                    e.preventDefault();          
+                    const category = e.currentTarget.querySelector('span').textContent.trim();          
+                    const currentUser = getLocalUser();
 
                                // 💡 FIX 1: Check if the user is NOT logged in FIRST.
-                               if (!currentUser) {             showStatusMessage("Login Required", "Please log in as a Job Seeker to view and search jobs.", false);            
+                              
+                    if (!currentUser) {            
+                        showStatusMessage("Login Required", "Please log in as a Job Seeker to view and search jobs.", false);            
                         showView('home');            
-                        showForm(loginFormContainer);             return;           }
+                        showForm(loginFormContainer);            
+                        return;          
+                    }
 
                                // If logged in, route them to their dashboard with filters, regardless of role.
                                // If they are an employer, initDashboard handles routing them to the employer view.
-                               const filters = { category: category };          
-                    showView('dashboard', true, filters);         });       });
+                              
+                    const filters = { category: category };          
+                    showView('dashboard', true, filters);        
+                });      
+            });
 
 
                    // ------------------------------------------------------------------
                    // 3. AUTH & MODAL LOGIC (PASSWORD RESET & CLOSURE FIX)
                    // ------------------------------------------------------------------
-                   const authModal = document.getElementById("authModal");       const loginFormContainer = document.getElementById("login-form-container");       const signupFormContainer = document.getElementById("signup-form-container");       const forgotFormContainer = document.getElementById("forgot-form-container");       const otpFormContainer = document.getElementById("otp-form-container");       const closeAuthBtn = document.querySelector("#authModal .close-btn");       const applicantsModal = document.getElementById("applicantsModal");       const subscriptionModal = document.getElementById("subscriptionModal");       const closeApplicantsModalBtn = document.getElementById("close-applicants-modal");       const userTypeSelect = document.getElementById("userType");       const companyNameInput = document.getElementById("signupCompanyName");       const switchFormLink = document.getElementById("switch-form-link");       const forgotPasswordLink = document.getElementById("forgotPasswordLink");       const backToLoginLink = document.getElementById("backToLoginLink");
+                  
+            const authModal = document.getElementById("authModal");      
+            const loginFormContainer = document.getElementById("login-form-container");      
+            const signupFormContainer = document.getElementById("signup-form-container");      
+            const forgotFormContainer = document.getElementById("forgot-form-container");      
+            const otpFormContainer = document.getElementById("otp-form-container");      
+            const closeAuthBtn = document.querySelector("#authModal .close-btn");      
+            const applicantsModal = document.getElementById("applicantsModal");      
+            const subscriptionModal = document.getElementById("subscriptionModal");      
+            const closeApplicantsModalBtn = document.getElementById("close-applicants-modal");      
+            const userTypeSelect = document.getElementById("userType");      
+            const companyNameInput = document.getElementById("signupCompanyName");      
+            const switchFormLink = document.getElementById("switch-form-link");      
+            const forgotPasswordLink = document.getElementById("forgotPasswordLink");      
+            const backToLoginLink = document.getElementById("backToLoginLink");
 
 
-                   const showForm = (formToShow) => {        
+                  
+            const showForm = (formToShow) => {        
                 [loginFormContainer, signupFormContainer, forgotFormContainer, otpFormContainer].forEach((f) => f ? f.classList.add("hidden") : null);        
                 formToShow.classList.remove("hidden");        
                 authModal.style.display = "block";
 
                          // Handle switch/forgot links visibility
-                         if (formToShow === loginFormContainer || formToShow === signupFormContainer) {           if (switchFormLink) {             switchFormLink.style.display = 'block';             const isLogin = formToShow === loginFormContainer;            
-                        switchFormLink.textContent = isLogin ? "Need an account? Sign Up" : "Already have an account? Log In";           }           if (forgotPasswordLink) forgotPasswordLink.style.display = (formToShow === loginFormContainer) ? 'block' : 'none';         } else {           if (switchFormLink) switchFormLink.style.display = 'none';           if (forgotPasswordLink) forgotPasswordLink.style.display = 'none';         }
+                        
+                if (formToShow === loginFormContainer || formToShow === signupFormContainer) {          
+                    if (switchFormLink) {            
+                        switchFormLink.style.display = 'block';            
+                        const isLogin = formToShow === loginFormContainer;            
+                        switchFormLink.textContent = isLogin ? "Need an account? Sign Up" : "Already have an account? Log In";          
+                    }          
+                    if (forgotPasswordLink) forgotPasswordLink.style.display = (formToShow === loginFormContainer) ? 'block' : 'none';        
+                } else {           if (switchFormLink) switchFormLink.style.display = 'none';           if (forgotPasswordLink) forgotPasswordLink.style.display = 'none';         }
 
-                         if (formToShow === signupFormContainer) {           userTypeSelect.value = 'seeker';          
+                        
+                if (formToShow === signupFormContainer) {          
+                    userTypeSelect.value = 'seeker';          
                     companyNameInput.classList.add('hidden');          
-                    companyNameInput.required = false;         }       };       if (loginBtn) { loginBtn.onclick = () => showForm(loginFormContainer); }       if (signupBtn) { signupBtn.onclick = () => showForm(signupFormContainer); }       if (closeAuthBtn) { closeAuthBtn.onclick = () => { authModal.style.display = "none"; }; }       if (closeApplicantsModalBtn) { closeApplicantsModalBtn.onclick = () => { applicantsModal.style.display = "none"; }; }
+                    companyNameInput.required = false;        
+                }      
+            };      
+            if (loginBtn) { loginBtn.onclick = () => showForm(loginFormContainer); }      
+            if (signupBtn) { signupBtn.onclick = () => showForm(signupFormContainer); }      
+            if (closeAuthBtn) { closeAuthBtn.onclick = () => { authModal.style.display = "none"; }; }      
+            if (closeApplicantsModalBtn) { closeApplicantsModalBtn.onclick = () => { applicantsModal.style.display = "none"; }; }
 
                    // Navigation for Forgot Password
-                   if (forgotPasswordLink) { forgotPasswordLink.onclick = (e) => { e.preventDefault();          
-                    showForm(forgotFormContainer); }; }       if (backToLoginLink) { backToLoginLink.onclick = (e) => { e.preventDefault();          
-                    showForm(loginFormContainer); }; }
+                  
+            if (forgotPasswordLink) {
+                forgotPasswordLink.onclick = (e) => {
+                    e.preventDefault();          
+                    showForm(forgotFormContainer);
+                };
+            }      
+            if (backToLoginLink) {
+                backToLoginLink.onclick = (e) => {
+                    e.preventDefault();          
+                    showForm(loginFormContainer);
+                };
+            }
 
 
                    // Global modal close logic (remains the same)
@@ -222,30 +414,67 @@ document.addEventListener("DOMContentLoaded", () => {       // -----------
                             }       };
 
                    // Switch links logic (remains the same)
-                   if (switchFormLink) {         switchFormLink.addEventListener('click', (e) => {           e.preventDefault();           const formContainer = signupFormContainer.classList.contains("hidden") ? signupFormContainer : loginFormContainer;          
-                    showForm(formContainer);         });       }
+                  
+            if (switchFormLink) {        
+                switchFormLink.addEventListener('click', (e) => {          
+                    e.preventDefault();          
+                    const formContainer = signupFormContainer.classList.contains("hidden") ? signupFormContainer : loginFormContainer;          
+                    showForm(formContainer);        
+                });      
+            }
 
-                   if (userTypeSelect) {         userTypeSelect.addEventListener('change', () => {           if (userTypeSelect.value === 'employer') {             companyNameInput.classList.remove('hidden');            
-                        companyNameInput.required = true;           } else {             companyNameInput.classList.add('hidden');            
-                        companyNameInput.required = false;           }         });       }
+                  
+            if (userTypeSelect) {        
+                userTypeSelect.addEventListener('change', () => {          
+                    if (userTypeSelect.value === 'employer') {            
+                        companyNameInput.classList.remove('hidden');            
+                        companyNameInput.required = true;          
+                    } else {            
+                        companyNameInput.classList.add('hidden');            
+                        companyNameInput.required = false;          
+                    }        
+                });      
+            }
 
                    // Forgot Password Submission Logic
-                   if (document.getElementById("forgotPasswordForm")) {         document.getElementById("forgotPasswordForm").addEventListener("submit", async(e) => {           e.preventDefault();          
-                    setLoading('submitResetBtn', true, 'Send Reset Link');           const email = document.getElementById("resetEmail").value;           try {             const data = await fetchApi('auth/forgot-password', 'POST', { email });
+                  
+            if (document.getElementById("forgotPasswordForm")) {        
+                document.getElementById("forgotPasswordForm").addEventListener("submit", async(e) => {          
+                    e.preventDefault();          
+                    setLoading('submitResetBtn', true, 'Send Reset Link');          
+                    const email = document.getElementById("resetEmail").value;          
+                    try {            
+                        const data = await fetchApi('auth/forgot-password', 'POST', { email });
 
                                     
                         authModal.style.display = "none";            
                         showStatusMessage("Reset Link Sent", data.message, false);            
                         document.getElementById("forgotPasswordForm").reset();
 
-                                   } catch (error) {             authModal.style.display = "none";            
-                        showStatusMessage("Reset Failed", error.message, true);           } finally {             setLoading('submitResetBtn', false, 'Send Reset Link');           }         });       }
+                                  
+                    } catch (error) {            
+                        authModal.style.display = "none";            
+                        showStatusMessage("Reset Failed", error.message, true);          
+                    } finally {             setLoading('submitResetBtn', false, 'Send Reset Link');           }        
+                });      
+            }
 
 
                    // Auth Submission Logic (FIXED for better error handling)
                   
-            document.getElementById("signupForm").addEventListener("submit", async(e) => {         e.preventDefault();        
-                setLoading('submitSignupBtn', true, 'Sign Up');         const name = document.getElementById("signupName").value;         const email = document.getElementById("signupEmail").value;         const password = document.getElementById("signupPassword").value;         const phone = document.getElementById("signupPhone").value;         const role = userTypeSelect.value;         const companyName = companyNameInput.value;         const signupData = { name, email, password, role, phone };         if (role === 'employer') {           signupData.companyName = companyName;         }         try {           const data = await fetchApi('auth/signup', 'POST', signupData);          
+            document.getElementById("signupForm").addEventListener("submit", async(e) => {        
+                e.preventDefault();        
+                setLoading('submitSignupBtn', true, 'Sign Up');        
+                const name = document.getElementById("signupName").value;        
+                const email = document.getElementById("signupEmail").value;        
+                const password = document.getElementById("signupPassword").value;        
+                const phone = document.getElementById("signupPhone").value;        
+                const role = userTypeSelect.value;        
+                const companyName = companyNameInput.value;        
+                const signupData = { name, email, password, role, phone };        
+                if (role === 'employer') {           signupData.companyName = companyName;         }        
+                try {          
+                    const data = await fetchApi('auth/signup', 'POST', signupData);          
                     setToken(data.token);          
                     setLocalUser(data.user);
 
@@ -261,14 +490,26 @@ document.addEventListener("DOMContentLoaded", () => {       // -----------
                               
                     showGuidePopup(data.user.role); // 💡 Start Guide for new users
 
-                             } catch (error) {           console.error("Signup failed:", error.message);          
+                            
+                } catch (error) {          
+                    console.error("Signup failed:", error.message);          
                     authModal.style.display = "none"; // <<-- FIX: Close Auth Modal on failure
-                               if (error.message.includes('already exists')) {             showStatusMessage("Account Exists", "A user with this email already exists. Please log in.", true);            
-                        showForm(loginFormContainer);           } else {             showStatusMessage("Registration Failed", error.message, true);           }         } finally {           setLoading('submitSignupBtn', false, 'Sign Up');         }       });
+                              
+                    if (error.message.includes('already exists')) {            
+                        showStatusMessage("Account Exists", "A user with this email already exists. Please log in.", true);            
+                        showForm(loginFormContainer);          
+                    } else {             showStatusMessage("Registration Failed", error.message, true);           }        
+                } finally {           setLoading('submitSignupBtn', false, 'Sign Up');         }      
+            });
 
                   
-            document.getElementById("loginForm").addEventListener("submit", async(e) => {         e.preventDefault();        
-                setLoading('submitLoginBtn', true, 'Login');         const email = document.getElementById("loginEmail").value;         const password = document.getElementById("loginPassword").value;         try {           const data = await fetchApi('auth/login', 'POST', { email, password });          
+            document.getElementById("loginForm").addEventListener("submit", async(e) => {        
+                e.preventDefault();        
+                setLoading('submitLoginBtn', true, 'Login');        
+                const email = document.getElementById("loginEmail").value;        
+                const password = document.getElementById("loginPassword").value;        
+                try {          
+                    const data = await fetchApi('auth/login', 'POST', { email, password });          
                     setToken(data.token);          
                     setLocalUser(data.user);
 
@@ -282,60 +523,109 @@ document.addEventListener("DOMContentLoaded", () => {       // -----------
                               
                     triggerSuccessEffect(); // 🎉 Balloon Burst on Login Success
 
-                             } catch (error) {           console.error("Login failed:", error.message);          
+                            
+                } catch (error) {          
+                    console.error("Login failed:", error.message);          
                     authModal.style.display = "none"; // <<-- FIX: Close Auth Modal on failure
                               
-                    showStatusMessage("Login Failed", error.message.includes('credentials') ? error.message : "Invalid email or password. Please try again.", true);         } finally {           setLoading('submitLoginBtn', false, 'Login');         }       });
+                    showStatusMessage("Login Failed", error.message.includes('credentials') ? error.message : "Invalid email or password. Please try again.", true);        
+                } finally {           setLoading('submitLoginBtn', false, 'Login');         }      
+            });
 
 
                    // ------------------------------------------------------------------
                    // NEW: GOOGLE OAUTH FLOW HANDLER (remains robust)
                    // ------------------------------------------------------------------
-                   if (googleLoginBtn) {         googleLoginBtn.addEventListener('click', () => {           // Note: Auth modal closes when redirecting to Google, so no manual closure needed here.
+                  
+            if (googleLoginBtn) {         googleLoginBtn.addEventListener('click', () => {           // Note: Auth modal closes when redirecting to Google, so no manual closure needed here.
                                window.location.href = `${BASE_URL}/auth/google/login`;         });       }
 
                   
-            async function handleGoogleAuthCallback() {         const hash = window.location.hash;         const urlParams = new URLSearchParams(hash.substring(1));         const token = urlParams.get('google_token');         const error = urlParams.get('error');
+            async function handleGoogleAuthCallback() {        
+                const hash = window.location.hash;        
+                const urlParams = new URLSearchParams(hash.substring(1));        
+                const token = urlParams.get('google_token');        
+                const error = urlParams.get('error');
 
                         
                 history.pushState("", document.title, window.location.pathname + window.location.search);
 
-                         if (error) {           authModal.style.display = "none"; // <<-- FIX: Close Auth Modal after callback failure
+                        
+                if (error) {          
+                    authModal.style.display = "none"; // <<-- FIX: Close Auth Modal after callback failure
                               
-                    showStatusMessage("Google Sign-In Failed", `Authentication was cancelled or failed. Error: ${error}`, true);           return;         }
+                    showStatusMessage("Google Sign-In Failed", `Authentication was cancelled or failed. Error: ${error}`, true);          
+                    return;        
+                }
 
-                         if (token) {           setToken(token);           try {             const userData = await fetchApi('auth/me', 'GET');            
+                        
+                if (token) {          
+                    setToken(token);          
+                    try {            
+                        const userData = await fetchApi('auth/me', 'GET');            
                         setLocalUser(userData.user);            
                         updateHeaderUI();            
                         authModal.style.display = "none"; // <<-- FIX: Close Auth Modal after successful user fetch
                                     
                         triggerSuccessEffect(); // 🎉 Balloon Burst on Google Login Success
-                                   } catch (e) {             removeToken();            
+                                  
+                    } catch (e) {            
+                        removeToken();            
                         authModal.style.display = "none"; // <<-- FIX: Close Auth Modal after token/user failure
                                     
-                        showStatusMessage("Sign In Error", "Could not retrieve user data after Google authentication.", true);           }         }       }       // ------------------------------------------------------------------
+                        showStatusMessage("Sign In Error", "Could not retrieve user data after Google authentication.", true);          
+                    }        
+                }      
+            }       // ------------------------------------------------------------------
 
 
                    // ------------------------------------------------------------------
                    // 4. CONTACT FORM LOGIC 
                    // ------------------------------------------------------------------
-                   const contactForm = document.querySelector(".contact-form");       if (contactForm) {         contactForm.addEventListener('submit', async(e) => {           e.preventDefault();          
-                    setLoading('contactSubmitBtn', true, 'Send Message');           const name = document.getElementById("contact-name").value;           const email = document.getElementById("contact-email").value;           const message = document.getElementById("contact-message").value;           try {             await fetchApi('contact', 'POST', { name, email, message });            
+                  
+            const contactForm = document.querySelector(".contact-form");      
+            if (contactForm) {        
+                contactForm.addEventListener('submit', async(e) => {          
+                    e.preventDefault();          
+                    setLoading('contactSubmitBtn', true, 'Send Message');          
+                    const name = document.getElementById("contact-name").value;          
+                    const email = document.getElementById("contact-email").value;          
+                    const message = document.getElementById("contact-message").value;          
+                    try {            
+                        await fetchApi('contact', 'POST', { name, email, message });            
                         showStatusMessage("Message Sent!", "Thank you for contacting HireHive. We will get back to you shortly.", false);            
-                        contactForm.reset();           } catch (error) {             console.error("Contact form submission failed:", error.message);            
-                        showStatusMessage("Submission Failed", error.message, true);           } finally {             setLoading('contactSubmitBtn', false, 'Send Message');           }         });       }
+                        contactForm.reset();          
+                    } catch (error) {            
+                        console.error("Contact form submission failed:", error.message);            
+                        showStatusMessage("Submission Failed", error.message, true);          
+                    } finally {             setLoading('contactSubmitBtn', false, 'Send Message');           }        
+                });      
+            }
 
                    // ------------------------------------------------------------------
                    // 5. SUBSCRIPTION LOGIC & PLANS VIEW
                    // ------------------------------------------------------------------
-                   const loadPlansView = () => {         const staticPlanDisplay = document.getElementById("static-plan-display");         if (!staticPlanDisplay) return;
+                  
+            const loadPlansView = () => {        
+                const staticPlanDisplay = document.getElementById("static-plan-display");        
+                if (!staticPlanDisplay) return;
 
                         
-                staticPlanDisplay.innerHTML = '';         const user = getLocalUser();         const isEmployer = user && user.role === 'employer';         const currentPlanKey = user ? (user.subscriptionstatus || 'buzz') : 'none';
+                staticPlanDisplay.innerHTML = '';        
+                const user = getLocalUser();        
+                const isEmployer = user && user.role === 'employer';        
+                const currentPlanKey = user ? (user.subscriptionstatus || 'buzz') : 'none';
 
-                         for (const [key, plan] of Object.entries(HIVE_PLANS)) {           const isCurrent = currentPlanKey === key;           const priceText = plan.price;           const buttonText = isCurrent ? 'Current Plan' : isEmployer ? 'Select Plan (Demo)' : 'Sign Up to Select';           const buttonClass = isCurrent ? 'btn-secondary disabled' : 'btn-primary';           const priceColor = key === 'buzz' ? plan.color : '#333';
+                        
+                for (const [key, plan] of Object.entries(HIVE_PLANS)) {          
+                    const isCurrent = currentPlanKey === key;          
+                    const priceText = plan.price;          
+                    const buttonText = isCurrent ? 'Current Plan' : isEmployer ? 'Select Plan (Demo)' : 'Sign Up to Select';          
+                    const buttonClass = isCurrent ? 'btn-secondary disabled' : 'btn-primary';          
+                    const priceColor = key === 'buzz' ? plan.color : '#333';
 
-                               const planCard = document.createElement('div');          
+                              
+                    const planCard = document.createElement('div');          
                     planCard.classList.add('subscription-card');          
                     planCard.style.cssText = `border: 2px solid ${isCurrent ? plan.color : '#ccc'}; width: 100%; max-width: 350px; text-align: center; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: transform 0.3s;`;          
                     planCard.innerHTML = `
@@ -346,16 +636,31 @@ document.addEventListener("DOMContentLoaded", () => {       // -----------
                             ${buttonText}
                         </button>
                     `;          
-                    staticPlanDisplay.appendChild(planCard);         }
+                    staticPlanDisplay.appendChild(planCard);        
+                }
 
                          // Attach modal functionality to select buttons on the main page
                         
                 document.querySelectorAll('#plans-view .select-plan-btn').forEach(btn => {           if (isEmployer && !btn.disabled) {             btn.addEventListener('click', () => {               // Trigger modal with simulation message
-                                           showStatusMessage("Subscription Simulation", `You are simulating the purchase of the ${HIVE_PLANS[btn.dataset.planKey].name}. Click 'Select Plan' in the dashboard to confirm the plan change.`, false);             });           } else if (!user) {             btn.addEventListener('click', () => {               showForm(signupFormContainer);             });           }         });       };             const showSubscriptionModal = () => {         const user = getLocalUser();         if (!user || user.role !== 'employer') return;         const modalContent = document.querySelector("#subscriptionModal .modal-content");         const currentPlanKey = user.subscriptionstatus || 'buzz';         const isEmployer = user.role === 'employer';
+                                           showStatusMessage("Subscription Simulation", `You are simulating the purchase of the ${HIVE_PLANS[btn.dataset.planKey].name}. Click 'Select Plan' in the dashboard to confirm the plan change.`, false);             });           } else if (!user) {             btn.addEventListener('click', () => {               showForm(signupFormContainer);             });           }         });      
+            };            
+            const showSubscriptionModal = () => {        
+                const user = getLocalUser();        
+                if (!user || user.role !== 'employer') return;        
+                const modalContent = document.querySelector("#subscriptionModal .modal-content");        
+                const currentPlanKey = user.subscriptionstatus || 'buzz';        
+                const isEmployer = user.role === 'employer';
 
-                         let planCardsHTML = `<span class="close-btn" id="close-subscription-modal">&times;</span><h2 style="margin-bottom: 1rem;">Choose Your Hive Plan</h2><p>Your Current Plan: <strong style="color: ${HIVE_PLANS[currentPlanKey].color}">${HIVE_PLANS[currentPlanKey].name}</strong></p><div class="plans-container" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 1.5rem;">`;
+                        
+                let planCardsHTML = `<span class="close-btn" id="close-subscription-modal">&times;</span><h2 style="margin-bottom: 1rem;">Choose Your Hive Plan</h2><p>Your Current Plan: <strong style="color: ${HIVE_PLANS[currentPlanKey].color}">${HIVE_PLANS[currentPlanKey].name}</strong></p><div class="plans-container" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 1.5rem;">`;
 
-                         for (const [key, plan] of Object.entries(HIVE_PLANS)) {           const isCurrent = currentPlanKey === key;           const priceText = plan.price;           const buttonClass = isCurrent ? 'btn-secondary disabled' : 'btn-primary';           const buttonText = isCurrent ? 'Current Plan' : 'Select Plan (Demo)';           const priceColor = key === 'buzz' ? plan.color : '#333';
+                        
+                for (const [key, plan] of Object.entries(HIVE_PLANS)) {          
+                    const isCurrent = currentPlanKey === key;          
+                    const priceText = plan.price;          
+                    const buttonClass = isCurrent ? 'btn-secondary disabled' : 'btn-primary';          
+                    const buttonText = isCurrent ? 'Current Plan' : 'Select Plan (Demo)';          
+                    const priceColor = key === 'buzz' ? plan.color : '#333';
 
                               
                     planCardsHTML += `
@@ -367,7 +672,8 @@ document.addEventListener("DOMContentLoaded", () => {       // -----------
                         ${buttonText}
                     </button>
                 </div>
-            `;         }        
+            `;        
+                }        
                 planCardsHTML += `</div>`;        
                 modalContent.innerHTML = planCardsHTML;
 
@@ -375,39 +681,64 @@ document.addEventListener("DOMContentLoaded", () => {       // -----------
                 document.getElementById("close-subscription-modal").onclick = () => { subscriptionModal.style.display = "none"; };
 
                         
-                modalContent.querySelectorAll('.select-plan-btn').forEach(btn => {           if (isEmployer && !btn.disabled) {             btn.addEventListener('click', async(e) => {               const planKey = e.currentTarget.dataset.planKey;               const selectedPlan = HIVE_PLANS[planKey];               const btnElement = e.currentTarget;               const originalText = btnElement.textContent;
+                modalContent.querySelectorAll('.select-plan-btn').forEach(btn => {          
+                    if (isEmployer && !btn.disabled) {            
+                        btn.addEventListener('click', async(e) => {              
+                            const planKey = e.currentTarget.dataset.planKey;              
+                            const selectedPlan = HIVE_PLANS[planKey];              
+                            const btnElement = e.currentTarget;              
+                            const originalText = btnElement.textContent;
 
                                           
                             btnElement.disabled = true;              
                             btnElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
-                                           try {                 const data = await fetchApi('employer/subscription', 'PUT', { newPlanKey: planKey });                
+                                          
+                            try {                
+                                const data = await fetchApi('employer/subscription', 'PUT', { newPlanKey: planKey });                
                                 setLocalUser(data.user);                
                                 switchEmployerView("employer-management-view");                
                                 showStatusMessage("Plan Updated", `${selectedPlan.name} is now your active plan.`, false);                
                                 subscriptionModal.style.display = "none";                
-                                initDashboard(null);               } catch (error) {                 showStatusMessage("Plan Update Failed", error.message, true);                
+                                initDashboard(null);              
+                            } catch (error) {                
+                                showStatusMessage("Plan Update Failed", error.message, true);                
                                 btnElement.disabled = false;                
-                                btnElement.innerHTML = originalText;               }             });           }         });        
-                subscriptionModal.style.display = "block";       };      
+                                btnElement.innerHTML = originalText;              
+                            }            
+                        });          
+                    }        
+                });        
+                subscriptionModal.style.display = "block";      
+            };      
             window.showSubscriptionModal = showSubscriptionModal;
 
                    // ------------------------------------------------------------------
                    // 6. DASHBOARD LOGIC (FIXED FILTER INITIALIZATION)
                    // ------------------------------------------------------------------
                   
-            function initDashboard(filters = null) {         const currentUser = getLocalUser();         if (!currentUser) {           showView('home', true, null);           return;         }         const seekerDashboard = document.getElementById("seeker-dashboard");         const employerDashboard = document.getElementById("employer-dashboard");
+            function initDashboard(filters = null) {        
+                const currentUser = getLocalUser();        
+                if (!currentUser) {           showView('home', true, null);           return;         }        
+                const seekerDashboard = document.getElementById("seeker-dashboard");        
+                const employerDashboard = document.getElementById("employer-dashboard");
 
-                         if (currentUser.role === "seeker") {           seekerDashboard.classList.remove("hidden");          
+                        
+                if (currentUser.role === "seeker") {          
+                    seekerDashboard.classList.remove("hidden");          
                     employerDashboard.classList.add("hidden");          
                     loadSeekerProfileForm();
 
-                               const filterKeywordsEl = document.getElementById("filter-keywords");
+                              
+                    const filterKeywordsEl = document.getElementById("filter-keywords");
 
-                               if (filters) {             if (filterKeywordsEl) filterKeywordsEl.value = filters.keywords || '';            
+                              
+                    if (filters) {            
+                        if (filterKeywordsEl) filterKeywordsEl.value = filters.keywords || '';            
                         document.getElementById("filter-location").value = filters.location || '';            
                         document.getElementById("filter-experience").value = filters.experience || '0';            
-                        document.getElementById("filter-category").value = filters.category || '';           } else {             document.getElementById("jobFilterForm").reset();             if (filterKeywordsEl) filterKeywordsEl.value = '';           }
+                        document.getElementById("filter-category").value = filters.category || '';          
+                    } else {             document.getElementById("jobFilterForm").reset();             if (filterKeywordsEl) filterKeywordsEl.value = '';           }
 
                               
                     document.querySelectorAll(".job-filter-btn").forEach(b => b.classList.remove('btn-primary'));          
@@ -418,15 +749,22 @@ document.addEventListener("DOMContentLoaded", () => {       // -----------
                     document.getElementById('applied-jobs').classList.add('hidden');
 
                               
-                    loadJobs(filters || {});         } else if (currentUser.role === "employer") {           employerDashboard.classList.remove("hidden");          
+                    loadJobs(filters || {});        
+                } else if (currentUser.role === "employer") {          
+                    employerDashboard.classList.remove("hidden");          
                     seekerDashboard.classList.add("hidden");          
-                    switchEmployerView("employer-management-view");         }       }
+                    switchEmployerView("employer-management-view");        
+                }      
+            }
 
                    // ------------------------------------------------------------------
                    // 7. SEEKER DASHBOARD & PROFILE LOGIC 
                    // ------------------------------------------------------------------
                   
-            async function loadSeekerProfileForm() {         const currentUser = getLocalUser();         const seekerJobView = document.getElementById("seeker-job-view");         const seekerProfileView = document.getElementById("seeker-profile-view");
+            async function loadSeekerProfileForm() {        
+                const currentUser = getLocalUser();        
+                const seekerJobView = document.getElementById("seeker-job-view");        
+                const seekerProfileView = document.getElementById("seeker-profile-view");
 
                         
                 document.getElementById("seeker-name").value = currentUser.name || "";        
@@ -434,50 +772,93 @@ document.addEventListener("DOMContentLoaded", () => {       // -----------
                 document.getElementById("seeker-skills").value = (currentUser.skills || []).join(", ");        
                 document.getElementById("seeker-education").value = currentUser.education || "";
 
-                         let completionScore = 0;         const totalChecks = 4;         if (currentUser.name && currentUser.name.trim() !== '') completionScore++;         if (currentUser.email && currentUser.email.trim() !== '') completionScore++;         if (currentUser.education && currentUser.education.trim() !== '') completionScore++;         if (currentUser.cvfilename && currentUser.cvfilename.trim() !== '') completionScore++;
+                        
+                let completionScore = 0;        
+                const totalChecks = 4;        
+                if (currentUser.name && currentUser.name.trim() !== '') completionScore++;        
+                if (currentUser.email && currentUser.email.trim() !== '') completionScore++;        
+                if (currentUser.education && currentUser.education.trim() !== '') completionScore++;        
+                if (currentUser.cvfilename && currentUser.cvfilename.trim() !== '') completionScore++;
 
-                         const percentage = Math.round((completionScore / totalChecks) * 100);        
+                        
+                const percentage = Math.round((completionScore / totalChecks) * 100);        
                 document.getElementById("profileCompletionBar").style.width = percentage + "%";        
                 document.getElementById("profileCompletionText").textContent = percentage + "% Complete";
 
-                         const cvFilenameEl = document.getElementById("cv-filename");         if (currentUser.cvfilename) {           cvFilenameEl.innerHTML = `Uploaded: ${currentUser.cvfilename} (<a href="#" class="cv-link" data-filename="${currentUser.cvfilename}">View/Download</a>)`;         } else {           cvFilenameEl.textContent = "No CV uploaded.";         }
+                        
+                const cvFilenameEl = document.getElementById("cv-filename");        
+                if (currentUser.cvfilename) {           cvFilenameEl.innerHTML = `Uploaded: ${currentUser.cvfilename} (<a href="#" class="cv-link" data-filename="${currentUser.cvfilename}">View/Download</a>)`;         } else {           cvFilenameEl.textContent = "No CV uploaded.";         }
 
                          // CV download simulation (now uses the actual name from the user object)
                         
-                cvFilenameEl.querySelectorAll('.cv-link').forEach(link => {           link.onclick = (e) => {             e.preventDefault();            
-                        showStatusMessage("CV View/Download", `Simulating download/view of CV: ${e.target.dataset.filename}.`, false);           };         });
-
-                         const editProfileSidebarBtn = document.getElementById("editProfileSidebarBtn");         if (editProfileSidebarBtn) {           editProfileSidebarBtn.onclick = () => {             document.getElementById("seeker-profile-view").classList.remove('hidden');            
-                        document.getElementById("seeker-job-view").classList.add('hidden');            
-                        loadSeekerProfileForm();           };         }
+                cvFilenameEl.querySelectorAll('.cv-link').forEach(link => {          
+                    link.onclick = (e) => {            
+                        e.preventDefault();            
+                        showStatusMessage("CV View/Download", `Simulating download/view of CV: ${e.target.dataset.filename}.`, false);          
+                    };        
+                });
 
                         
-                document.getElementById("profile-form").onsubmit = async(e) => {           e.preventDefault();           const saveBtn = e.target.querySelector('button[type="submit"]');          
+                const editProfileSidebarBtn = document.getElementById("editProfileSidebarBtn");        
+                if (editProfileSidebarBtn) {          
+                    editProfileSidebarBtn.onclick = () => {            
+                        document.getElementById("seeker-profile-view").classList.remove('hidden');            
+                        document.getElementById("seeker-job-view").classList.add('hidden');            
+                        loadSeekerProfileForm();          
+                    };        
+                }
+
+                        
+                document.getElementById("profile-form").onsubmit = async(e) => {          
+                    e.preventDefault();          
+                    const saveBtn = e.target.querySelector('button[type="submit"]');          
                     setLoading(saveBtn.id || 'profileSaveBtn', true, 'Save Profile');
 
-                               const name = document.getElementById("seeker-name").value;           const skills = document.getElementById("seeker-skills").value;           const education = document.getElementById("seeker-education").value;           const cvFile = document.getElementById("cv-upload").files[0];
+                              
+                    const name = document.getElementById("seeker-name").value;          
+                    const skills = document.getElementById("seeker-skills").value;          
+                    const education = document.getElementById("seeker-education").value;          
+                    const cvFile = document.getElementById("cv-upload").files[0];
 
-                               const formData = new FormData();          
+                              
+                    const formData = new FormData();          
                     formData.append('name', name);          
                     formData.append('education', education);          
-                    formData.append('skills', skills);           if (cvFile) {             formData.append('cvFile', cvFile);           }
+                    formData.append('skills', skills);          
+                    if (cvFile) {             formData.append('cvFile', cvFile);           }
 
-                               try {             const data = await fetchApi('seeker/profile', 'PUT', formData, true);            
+                              
+                    try {            
+                        const data = await fetchApi('seeker/profile', 'PUT', formData, true);            
                         setLocalUser(data.user);            
                         console.log("Profile updated!");            
                         showStatusMessage("Profile Updated", "Your profile has been saved successfully.", false);            
                         seekerJobView.classList.remove('hidden');            
                         seekerProfileView.classList.add('hidden');            
-                        loadSeekerProfileForm();           } catch (error) {             console.error("Profile update failed:", error.message);            
-                        showStatusMessage("Profile Update Failed", error.message, true);           } finally {             setLoading(saveBtn.id || 'profileSaveBtn', false, 'Save Profile');           }         };       }
+                        loadSeekerProfileForm();          
+                    } catch (error) {            
+                        console.error("Profile update failed:", error.message);            
+                        showStatusMessage("Profile Update Failed", error.message, true);          
+                    } finally {             setLoading(saveBtn.id || 'profileSaveBtn', false, 'Save Profile');           }        
+                };      
+            }
 
                   
-            async function loadJobs(filters = {}) {         const allJobsList = document.getElementById("all-jobs-list");         const shortlistedJobsList = document.getElementById("shortlisted-jobs-list");         const appliedJobsList = document.getElementById("applied-jobs-list");        
+            async function loadJobs(filters = {}) {        
+                const allJobsList = document.getElementById("all-jobs-list");        
+                const shortlistedJobsList = document.getElementById("shortlisted-jobs-list");        
+                const appliedJobsList = document.getElementById("applied-jobs-list");        
                 allJobsList.innerHTML = shortlistedJobsList.innerHTML = appliedJobsList.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Loading jobs...</p>';
 
-                         try {           const filterParams = new URLSearchParams(filters).toString();           const jobs = await fetchApi(`seeker/jobs?${filterParams}`, 'GET');           const applicationData = await fetchApi('seeker/applications', 'GET');
+                        
+                try {          
+                    const filterParams = new URLSearchParams(filters).toString();          
+                    const jobs = await fetchApi(`seeker/jobs?${filterParams}`, 'GET');          
+                    const applicationData = await fetchApi('seeker/applications', 'GET');
 
-                               const appliedJobIds = applicationData.applied.map(job => job.id);           const shortlistedJobDetails = applicationData.shortlisted;
+                              
+                    const appliedJobIds = applicationData.applied.map(job => job.id);          
+                    const shortlistedJobDetails = applicationData.shortlisted;
 
                               
                     allJobsList.innerHTML = shortlistedJobsList.innerHTML = appliedJobsList.innerHTML = "";

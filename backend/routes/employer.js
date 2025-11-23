@@ -1,319 +1,360 @@
-import express from "express";
-import jwt from "jsonwebtoken";
-import { supabase } from "../db.js";
+import express from 'express';
+import { supabase } from '../db.js';
+import jwt from 'jsonwebtoken';
+// import Razorpay from 'razorpay'; 
+// import crypto from 'crypto'; 
 
 const router = express.Router();
 
-// ----------------------------------------
-// 🔐 AUTH MIDDLEWARE
-// ----------------------------------------
+// --- Subscription Plan Limits & Prices ---
+const HIVE_PLANS = {
+    'buzz': { limit: 2, name: "Buzz Plan" },
+    'worker': { limit: 5, name: "Worker Plan" },
+    'colony': { limit: 15, name: "Colony Plan" },
+    'queen': { limit: 30, name: "Queen Plan" },
+    'hive_master': { limit: Infinity, name: "Hive Master Plan" },
+};
+
+// --- MIDDLEWARE (Imported from auth.js, using local definition for completeness) ---
 const auth = (req, res, next) => {
-    const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(" ")[1];
-
-    if (!token) {
-        return res.status(401).json({ error: "No token provided" });
+    let token;
+    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+        try {
+            token = req.headers.authorization.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            req.user = { id: decoded.id, role: decoded.role };
+            next();
+        } catch (error) {
+            return res.status(401).json({ error: 'Not authorized, token failed' });
+        }
     }
-
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded;
-        next();
-    } catch {
-        return res.status(401).json({ error: "Invalid or expired token" });
+    if (!token) {
+        return res.status(401).json({ error: 'Not authorized, no token' });
     }
 };
 
-const isEmployer = (req, res, next) => {
-    const role = req.user && req.user.role;
-    if (!["employer", "admin"].includes(role)) {
-        return res.status(403).json({ error: "Access denied" });
+const checkRole = (roles) => (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+        return res.status(403).json({ error: 'Access denied. Insufficient privileges.' });
     }
     next();
 };
+const isEmployer = checkRole(['employer', 'admin']);
 
-// ----------------------------------------
-// 🐝 Subscription Plans
-// ----------------------------------------
-const HIVE_PLANS = {
-    buzz: { limit: 2, name: "Buzz Plan" },
-    worker: { limit: 5, name: "Worker Plan" },
-    colony: { limit: 15, name: "Colony Plan" },
-    queen: { limit: 30, name: "Queen Plan" },
-    hive_master: { limit: Infinity, name: "Hive Master Plan" },
-};
 
-// ----------------------------------------
-// 📌 1️⃣ CREATE JOB
-// ----------------------------------------
-router.post("/jobs", auth, isEmployer, async(req, res) => {
-    try {
-        const employerId = req.user.id;
-        const {
-            title,
-            category,
-            location,
-            experience,
-            salary,
-            ctc,
-            description,
-            requiredSkills,
-            noticePeriod,
-            screeningQuestions,
-        } = req.body;
+// ------------------------------------------------------------------
+// 2. EMPLOYER JOB MANAGEMENT (/api/employer/jobs)
+// ------------------------------------------------------------------
 
-        // 1️⃣ Check plan limit
-        const { data: user, error: userError } = await supabase
-            .from("users")
-            .select("jobpostcount, subscriptionstatus")
-            .eq("id", employerId)
-            .single();
+// POST: Create a new job
+router.post('/jobs', auth, isEmployer, async(req, res) => {
+    const { title, category, location, experience, salary, ctc, requiredSkills, description, noticePeriod, screeningQuestions } = req.body;
+    const employerId = req.user.id;
 
-        if (userError) {
-            console.error("Fetch user error →", userError.message);
-            return res.status(400).json({ error: userError.message });
-        }
+    // 1. Check Job Post Limit
+    const { data: user, error: userError } = await supabase
+        .from('users')
+        .select('id, password, jobpostcount, subscriptionstatus')
+        .eq('id', employerId)
+        .single();
+    if (userError || !user) return res.status(500).json({ error: 'Failed to retrieve user subscription status.' });
 
-        const subscriptionStatus = user && user.subscriptionstatus;
-        const plan =
-            (subscriptionStatus && HIVE_PLANS[subscriptionStatus]) ||
-            HIVE_PLANS.buzz;
+    const currentPlanKey = user.subscriptionstatus || 'buzz';
+    const plan = HIVE_PLANS[currentPlanKey];
 
-        if (user.jobpostcount >= plan.limit) {
-            return res.status(403).json({
-                error: `Job post limit reached for (${plan.name}). Upgrade plan to continue.`,
-            });
-        }
+    if (!plan) return res.status(403).json({ error: 'Invalid subscription plan. Please contact support.' });
 
-        // 2️⃣ Insert job
-        const jobData = {
-            employerid: employerId,
-            title,
-            category,
-            location,
-            experience,
-            salary,
-            ctc,
-            description,
-            required_skills: requiredSkills,
-            notice_period: noticePeriod,
-            screening_questions: screeningQuestions,
-        };
+    const planLimit = plan.limit;
+    const isUnlimited = planLimit === Infinity;
 
-        const { data: job, error } = await supabase
-            .from("jobs")
-            .insert([jobData])
+    if (!isUnlimited && user.jobpostcount >= planLimit) {
+        return res.status(403).json({
+            error: `Job posting limit (${planLimit}) reached for your current plan (${plan.name}). Please upgrade.`
+        });
+    }
+
+    // 2. Insert Job
+    const jobData = {
+        employerid: employerId,
+        title,
+        category,
+        location,
+        experience,
+        salary,
+        ctc,
+        description,
+        required_skills: requiredSkills,
+        notice_period: noticePeriod,
+        screening_questions: screeningQuestions,
+    };
+
+    const { data: job, error: jobInsertError } = await supabase
+        .from('jobs')
+        .insert([jobData])
+        .select()
+        .single();
+
+    if (jobInsertError) return res.status(400).json({ error: jobInsertError.message });
+
+    // 3. Update Job Count
+    let updatedUser = user;
+    if (!isUnlimited) {
+        const { data: updateData, error: updateError } = await supabase
+            .from('users')
+            .update({ jobpostcount: user.jobpostcount + 1 })
+            .eq('id', employerId)
             .select()
             .single();
-
-        if (error) {
-            console.error("Job insert error →", error.message);
-            return res.status(400).json({ error: error.message });
-        }
-
-        // 3️⃣ Increase counter
-        const { error: updateError } = await supabase
-            .from("users")
-            .update({ jobpostcount: user.jobpostcount + 1 })
-            .eq("id", employerId);
 
         if (updateError) {
-            console.error("Job count update error →", updateError.message);
+            console.error("Failed to update job post count:", updateError);
+        } else {
+            updatedUser = updateData;
         }
-
-        res.json({ message: "Job posted successfully ✔", job });
-    } catch (err) {
-        console.error("Job Create Error →", err.message);
-        res.status(500).json({ error: "Failed to post job" });
     }
+
+    // Final response
+    const { password: userPassword, ...userData } = updatedUser;
+    res.json({ message: 'Job posted successfully', job: job, user: userData });
 });
 
-// ----------------------------------------
-// 📌 2️⃣ GET MY JOBS
-// ----------------------------------------
-router.get("/jobs", auth, isEmployer, async(req, res) => {
-    try {
-        const employerId = req.user.id;
+// GET: Retrieve all jobs posted by the current employer
+router.get('/jobs', auth, isEmployer, async(req, res) => {
+    const employerId = req.user.id;
+    const { data: jobs, error } = await supabase
+        .from('jobs')
+        .select(`
+            *, 
+            applications(count)
+        `)
+        .eq('employerid', employerId)
+        .order('posteddate', { ascending: false });
 
-        const { data, error } = await supabase
-            .from("jobs")
-            .select("*, applications(count)")
-            .eq("employerid", employerId)
-            .order("posteddate", { ascending: false });
-
-        if (error) return res.status(400).json({ error: error.message });
-
-        res.json(data);
-    } catch (err) {
-        console.error("Get jobs error →", err.message);
-        res.status(500).json({ error: "Failed to fetch jobs" });
-    }
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(jobs);
 });
 
-// ----------------------------------------
-// 📌 3️⃣ UPDATE JOB
-// ----------------------------------------
-router.put("/jobs/:jobId", auth, isEmployer, async(req, res) => {
-    try {
-        const jobId = parseInt(req.params.jobId, 10);
-        const employerId = req.user.id;
+// PUT: Update an existing job
+router.put('/jobs/:jobId', auth, isEmployer, async(req, res) => {
+    const { jobId } = req.params;
+    const employerId = req.user.id;
+    const updateData = req.body;
 
-        const updates = {...req.body };
+    // Map frontend camelCase to backend snake_case
+    const mappedUpdateData = {};
+    for (const key in updateData) {
+        if (key === 'requiredSkills') mappedUpdateData['required_skills'] = updateData[key];
+        else if (key === 'noticePeriod') mappedUpdateData['notice_period'] = updateData[key];
+        else if (key === 'screeningQuestions') mappedUpdateData['screening_questions'] = updateData[key];
+        else mappedUpdateData[key] = updateData[key];
+    }
 
-        // Map camelCase → snake_case
-        if (updates.requiredSkills) {
-            updates.required_skills = updates.requiredSkills;
-            delete updates.requiredSkills;
-        }
-        if (updates.noticePeriod) {
-            updates.notice_period = updates.noticePeriod;
-            delete updates.noticePeriod;
-        }
-        if (updates.screeningQuestions) {
-            updates.screening_questions = updates.screeningQuestions;
-            delete updates.screeningQuestions;
-        }
+    const { data: job, error: jobError } = await supabase
+        .from('jobs')
+        .update(mappedUpdateData)
+        .eq('id', jobId)
+        .eq('employerid', employerId)
+        .select()
+        .single();
 
-        const { data, error } = await supabase
-            .from("jobs")
-            .update(updates)
-            .eq("id", jobId)
-            .eq("employerid", employerId)
+    if (jobError) return res.status(400).json({ error: jobError.message });
+    if (!job) return res.status(404).json({ error: 'Job not found or access denied.' });
+
+    // Fetch user again to return up-to-date user data for re-sync
+    const { data: user, error: userError } = await supabase.from('users').select('*').eq('id', employerId).single();
+    if (userError) console.error("Failed to retrieve user after job update:", userError);
+
+    const { password, ...userData } = user || {};
+
+    res.json({ message: 'Job updated successfully', job, user: userData });
+});
+
+// DELETE: Delete a job
+router.delete('/jobs/:jobId', auth, isEmployer, async(req, res) => {
+    const { jobId } = req.params;
+    const employerId = req.user.id;
+
+    // 1. Get current user data to decrement count
+    const { data: user, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', employerId)
+        .single();
+
+    if (userError || !user) {
+        console.error("Failed to retrieve user count for decrement:", userError);
+        return res.status(500).json({ error: 'Failed to retrieve user data for deletion check.' });
+    }
+
+    const currentPlanKey = user.subscriptionstatus || 'buzz';
+    const plan = HIVE_PLANS[currentPlanKey];
+    const isUnlimited = !plan || plan.limit === Infinity;
+
+    // 2. Delete all related applications (Added check for robustness)
+    const { error: appDeleteError } = await supabase.from('applications').delete().eq('jobid', jobId);
+
+    if (appDeleteError) {
+        console.error("Failed to delete related applications:", appDeleteError);
+    }
+
+    // 3. Delete Job
+    const { error: jobDeleteError } = await supabase
+        .from('jobs')
+        .delete()
+        .eq('id', jobId)
+        .eq('employerid', employerId);
+
+    if (jobDeleteError) return res.status(400).json({ error: jobDeleteError.message });
+
+    // 4. Decrement Job Count
+    let updatedUser = user;
+    if (!isUnlimited && user.jobpostcount > 0) {
+        const newCount = user.jobpostcount - 1;
+        const { data: updateData, error: updateError } = await supabase
+            .from('users')
+            .update({ jobpostcount: newCount })
+            .eq('id', employerId)
             .select()
             .single();
 
-        if (error || !data) {
-            return res.status(404).json({ error: "Job not found" });
+        if (updateError) {
+            console.error("Failed to decrement job post count:", updateError);
+        } else {
+            updatedUser = updateData;
         }
-
-        res.json({ message: "Job updated ✔", job: data });
-    } catch (err) {
-        console.error("Update job error →", err.message);
-        res.status(500).json({ error: "Failed to update job" });
     }
+
+    const { password: userPassword, ...userData } = updatedUser;
+    res.json({ message: 'Job deleted successfully and applications removed.', user: userData });
 });
 
-// ----------------------------------------
-// 📌 4️⃣ DELETE JOB
-// ----------------------------------------
-router.delete("/jobs/:jobId", auth, isEmployer, async(req, res) => {
-    try {
-        const jobId = parseInt(req.params.jobId, 10);
-        const employerId = req.user.id;
 
-        const { error } = await supabase
-            .from("jobs")
-            .delete()
-            .eq("id", jobId)
-            .eq("employerid", employerId);
+// ------------------------------------------------------------------
+// 3. APPLICANTS & SEEKER DATA
+// ------------------------------------------------------------------
 
-        if (error) return res.status(400).json({ error: error.message });
+// GET: Retrieve all applicants for a specific job
+router.get('/applicants/:jobId', auth, isEmployer, async(req, res) => {
+    const { jobId } = req.params;
+    const employerId = req.user.id;
 
-        res.json({ message: "Job deleted successfully ✔" });
-    } catch (err) {
-        console.error("Delete job error →", err.message);
-        res.status(500).json({ error: "Failed to delete job" });
-    }
+    // Verify employer owns the job
+    const { data: job, error: jobError } = await supabase
+        .from('jobs')
+        .select('id, employerid, screening_questions, title')
+        .eq('employerid', employerId)
+        .eq('id', jobId)
+        .single();
+
+    if (jobError || !job) return res.status(403).json({ error: 'Access denied to job applicants.' });
+
+    // Fetch applications and join with seeker data
+    const { data: applications, error } = await supabase
+        .from('applications')
+        .select(`
+            answers,
+            status, 
+            seekerid,
+            seekers:seekerid (name, email, phone, skills, education, cvfilename) 
+        `)
+        .eq('jobid', jobId);
+
+    if (error) return res.status(400).json({ error: error.message });
+
+    const formattedApplicants = applications.map(app => ({
+        ...app.seekers,
+        applicationAnswers: app.answers,
+        status: app.status,
+        seekerid: app.seekerid
+    }));
+
+    res.json({
+        jobTitle: job.title,
+        screeningQuestions: job.screening_questions,
+        applicants: formattedApplicants
+    });
 });
 
-// ----------------------------------------
-// 👥 5️⃣ VIEW APPLICANTS
-// ----------------------------------------
-router.get("/applicants/:jobId", auth, isEmployer, async(req, res) => {
-    try {
-        const jobId = parseInt(req.params.jobId, 10);
-        const employerId = req.user.id;
+// NEW: Update an applicant's status
+router.put('/applicants/status', auth, isEmployer, async(req, res) => {
+    const { seekerId, jobId, newStatus } = req.body;
+    const employerId = req.user.id;
 
-        // Verify ownership
-        const { data: job, error: jobError } = await supabase
-            .from("jobs")
-            .select("id, employerid, screening_questions, title")
-            .eq("id", jobId)
-            .eq("employerid", employerId)
-            .single();
-
-        if (jobError || !job) {
-            return res.status(403).json({ error: "Unauthorized job access" });
-        }
-
-        const { data: applicants, error } = await supabase
-            .from("applications")
-            .select(
-                `
-                seekerid,
-                status,
-                answers,
-                seekers:seekerid (
-                    name, email, phone, skills, education, cvfilename
-                )
-            `
-            )
-            .eq("jobid", jobId);
-
-        if (error) {
-            return res.status(400).json({ error: error.message });
-        }
-
-        const formatted = applicants.map((a) => ({
-            ...a.seekers,
-            seekerId: a.seekerid,
-            status: a.status,
-            answers: a.answers,
-        }));
-
-        res.json({
-            jobTitle: job.title,
-            screeningQuestions: job.screening_questions,
-            applicants: formatted,
-        });
-    } catch (err) {
-        console.error("View applicants error →", err.message);
-        res.status(500).json({ error: "Failed to load applicants" });
+    if (!seekerId || !jobId || !newStatus) {
+        return res.status(400).json({ error: 'Missing required fields: seekerId, jobId, newStatus.' });
     }
+
+    // Security Check: Verify employer owns the job before updating application status
+    const { data: job, error: jobError } = await supabase
+        .from('jobs')
+        .select('id')
+        .eq('id', jobId)
+        .eq('employerid', employerId)
+        .single();
+
+    if (jobError || !job) {
+        return res.status(403).json({ error: 'Access denied. You do not own this job.' });
+    }
+
+    // Update the application status
+    const { data, error } = await supabase
+        .from('applications')
+        .update({ status: newStatus })
+        .eq('jobid', jobId)
+        .eq('seekerid', seekerId)
+        .select()
+        .single();
+
+    if (error) {
+        console.error("Applicant status update error:", error);
+        return res.status(500).json({ error: 'Failed to update applicant status.' });
+    }
+
+    if (!data) {
+        return res.status(404).json({ error: 'Application not found.' });
+    }
+
+    res.json({ message: 'Status updated successfully', application: data });
 });
 
-// ----------------------------------------
-// 📝 6️⃣ UPDATE APPLICATION STATUS
-// ----------------------------------------
-router.put("/applicants/status", auth, isEmployer, async(req, res) => {
-    try {
-        const { seekerId, jobId, newStatus } = req.body;
-        const employerId = req.user.id;
 
-        if (!seekerId || !jobId || !newStatus) {
-            return res.status(400).json({ error: "Missing required fields" });
-        }
+// ------------------------------------------------------------------
+// 4. SUBSCRIPTION & PAYMENT (SIMULATED)
+// ------------------------------------------------------------------
 
-        // Check job ownership
-        const { data: job, error: jobError } = await supabase
-            .from("jobs")
-            .select("id")
-            .eq("id", jobId)
-            .eq("employerid", employerId)
-            .single();
+// PUT: Update the employer's subscription
+router.put('/subscription', auth, isEmployer, async(req, res) => {
+    const { newPlanKey } = req.body;
+    const employerId = req.user.id;
 
-        if (jobError || !job) {
-            return res.status(403).json({ error: "Unauthorized action" });
-        }
-
-        const { data, error } = await supabase
-            .from("applications")
-            .update({ status: newStatus })
-            .eq("jobid", jobId)
-            .eq("seekerid", seekerId)
-            .select()
-            .single();
-
-        if (error || !data) {
-            return res.status(400).json({ error: "Failed to update status" });
-        }
-
-        res.json({ message: "Status updated ✔", application: data });
-    } catch (err) {
-        console.error("Update status error →", err.message);
-        res.status(500).json({ error: "Failed to update status" });
+    if (!HIVE_PLANS[newPlanKey]) {
+        return res.status(400).json({ error: "Invalid subscription plan provided." });
     }
+
+    // Reset job post count to 0 when switching to a new plan (simulates renewal/upgrade)
+    const updateData = {
+        subscriptionstatus: newPlanKey,
+        jobpostcount: 0,
+        subscription_jsonb: { active: true, plan: newPlanKey }
+    };
+
+    const { data: updatedUser, error: updateError } = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('id', employerId)
+        .select()
+        .single();
+
+    if (updateError) {
+        console.error("Supabase subscription update error:", updateError);
+        return res.status(500).json({ error: 'Failed to update subscription status.' });
+    }
+
+    const { password: userPassword, ...userData } = updatedUser;
+    res.json({
+        message: `Subscription plan updated to ${HIVE_PLANS[newPlanKey].name}.`,
+        user: userData
+    });
 });
 
-// ----------------------------------------
 export default router;
