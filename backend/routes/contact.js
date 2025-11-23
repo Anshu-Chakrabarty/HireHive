@@ -1,42 +1,60 @@
-import express from 'express';
+import express from "express";
+import { supabase } from "../db.js";
 
 const router = express.Router();
 
-// Route to handle contact form submissions
-router.post('/', (req, res) => {
-    const { name, email, message } = req.body;
+// 📌 Contact Form Handler - Save message into DB
+router.post("/", async(req, res) => {
+    try {
+        const { name, email, message } = req.body;
 
-    // --- Basic Validation ---
-    if (!name || !email || !message) {
-        return res.status(400).json({ error: "Name, email, and message fields are required." });
+        // 1️⃣ Required Fields Check
+        if (!name || !email || !message) {
+            return res.status(400).json({
+                error: "All fields (name, email, message) are required."
+            });
+        }
+
+        // 2️⃣ Email Validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ error: "Invalid email address." });
+        }
+
+        // 3️⃣ Basic Sanitization
+        const cleanName = name.trim();
+        const cleanEmail = email.trim().toLowerCase();
+        const cleanMessage = message.trim();
+
+        if (cleanMessage.length < 5) {
+            return res.status(400).json({ error: "Message is too short." });
+        }
+
+        // 4️⃣ Database Save
+        const { error } = await supabase
+            .from("contact_messages")
+            .insert([{
+                name: cleanName,
+                email: cleanEmail,
+                message: cleanMessage,
+                status: "new"
+            }]);
+
+        if (error) {
+            console.error("Contact form save error:", error);
+            return res.status(500).json({ error: "Failed to save message." });
+        }
+
+        console.log(`📩 New Contact Message from ${cleanName} (${cleanEmail})`);
+
+        // 5️⃣ Success Response
+        res.status(202).json({
+            message: "Message received! Our support team will respond shortly."
+        });
+    } catch (err) {
+        console.error("Server Contact Error:", err.message);
+        res.status(500).json({ error: "Internal server error." });
     }
-
-    // --- Enhanced Validation: Check Email Format ---
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-        return res.status(400).json({ error: "Invalid email format. Please check your entry." });
-    }
-
-    // --- SECURITY STEP: Input Sanitization Placeholder ---
-    const sanitizedName = name.trim();
-    const sanitizedEmail = email.trim().toLowerCase();
-    const sanitizedMessage = message.trim();
-
-    // --- LOGIC SIMULATION ---
-    console.log(`\n--- CONTACT FORM RECEIVED ---`);
-    console.log(`From: ${sanitizedName} <${sanitizedEmail}>`);
-    console.log(`Message Snippet: ${sanitizedMessage.substring(0, 50)}...`);
-    console.log(`-----------------------------\n`);
-
-    /* In a live application, this section would contain code to:
-       1. Save the message to Supabase.
-       2. Use Nodemailer/SendGrid to send an internal email notification.
-    */
-
-    // Respond with success. 202 (Accepted) is perfect for asynchronous processing.
-    res.status(202).json({
-        message: "Contact message successfully received and forwarded to the support team."
-    });
 });
 
 export default router;

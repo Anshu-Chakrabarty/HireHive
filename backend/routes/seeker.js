@@ -1,255 +1,359 @@
-import express from 'express';
-import multer from 'multer';
-import { supabase } from '../db.js';
-import jwt from 'jsonwebtoken';
+import express from "express";
+import multer from "multer";
+import jwt from "jsonwebtoken";
+import { supabase } from "../db.js";
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
-// --- MIDDLEWARE IMPORT from auth.js ---
-import { protect as auth } from "./auth.js"; // Import protect middleware from auth route
+// -----------------------------------------
+// 🔐 AUTH MIDDLEWARE
+// -----------------------------------------
+const auth = (req, res, next) => {
+    const authHeader = req.headers && req.headers.authorization;
+    const token = authHeader && authHeader.split(" ")[1];
 
-// Seeker/Admin Role Check Middleware
-const checkRole = (roles) => (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) {
-        return res.status(403).json({ error: 'Access denied. Insufficient privileges.' });
+    if (!token) {
+        return res.status(401).json({ error: "No authentication token" });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded;
+        next();
+    } catch (err) {
+        console.error("JWT Verify Error:", err.message);
+        return res.status(401).json({ error: "Invalid or expired token" });
+    }
+};
+
+const isSeeker = (req, res, next) => {
+    const role = req.user && req.user.role;
+    if (!["seeker", "admin"].includes(role)) {
+        return res.status(403).json({ error: "Seeker access required" });
     }
     next();
 };
 
-const isSeeker = checkRole(['seeker', 'admin']);
-
-
-// ------------------------------------------------------------------
-// 2. PROFILE MANAGEMENT (PUT /api/seeker/profile)
-// ------------------------------------------------------------------
-
-// PUT: Update Seeker Profile Info and Optionally Upload CV
-router.put('/profile', auth, isSeeker, upload.single('cvFile'), async(req, res) => {
-    const userId = req.user.id;
-    const { name, education, skills } = req.body;
-
-    if (!name || !education || skills === undefined) {
-        return res.status(400).json({ error: 'Name, education, and skills are required.' });
-    }
-
-    let updateData = {
-        name,
-        education,
-        skills: skills.split(',').map(s => s.trim()).filter(Boolean)
-    };
-
-    if (req.file) {
-        const file = req.file;
-        const cvfilename = `cvs/${userId}_${Date.now()}_${file.originalname.replace(/[^a-z0-9.]/gi, '_')}`;
-
-        const { error: uploadError } = await supabase.storage
-            .from('cvs')
-            .upload(cvfilename, file.buffer, {
-                contentType: file.mimetype,
-                upsert: true
-            });
-
-        if (uploadError) {
-            console.error('CV Upload Error:', uploadError);
-            return res.status(500).json({ error: 'CV upload failed. File size might be too large or invalid format.' });
-        }
-
-        updateData.cvfilename = cvfilename;
-    }
-
-    const { data: updatedUser, error: updateError } = await supabase
-        .from('users')
-        .update(updateData)
-        .eq('id', userId)
-        .select(`id, role, name, email, phone, skills, education, cvfilename, company_name, jobpostcount, subscriptionstatus, google_id, created_at`)
-        .single();
-
-    if (updateError) return res.status(400).json({ error: updateError.message });
-
-    res.json({ message: 'Profile updated successfully', user: updatedUser });
+// -----------------------------------------
+// 📄 CV Upload Config: Memory storage
+// -----------------------------------------
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB Max
 });
 
+// -----------------------------------------
+// ✍️ 1️⃣ Update Profile
+// -----------------------------------------
+router.put(
+    "/profile",
+    auth,
+    isSeeker,
+    upload.single("cvFile"),
+    async(req, res) => {
+        try {
+            const userId = req.user.id;
+            const { name, education, skills } = req.body;
 
-// ------------------------------------------------------------------
-// 3. JOB BOARD & APPLICATION
-// ------------------------------------------------------------------
+            if (!name || !education || skills === undefined) {
+                return res
+                    .status(400)
+                    .json({ error: "Required fields missing" });
+            }
 
-// GET: Retrieve all available jobs (Job Board) with Filters
-router.get('/jobs', auth, isSeeker, async(req, res) => {
-    const { location, salary, experience, category, keywords } = req.query;
+            const updateData = {
+                name,
+                education,
+                skills: String(skills)
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter(Boolean),
+            };
 
-    let query = supabase
-        .from('jobs')
-        .select(`
-            *,
-            employer:employerid (name) 
-        `);
+            // 📂 If CV uploaded, upload to Supabase Storage
+            if (req.file) {
+                const file = req.file;
+                const safeFile = file.originalname.replace(/[^\w.-]/g, "_");
+                const cvPath = `cvs/${userId}_${Date.now()}_${safeFile}`;
 
-    // Apply filters dynamically
-    if (location) {
-        query = query.ilike('location', `%${location}%`);
-    }
-    if (category) {
-        query = query.eq('category', category);
-    }
-    if (salary) {
-        query = query.ilike('salary', `%${salary}%`);
-    }
+                const { error: uploadError } = await supabase.storage
+                    .from("cvs")
+                    .upload(cvPath, file.buffer, {
+                        contentType: file.mimetype,
+                        upsert: true,
+                    });
 
-    // 💡 FIX: Apply Experience Filter (Fuzzy Search for text column)
-    if (experience && experience !== '0') {
-        const minYears = parseInt(experience, 10);
-        if (!isNaN(minYears)) {
-            // Find jobs where the experience string contains the min year or is a range
-            // e.g., if minYears is 5, look for '5+ Years' or '5-8 Years'
-            query = query.or(`experience.ilike.%${minYears}+%`, `experience.ilike.%${minYears}-%`);
+                if (uploadError) {
+                    console.error("CV Upload Error:", uploadError.message);
+                    return res.status(500).json({
+                        error: "CV upload failed. Try again with a valid PDF under 5 MB.",
+                    });
+                }
+
+                updateData.cvfilename = cvPath;
+            }
+
+            // DB Update
+            const { data, error } = await supabase
+                .from("users")
+                .update(updateData)
+                .eq("id", userId)
+                .select("*")
+                .single();
+
+            if (error) {
+                return res.status(400).json({ error: error.message });
+            }
+
+            if (data && data.password) {
+                delete data.password;
+            }
+
+            return res.json({ message: "Profile updated", user: data });
+        } catch (err) {
+            console.error("Profile Update Error:", err.message);
+            return res
+                .status(500)
+                .json({ error: "Failed to update profile" });
         }
     }
+);
 
+// -----------------------------------------
+// 🔍 2️⃣ Browse Jobs (Filter + Search)
+// -----------------------------------------
+router.get("/jobs", auth, isSeeker, async(req, res) => {
+    try {
+        const { location, salary, experience, category, keywords } = req.query;
 
-    // Apply keyword filter across job title and description
-    if (keywords) {
-        const searchTerms = keywords.split(' ').map(term => term.trim()).filter(Boolean);
-        if (searchTerms.length > 0) {
-            const conditions = searchTerms.map(term =>
-                `or(title.ilike.%${term}%,description.ilike.%${term}%,required_skills.cs.%${term}%)`
-            ).join(',');
-            query = query.or(conditions);
+        let query = supabase
+            .from("jobs")
+            .select("*, employer:employerid (name)")
+            .order("posteddate", { ascending: false });
+
+        if (location) {
+            query = query.ilike("location", "%" + location + "%");
         }
-    }
+        if (salary) {
+            query = query.ilike("salary", "%" + salary + "%");
+        }
+        if (category) {
+            query = query.eq("category", category);
+        }
 
-    // Order and execute
-    const { data: jobs, error } = await query
-        .order('posteddate', { ascending: false });
-
-    if (error) return res.status(400).json({ error: error.message });
-    res.json(jobs);
-});
-
-
-// GET: Retrieve a seeker's application history and suggested jobs
-router.get('/applications', auth, isSeeker, async(req, res) => {
-    const seekerId = req.user.id;
-
-    // 1. Fetch Application History (Only IDs and Status)
-    const { data: applicationRecords, error: historyError } = await supabase
-        .from('applications')
-        .select('jobid, status')
-        .eq('seekerid', seekerId);
-
-    if (historyError) {
-        console.error("Supabase application history fetch error:", historyError);
-        return res.status(500).json({ error: 'Failed to retrieve application history.' });
-    }
-
-    const appliedJobIds = applicationRecords.map(app => app.jobid);
-    const shortlistedJobIds = applicationRecords
-        .filter(app => app.status === 'Shortlisted')
-        .map(app => app.jobid);
-
-    // 2. Fetch all jobs
-    const { data: jobsData, error: jobsError } = await supabase
-        .from('jobs')
-        .select('*, employer:employerid (name)');
-
-    if (jobsError) {
-        console.error("Supabase job data fetch error:", jobsError);
-        return res.status(500).json({ error: 'Failed to retrieve job data for suggestions.' });
-    }
-
-    const allJobs = jobsData || [];
-
-    // 3. Separate applied jobs and fetch user skills for suggestions
-    const appliedJobs = [];
-    const shortlistedJobs = [];
-
-    applicationRecords.forEach(app => {
-        const jobDetail = allJobs.find(job => job.id === app.jobid);
-        if (jobDetail) {
-            const jobWithStatus = {...jobDetail, status: app.status };
-            appliedJobs.push(jobWithStatus);
-            if (app.status === 'Shortlisted') {
-                shortlistedJobs.push(jobDetail);
+        if (experience && experience !== "0") {
+            const years = parseInt(experience, 10);
+            if (!isNaN(years)) {
+                // Example: match "2+" or "2-3 years" etc.
+                query = query.or(
+                    "experience.ilike.%"
+                    .concat(years.toString())
+                    .concat("+%,experience.ilike.%")
+                    .concat(years.toString())
+                    .concat("-%")
+                );
             }
         }
-    });
 
-    // 4. Find Suggested Jobs (Skill Match)
-    const { data: user } = await supabase.from('users').select('skills').eq('id', seekerId).single();
+        if (keywords) {
+            const terms = String(keywords)
+                .split(" ")
+                .map((t) => t.trim())
+                .filter(Boolean);
 
-    let seekerSkills = [];
-    if (user && user.skills && Array.isArray(user.skills)) {
-        seekerSkills = user.skills.map(s => s.toLowerCase());
+            // Build single OR string for all terms
+            if (terms.length > 0) {
+                const orParts = [];
+                terms.forEach((term) => {
+                    orParts.push("title.ilike.%" + term + "%");
+                    orParts.push("description.ilike.%" + term + "%");
+                    // If you are storing required_skills as text/array:
+                    // orParts.push("required_skills.ilike.%" + term + "%");
+                });
+
+                const orString = orParts.join(",");
+                query = query.or(orString);
+            }
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        return res.json(data || []);
+    } catch (err) {
+        console.error("Job Search Error:", err.message);
+        return res.status(500).json({ error: "Failed to load jobs" });
     }
+});
 
-    const suggestedJobs = allJobs
-        .filter(job => !appliedJobIds.includes(job.id))
-        .filter(job => {
-            const jobSkills = (job.required_skills || []).map(s => s.toLowerCase());
-            return jobSkills.some(skill => seekerSkills.includes(skill));
+// -----------------------------------------
+// 🧩 3️⃣ Application History + Suggestions
+// -----------------------------------------
+router.get("/applications", auth, isSeeker, async(req, res) => {
+    try {
+        const seekerId = req.user.id;
+
+        // Fetch applied jobs for THIS seeker
+        const { data: apps, error: appsError } = await supabase
+            .from("applications")
+            .select("jobid, status, seekerid")
+            .eq("seekerid", seekerId);
+
+        if (appsError) {
+            console.error("Applications Fetch Error:", appsError.message);
+            return res.status(400).json({ error: appsError.message });
+        }
+
+        const appsList = apps || [];
+        const appliedJobIds = appsList.map((a) => a.jobid);
+        const shortlistedJobIds = appsList
+            .filter((a) => a.status === "Shortlisted")
+            .map((a) => a.jobid);
+
+        // All jobs
+        const { data: jobs, error: jobsError } = await supabase
+            .from("jobs")
+            .select("*, employer:employerid (name)");
+
+        if (jobsError) {
+            console.error("Jobs Fetch Error:", jobsError.message);
+            return res.status(400).json({ error: jobsError.message });
+        }
+
+        const jobsList = jobs || [];
+
+        // Fetch seeker skills
+        const { data: seeker, error: seekerError } = await supabase
+            .from("users")
+            .select("skills")
+            .eq("id", seekerId)
+            .single();
+
+        if (seekerError) {
+            console.error("Seeker Fetch Error:", seekerError.message);
+        }
+
+        let seekerSkills = [];
+        if (seeker && Array.isArray(seeker.skills)) {
+            seekerSkills = seeker.skills
+                .map((s) => String(s).toLowerCase())
+                .filter(Boolean);
+        }
+
+        // Applied jobs with status
+        const applied = jobsList
+            .filter((j) => appliedJobIds.includes(j.id))
+            .map((j) => {
+                const app = appsList.find((a) => a.jobid === j.id);
+                return {
+                    ...j,
+                    status: app ? app.status : "applied",
+                };
+            });
+
+        // Suggested jobs based on skills
+        const suggestedRaw = jobsList.filter((j) => {
+            if (appliedJobIds.includes(j.id)) {
+                return false;
+            }
+
+            let requiredSkills = [];
+            if (Array.isArray(j.required_skills)) {
+                requiredSkills = j.required_skills;
+            } else if (j.required_skills) {
+                // if stored as text, you can parse/split it
+                requiredSkills = String(j.required_skills)
+                    .split(",")
+                    .map((s) => s.trim());
+            }
+
+            if (requiredSkills.length === 0 || seekerSkills.length === 0) {
+                return false;
+            }
+
+            return requiredSkills.some((s) =>
+                seekerSkills.includes(String(s).toLowerCase())
+            );
         });
 
-    const suggestedAndShortlistedCombined = [
-        ...shortlistedJobs,
-        ...suggestedJobs.filter(job => !shortlistedJobIds.includes(job.id))
-    ];
+        // Put shortlisted jobs first in suggestions
+        const shortlistedJobs = shortlistedJobIds
+            .map((id) => jobsList.find((j) => j.id === id))
+            .filter(Boolean);
 
-    res.json({
-        applied: appliedJobs,
-        shortlisted: suggestedAndShortlistedCombined
-    });
-});
+        const finalSuggested = shortlistedJobs.concat(
+            suggestedRaw.filter((j) => !shortlistedJobIds.includes(j.id))
+        );
 
-
-// POST: Apply for a specific job (remains the same)
-router.post('/apply/:jobId', auth, isSeeker, async(req, res) => {
-    const { jobId } = req.params;
-    const { answers } = req.body;
-    const seekerId = req.user.id;
-
-    const parsedJobId = parseInt(jobId);
-    if (isNaN(parsedJobId)) {
-        return res.status(400).json({ error: 'Invalid job ID provided.' });
+        return res.json({
+            applied,
+            suggested: finalSuggested,
+        });
+    } catch (err) {
+        console.error("Suggestions Error:", err.message);
+        return res
+            .status(500)
+            .json({ error: "Failed to fetch applications" });
     }
+});
 
-    // 1. Check for existing application
-    const { data: existingApp, error: checkError } = await supabase
-        .from('applications')
-        .select('id')
-        .eq('seekerid', seekerId)
-        .eq('jobid', parsedJobId);
+// -----------------------------------------
+// 📨 4️⃣ Apply for a Job
+// -----------------------------------------
+router.post("/apply/:jobId", auth, isSeeker, async(req, res) => {
+    try {
+        const seekerId = req.user.id;
+        const jobId = parseInt(req.params.jobId, 10);
+        const body = req.body || {};
+        const answers = Array.isArray(body.answers) ? body.answers : [];
 
-    if (checkError) return res.status(500).json({ error: checkError.message });
-    if (existingApp && existingApp.length > 0) {
-        return res.status(409).json({ error: 'You have already applied for this job.' });
+        if (isNaN(jobId)) {
+            return res.status(400).json({ error: "Invalid job ID" });
+        }
+
+        // Check if already applied
+        const { data: existing, error: existingError } = await supabase
+            .from("applications")
+            .select("jobid")
+            .eq("jobid", jobId)
+            .eq("seekerid", seekerId);
+
+        if (existingError) {
+            console.error(
+                "Existing Application Check Error:",
+                existingError.message
+            );
+            return res.status(400).json({ error: existingError.message });
+        }
+
+        if (existing && existing.length > 0) {
+            return res.status(409).json({ error: "Already applied" });
+        }
+
+        const newApp = {
+            jobid: jobId,
+            seekerid: seekerId,
+            answers: answers,
+            status: "applied",
+        };
+
+        const { error } = await supabase
+            .from("applications")
+            .insert([newApp]);
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        return res.json({ message: "Application submitted ✔" });
+    } catch (err) {
+        console.error("Apply Error:", err.message);
+        return res.status(500).json({ error: "Failed to apply" });
     }
-
-    // 2. Insert new application 
-    const applicationData = {
-        jobid: parsedJobId,
-        seekerid: seekerId,
-        status: 'applied',
-        answers: answers || [],
-        applieddate: new Date().toISOString()
-    };
-
-    const { data, error } = await supabase
-        .from('applications')
-        .insert([applicationData])
-        .select('id')
-        .single();
-
-    if (error) return res.status(400).json({ error: error.message });
-    res.json({ message: 'Application submitted successfully', application: data });
 });
 
-
-// ------------------------------------------------------------------
-// 4. ADMIN/DEPRECATED ROUTES
-// ------------------------------------------------------------------
-router.get('/', (req, res) => {
-    return res.status(404).json({ error: 'Endpoint deprecated.' });
-});
-
+// -----------------------------------------
 export default router;
