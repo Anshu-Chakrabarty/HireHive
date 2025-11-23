@@ -31,6 +31,8 @@ body {
     /* New Spacing Variables for Consistency */
     --nav-height: 75px;
     --nav-padding: 1rem 5%;
+    --white-color: #ffffff;
+    /* Added for clarity where 'white' is used */
 }
 
 * {
@@ -100,7 +102,7 @@ body {
 }
 
 .feature-list li:hover {
-    background-color: #fff;
+    background-color: var(--white-color);
     transform: translateX(5px);
 }
 
@@ -1387,9 +1389,8 @@ footer {
     .nav-links {
         display: none;
         width: 100%;
-        position: absolute;
-        top: var(--nav-height);
-        left: 0;
+        /* Adjusted positioning to flow below the navbar when static */
+        position: static;
         box-shadow: 0 4px 5px rgba(0, 0, 0, 0.1);
         flex-direction: column;
         background: var(--white-color);
