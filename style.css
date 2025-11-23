@@ -85,10 +85,10 @@ a:hover {
 
 
 /* =========================================================
-   Top Navigation / Header
+   Top Navigation / Header (for your current HTML)
    ========================================================= */
 
-.site-header {
+header {
     position: fixed;
     top: 0;
     left: 0;
@@ -99,7 +99,7 @@ a:hover {
     border-bottom: 1px solid rgba(229, 231, 235, 0.8);
 }
 
-.nav-container {
+.navbar {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0.6rem 1.5rem;
@@ -109,37 +109,27 @@ a:hover {
     gap: 1rem;
 }
 
-.nav-left {
+.logo {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    text-decoration: none;
 }
 
-.logo-mark {
-    width: 32px;
-    height: 32px;
-    border-radius: 10px;
-    background: linear-gradient( 135deg, var(--primary-color), var(--accent-color));
-    display: flex;
+.logo h1 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--secondary-color);
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    color: #ffffff;
-    font-weight: 700;
-    font-size: 0.9rem;
-    box-shadow: var(--shadow-soft);
+    gap: 0.5rem;
 }
 
-.logo-text-main {
-    font-weight: 700;
-    font-size: 1.05rem;
+.logo h1 i {
+    color: var(--primary-color);
 }
 
-.logo-text-sub {
-    font-size: 0.75rem;
-    color: var(--muted-color);
-}
-
-#navLinks {
+.nav-links {
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -148,7 +138,7 @@ a:hover {
 #navLinks a {
     font-size: 0.9rem;
     color: var(--muted-color);
-    padding: 0.3rem 0.4rem;
+    padding: 0.3rem 0.6rem;
     border-radius: 999px;
 }
 
@@ -157,10 +147,16 @@ a:hover {
     background: rgba(148, 163, 184, 0.12);
 }
 
-.nav-auth-actions {
+.auth-buttons {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+#welcome-message {
+    color: var(--muted-color);
+    font-size: 0.85rem;
 }
 
 #menuToggle {
@@ -197,14 +193,14 @@ a:hover {
 }
 
 .btn-primary {
-    background: linear-gradient( 135deg, var(--primary-color), #1d4ed8);
+    background: linear-gradient(135deg, var(--primary-color), #1d4ed8);
     color: #ffffff;
     border-color: transparent;
     box-shadow: 0 8px 18px rgba(37, 99, 235, 0.28);
 }
 
 .btn-primary:hover {
-    background: linear-gradient( 135deg, #1d4ed8, var(--primary-color));
+    background: linear-gradient(135deg, #1d4ed8, var(--primary-color));
     transform: translateY(-1px);
     box-shadow: 0 12px 22px rgba(37, 99, 235, 0.35);
 }
@@ -348,7 +344,8 @@ textarea {
     position: relative;
 }
 
-.modal-content h2 {
+.modal-content h2,
+.modal-content h3 {
     margin-top: 0;
     margin-bottom: 0.4rem;
 }
@@ -544,6 +541,7 @@ tbody tr:hover {
 .feature-list {
     list-style: none;
     padding: 0;
+    margin: 0.4rem 0 0.6rem;
 }
 
 .feature-list li {
@@ -567,6 +565,141 @@ tbody tr:hover {
 .return-home-container {
     margin-top: 1.2rem;
     text-align: center;
+}
+
+
+/* =========================================================
+   Hero / Home / Services / Blog
+   ========================================================= */
+
+.hero {
+    margin-top: 0.5rem;
+    margin-bottom: 2rem;
+    background: radial-gradient(circle at top left, rgba(37, 99, 235, 0.16), transparent 55%), radial-gradient(circle at bottom right, rgba(249, 115, 22, 0.17), transparent 60%);
+    border-radius: 1.25rem;
+    padding: 2.5rem 2rem;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+}
+
+.hero-content h2 {
+    font-size: 2rem;
+    margin: 0 0 0.4rem 0;
+}
+
+.hero-content p {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--muted-color);
+}
+
+
+/* Services / Hive cells */
+
+.services-section {
+    margin-bottom: 2rem;
+}
+
+.services-section h2 {
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+}
+
+.hive-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.75rem;
+}
+
+.hive-cell {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 0.9rem 0.8rem;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid rgba(229, 231, 235, 0.9);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+
+.hive-cell span {
+    font-size: 0.9rem;
+    color: #111827;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.hive-cell i {
+    color: var(--primary-color);
+}
+
+.hive-cell:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 26px rgba(15, 23, 42, 0.16);
+    border-color: rgba(37, 99, 235, 0.7);
+}
+
+
+/* Blog section */
+
+.blog-section {
+    margin-bottom: 2.5rem;
+}
+
+.blog-section h2 {
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+}
+
+.blog-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 1rem;
+}
+
+.blog-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 1rem;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid rgba(229, 231, 235, 0.9);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.blog-card-image {
+    width: 42px;
+    height: 42px;
+    border-radius: 999px;
+    background: rgba(37, 99, 235, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.blog-card-image i {
+    color: var(--primary-color);
+    font-size: 1.1rem;
+}
+
+.blog-card-content h3 {
+    font-size: 0.98rem;
+    margin: 0 0 0.2rem 0;
+}
+
+.blog-card-content p {
+    margin: 0 0 0.4rem 0;
+    font-size: 0.86rem;
+    color: var(--muted-color);
+}
+
+.blog-card-content a {
+    font-size: 0.85rem;
+    font-weight: 500;
 }
 
 
@@ -655,8 +788,18 @@ tbody tr:hover {
 
 
 /* =========================================================
-   Employer Dashboard
+   Employer Dashboard Container
    ========================================================= */
+
+.dashboard-container {
+    display: block;
+}
+
+#dashboard-view h2 {
+    margin-top: 0;
+    margin-bottom: 0.8rem;
+    font-size: 1.3rem;
+}
 
 #employer-dashboard {
     display: flex;
@@ -716,6 +859,15 @@ tbody tr:hover {
 }
 
 
+/* Posted jobs */
+
+.posted-jobs-section h3 {
+    margin-top: 0;
+    margin-bottom: 0.4rem;
+    font-size: 1rem;
+}
+
+
 /* =========================================================
    Subscription / Plans
    ========================================================= */
@@ -745,17 +897,39 @@ tbody tr:hover {
    Admin View (Simulated)
    ========================================================= */
 
-#admin-view .admin-grid {
+#admin-view .stats-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 0.8rem;
+    margin-bottom: 1rem;
 }
 
-.admin-stat-card {
-    padding: 0.8rem;
+.stat-card {
+    padding: 0.9rem;
     border-radius: var(--radius-md);
     background: #ffffff;
     box-shadow: var(--shadow-soft);
+    text-align: left;
+}
+
+.stat-card i {
+    font-size: 1.3rem;
+    color: var(--primary-color);
+}
+
+.stat-card h3 {
+    margin: 0.4rem 0 0.2rem 0;
+    font-size: 0.9rem;
+}
+
+.stat-card p {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.admin-lists {
+    margin-top: 1rem;
 }
 
 
@@ -763,6 +937,7 @@ tbody tr:hover {
    Seeker Dashboard (LinkedIn-like)
    ========================================================= */
 
+.seeker-layout,
 .seeker-dashboard-layout {
     display: grid;
     grid-template-columns: 260px minmax(0, 1fr);
@@ -779,389 +954,108 @@ tbody tr:hover {
     box-shadow: var(--shadow-soft);
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
     min-height: 100%;
 }
 
-.seeker-sidebar-header {
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
-    margin-bottom: 1.2rem;
+.profile-completion-card h3 {
+    margin-top: 0;
 }
 
-.seeker-avatar-initial {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: rgba(15, 23, 42, 0.05);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    color: var(--secondary-color);
-    font-size: 1rem;
-}
 
-.seeker-sidebar-info {
-    display: flex;
-    flex-direction: column;
-}
+/* Legacy sidebar nav links inside seeker */
 
-.seeker-sidebar-name {
-    font-size: 0.95rem;
-    font-weight: 600;
-    margin: 0;
-}
-
-.seeker-sidebar-role {
-    font-size: 0.8rem;
-    color: var(--muted-color);
-    margin: 0;
-}
-
-.seeker-sidebar-nav {
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
-}
-
-.seeker-nav-btn {
-    border: none;
-    background: none;
-    width: 100%;
-    padding: 0.45rem 0.5rem;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.9rem;
-    color: #4b5563;
-    cursor: pointer;
-}
-
-.seeker-nav-btn i {
-    width: 18px;
-    text-align: center;
-    font-size: 0.9rem;
-}
-
-.seeker-nav-btn.active,
-.seeker-nav-btn:hover {
-    background: rgba(37, 99, 235, 0.08);
+.seeker-sidebar .sidebar-link {
+    font-size: 0.86rem;
     color: var(--primary-color);
-}
-
-.seeker-sidebar-footer {
-    margin-top: 1.3rem;
 }
 
 
 /* Main seeker area */
 
+.seeker-main-content,
 .seeker-main {
     display: flex;
     flex-direction: column;
     gap: 1rem;
 }
 
-.seeker-main-header {
+
+/* Seeker job header */
+
+.seeker-job-header {
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-}
-
-.seeker-main-header-left {
-    max-width: 60%;
-}
-
-.seeker-welcome-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--secondary-color);
-    margin: 0 0 0.2rem 0;
-}
-
-.seeker-welcome-subtitle {
-    font-size: 0.85rem;
-    color: var(--muted-color);
-    margin: 0;
-}
-
-.seeker-main-header-right {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.icon-btn {
-    position: relative;
-    border: none;
-    background: rgba(15, 23, 42, 0.03);
-    border-radius: 999px;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-}
-
-.icon-btn i {
-    color: var(--secondary-color);
-}
-
-.icon-btn .badge {
-    position: absolute;
-    top: -4px;
-    right: -4px;
-    background: var(--danger-color);
-    color: #ffffff;
-    border-radius: 999px;
-    font-size: 0.7rem;
-    padding: 0 4px;
-}
-
-
-/* Top grid: summary + quick actions */
-
-.seeker-top-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.1fr);
-    gap: 1rem;
-}
-
-
-/* Profile summary card */
-
-.seeker-profile-summary-card .profile-summary-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.6rem;
-}
-
-.profile-summary-title {
-    font-size: 0.95rem;
-    font-weight: 600;
-    margin: 0 0 0.1rem 0;
-}
-
-.profile-summary-subtitle {
-    font-size: 0.8rem;
-    color: var(--muted-color);
-    margin: 0;
-}
-
-.profile-progress-wrapper {
-    margin-bottom: 0.6rem;
-}
-
-.profile-progress-bar {
-    background: #e5e7eb;
-    border-radius: 999px;
-    height: 8px;
-    overflow: hidden;
-    position: relative;
-}
-
-.profile-progress-bar #profileCompletionBar {
-    position: absolute;
-    inset: 0;
-    width: 0%;
-    border-radius: 999px;
-    background: linear-gradient( 90deg, var(--primary-color), var(--accent-color));
-    transition: width 0.4s ease;
-}
-
-.profile-progress-label {
-    font-size: 0.8rem;
-    color: #4b5563;
-    margin-top: 0.25rem;
-}
-
-.profile-summary-highlights {
-    list-style: none;
-    padding: 0;
-    margin: 0.15rem 0 0;
-    font-size: 0.8rem;
-    color: #4b5563;
-}
-
-.profile-summary-highlights li {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    margin-bottom: 0.15rem;
-}
-
-.profile-summary-highlights i {
-    color: var(--success-color);
-    font-size: 0.8rem;
-}
-
-
-/* Quick actions */
-
-.seeker-quick-actions-card .quick-actions-title {
-    font-size: 0.95rem;
-    font-weight: 600;
-    margin: 0 0 0.5rem 0;
-}
-
-.quick-actions-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.5rem;
-}
-
-.quick-action-btn {
-    border: 1px dashed #e5e7eb;
-    border-radius: 10px;
-    background: rgba(249, 250, 251, 0.9);
-    padding: 0.6rem 0.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
-    cursor: pointer;
-    font-size: 0.85rem;
-}
-
-.quick-action-btn i {
-    font-size: 0.9rem;
-    color: var(--primary-color);
-}
-
-.quick-action-btn span {
-    font-size: 0.8rem;
-    color: #4b5563;
-}
-
-
-/* Job filter form */
-
-.job-filter-form {
-    margin-top: 0.6rem;
-    margin-bottom: 0.6rem;
-}
-
-.job-filter-row {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.6rem;
-}
-
-.job-filter-field label {
-    font-size: 0.8rem;
-    color: var(--muted-color);
-    margin-bottom: 0.2rem;
-    display: block;
-}
-
-.job-filter-actions {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-}
-
-
-/* Job tabs */
-
-.job-tabs-row {
-    display: inline-flex;
-    gap: 0.5rem;
-    margin-top: 0.4rem;
     margin-bottom: 0.5rem;
 }
 
-.job-view-section {
-    margin-top: 0.4rem;
+
+/* Job filter nav in seeker + employer */
+
+.job-filter-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0.4rem 0 0.7rem 0;
 }
 
-.job-section-title {
-    font-size: 0.9rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-}
 
+/* Job filter form (left sidebar widget) */
 
-/* Recommended horizontal */
-
-.seeker-recommended-card .small-muted {
-    font-size: 0.75rem;
-    color: var(--muted-color);
+.filter-widget h3 {
+    margin-top: 0;
     margin-bottom: 0.4rem;
 }
 
-.recommended-horizontal {
-    display: flex;
-    gap: 0.8rem;
-    overflow-x: auto;
-    padding-bottom: 0.2rem;
-}
-
-.recommended-horizontal::-webkit-scrollbar {
-    height: 6px;
-}
-
-.recommended-horizontal::-webkit-scrollbar-thumb {
-    background: #d1d5db;
-    border-radius: 999px;
-}
-
-.recommended-horizontal-placeholder {
-    font-size: 0.8rem;
-    color: var(--muted-color);
-}
-
-
-/* Profile form */
-
-.seeker-profile-form {
-    display: flex;
-    flex-direction: column;
-    gap: 0.8rem;
-    margin-top: 0.5rem;
-}
-
-.form-grid-2 {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.8rem;
-}
-
-.form-field {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-}
-
-.form-actions {
-    display: flex;
-    gap: 0.5rem;
+#jobFilterForm,
+.job-filter-form {
     margin-top: 0.3rem;
 }
 
-.small-muted {
-    font-size: 0.78rem;
-    color: var(--muted-color);
+#jobFilterForm label {
+    font-size: 0.8rem;
+    margin-bottom: 0.1rem;
+    display: block;
 }
 
 
-/* Simple list (for notifications / settings) */
+/* Job views */
 
-.simple-list {
-    list-style: none;
-    padding-left: 0;
-    font-size: 0.85rem;
-    color: #4b5563;
+.full-screen-view.card {
+    margin-top: 0.5rem;
 }
 
-.simple-list li {
-    margin-bottom: 0.2rem;
+.job-view-section h3 {
+    margin-top: 0;
+}
+
+
+/* Seeker profile view */
+
+.profile-section h3 {
+    margin-top: 0;
+}
+
+
+/* =========================================================
+   Profile Progress Bar (Sidebar small version)
+   ========================================================= */
+
+.progress-container {
+    width: 100%;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 999px;
+    overflow: hidden;
+    margin: 0.4rem 0;
+}
+
+#profileCompletionBar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+    transition: width 0.4s ease;
 }
 
 
@@ -1178,7 +1072,7 @@ tbody tr:hover {
     height: 52px;
     border-radius: 50%;
     border: none;
-    background: linear-gradient( 135deg, var(--primary-color), var(--accent-color));
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
     color: #ffffff;
     display: flex;
     align-items: center;
@@ -1205,16 +1099,15 @@ tbody tr:hover {
 
 .chat-header {
     padding: 0.6rem 0.8rem;
-    background: linear-gradient( 135deg, var(--primary-color), #1d4ed8);
+    background: linear-gradient(135deg, var(--primary-color), #1d4ed8);
     color: #ffffff;
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
 
-.chat-header-title {
-    font-size: 0.9rem;
-    font-weight: 600;
+.chat-header h4 {
+    margin: 0;
 }
 
 #chat-body {
@@ -1223,6 +1116,8 @@ tbody tr:hover {
     overflow-y: auto;
     font-size: 0.85rem;
     background: #f9fafb;
+    display: flex;
+    flex-direction: column;
 }
 
 .chat-message {
@@ -1245,7 +1140,7 @@ tbody tr:hover {
     margin-left: auto;
 }
 
-.chat-footer {
+.chat-input {
     padding: 0.45rem 0.5rem;
     border-top: 1px solid #e5e7eb;
     background: #ffffff;
@@ -1259,6 +1154,159 @@ tbody tr:hover {
     border: 1px solid #e5e7eb;
     padding: 0.35rem 0.6rem;
     font-size: 0.83rem;
+}
+
+
+/* =========================================================
+   Design Globe / Orbit Mini Widget
+   ========================================================= */
+
+#design-globe-container {
+    position: fixed;
+    left: 1rem;
+    bottom: 1.2rem;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    pointer-events: none;
+}
+
+.globe-center-small {
+    width: 70px;
+    height: 70px;
+    border-radius: 999px;
+    background: radial-gradient(circle at top left, #facc15, #f97316);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-medium);
+}
+
+.honeycomb-globe-small {
+    width: 52px;
+    height: 52px;
+    border-radius: 999px;
+    object-fit: cover;
+}
+
+.opportunity-orbit-container-small {
+    position: relative;
+    width: 120px;
+    height: 120px;
+}
+
+.hive-cell-small {
+    position: absolute;
+    background: #ffffff;
+    border-radius: 999px;
+    padding: 0.25rem 0.45rem;
+    box-shadow: var(--shadow-soft);
+    font-size: 0.7rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.hive-cell-small span {
+    white-space: nowrap;
+}
+
+.hive-cell-small i {
+    color: var(--primary-color);
+}
+
+
+/* position tiny orbit labels */
+
+.item-1-small {
+    top: 0;
+    left: 40%;
+    transform: translateX(-50%);
+}
+
+.item-2-small {
+    top: 30%;
+    right: 0;
+    transform: translateY(-50%);
+}
+
+.item-3-small {
+    bottom: 0;
+    right: 10%;
+}
+
+.item-4-small {
+    bottom: 0;
+    left: 10%;
+}
+
+.item-5-small {
+    top: 30%;
+    left: 0;
+    transform: translateY(-50%);
+}
+
+.item-6-small {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+
+/* =========================================================
+   Footer
+   ========================================================= */
+
+footer {
+    margin-top: 2rem;
+    padding: 1.8rem 1.5rem 2rem;
+    background: #111827;
+    color: #e5e7eb;
+}
+
+.footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+}
+
+.footer-col h4 {
+    margin: 0 0 0.4rem 0;
+    font-size: 0.98rem;
+}
+
+.footer-col p {
+    margin: 0.2rem 0;
+    font-size: 0.85rem;
+    color: #9ca3af;
+}
+
+.footer-col ul {
+    list-style: none;
+    padding: 0;
+    margin: 0.2rem 0 0;
+}
+
+.footer-col ul li {
+    margin-bottom: 0.25rem;
+}
+
+.footer-col ul li a {
+    font-size: 0.85rem;
+    color: #e5e7eb;
+}
+
+.footer-col ul li a:hover {
+    color: #bfdbfe;
+}
+
+.footer-col.social i {
+    margin-right: 0.4rem;
+    cursor: pointer;
+    font-size: 0.9rem;
 }
 
 
@@ -1279,11 +1327,9 @@ tbody tr:hover {
    ========================================================= */
 
 @media (max-width: 1100px) {
+    .seeker-layout,
     .seeker-dashboard-layout {
         grid-template-columns: 220px minmax(0, 1fr);
-    }
-    .seeker-top-grid {
-        grid-template-columns: 1fr;
     }
     .job-filter-row {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1311,22 +1357,16 @@ tbody tr:hover {
         display: flex;
     }
     #app-main-content {
-        padding-top: 4.5rem;
+        padding-top: 4.8rem;
+    }
+    #design-globe-container {
+        display: none;
     }
 }
 
 @media (max-width: 768px) {
+    .seeker-layout,
     .seeker-dashboard-layout {
-        grid-template-columns: 1fr;
-    }
-    .seeker-main-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    .seeker-main-header-left {
-        max-width: 100%;
-    }
-    .job-filter-row {
         grid-template-columns: 1fr;
     }
     .contact-form .form-row {
@@ -1339,6 +1379,9 @@ tbody tr:hover {
         right: 0.8rem;
         width: calc(100% - 1.6rem);
     }
+    .hero {
+        padding: 1.8rem 1.4rem;
+    }
 }
 
 @media (max-width: 480px) {
@@ -1350,5 +1393,8 @@ tbody tr:hover {
         right: 0.5rem;
         left: 0.5rem;
         width: auto;
+    }
+    footer {
+        padding-inline: 1rem;
     }
 }
