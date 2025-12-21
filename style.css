@@ -1,0 +1,1954 @@
+/* --- Frontend: style.css (FINAL PROFESSIONAL DESIGN - COMPLETE AND ALIGNED) --- */
+
+html,
+body {
+    /* Prevents double-tap zooming on mobile */
+    touch-action: manipulation;
+}
+
+
+/* General Styling & Color Variables */
+
+:root {
+    --primary-color: #ffc107;
+    /* Amber/Bright Yellow */
+    --primary-hover-color: #e0a800;
+    /* Darker Amber */
+    --secondary-color: #343a40;
+    /* Dark Gray/Text */
+    --accent-color: #007bff;
+    /* Blue for links/info */
+    --light-color: #f8f9fa;
+    /* Near White/Content Background */
+    --soft-bg: #f4f4f7;
+    /* Soft off-white background for pages */
+    --dark-bg: #212529;
+    /* Deep dark background */
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --info-color: #007bff;
+    --font-family: "Poppins", sans-serif;
+    /* New Spacing Variables for Consistency */
+    --nav-height: 75px;
+    --nav-padding: 1rem 5%;
+    --white-color: #ffffff;
+    /* Added for clarity where 'white' is used */
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-family);
+    line-height: 1.6;
+    background-color: var(--soft-bg);
+    color: var(--secondary-color);
+    padding-top: var(--nav-height);
+}
+
+
+/* Utility Classes for SPA */
+
+.hidden {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+.page-view,
+.role-view {
+    min-height: calc(100vh - var(--nav-height) - 100px);
+}
+
+.spaced-heading {
+    margin-top: 2rem;
+}
+
+.center-text {
+    text-align: center !important;
+}
+
+.spaced-paragraph {
+    font-weight: bold;
+}
+
+.font-bold {
+    font-weight: 700 !important;
+}
+
+.font-semi-bold {
+    font-weight: 600 !important;
+}
+
+
+/* Feature List Enhancement (For About/Career Growth pages) */
+
+.feature-list {
+    list-style-type: none;
+    padding: 0;
+    text-align: left;
+    max-width: 600px;
+    margin: 2rem auto;
+}
+
+.feature-list li {
+    margin-bottom: 1rem;
+    font-size: 1.05rem;
+    padding: 0.5rem;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    border-left: 4px solid var(--primary-color);
+    background-color: var(--light-color);
+}
+
+.feature-list li:hover {
+    background-color: var(--white-color);
+    transform: translateX(5px);
+}
+
+.check-icon {
+    color: var(--primary-color);
+    margin-right: 0.75rem;
+    font-size: 1.1rem;
+}
+
+
+/* 1. NAVBAR ALIGNMENT & SPACING FIX */
+
+
+/* Ensure the logo stays on the left and links in the middle */
+
+.navbar {
+    display: flex !important;
+    /* Switch from grid to flex */
+    justify-content: space-between;
+    /* Pushes Logo left and Auth Buttons right */
+    align-items: center;
+    padding: var(--nav-padding);
+    background: var(--white-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    top: 0;
+    width: 100%;
+    height: var(--nav-height);
+    z-index: 1000;
+}
+
+.nav-links {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    /* Space between links */
+    flex-grow: 1;
+    /* This pushes the links to occupy the center space */
+}
+
+
+/* FIX: Logo Replacement via CSS Background (Using Logo.jpg) */
+
+.logo h1 {
+    /* Hide the text and icon, but set background/border */
+    text-indent: -9999px;
+    overflow: hidden;
+    /* Set the logo image as background */
+    background: url('Logo.jpg') no-repeat center center;
+    background-size: contain;
+    /* Define the size and border for prominent look */
+    width: 160px;
+    /* Increased size for visibility on big screens */
+    height: 50px;
+    /* Increased size */
+    line-height: 50px;
+    margin: 0;
+    /* Remove default margin */
+    padding: 2px;
+    /* Attractive Border Combination */
+    border: 2px solid var(--secondary-color);
+    border-radius: 5px;
+    outline: 2px solid var(--primary-color);
+    outline-offset: -4px;
+}
+
+.logo i {
+    color: var(--primary-color);
+    font-size: 1.6rem;
+}
+
+
+/* Desktop Nav Links */
+
+.nav-links a {
+    color: var(--secondary-color);
+    text-decoration: none;
+    margin: 0 0.8rem;
+    /* Reduced margin for less spacing */
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.nav-links a:hover {
+    color: var(--primary-color);
+}
+
+
+/* Mobile Toggle Button (Hidden on desktop) */
+
+.menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--secondary-color);
+    padding: 0.5rem;
+}
+
+.auth-buttons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    line-height: 1;
+}
+
+#welcome-message {
+    font-weight: 500;
+    color: var(--secondary-color);
+    white-space: nowrap;
+}
+
+
+/* Buttons (Unchanged) */
+
+.btn {
+    padding: 0.6rem 1.2rem;
+    border: 1px solid var(--secondary-color);
+    background: transparent;
+    color: var(--secondary-color);
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease, box-shadow 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary {
+    /* Yellow background, Dark text (Yellow/Black combo) */
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--secondary-color);
+}
+
+.btn:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover-color);
+}
+
+.btn-secondary {
+    /* Dark background, Light text (Yellow/Black combo) */
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    color: var(--white-color);
+}
+
+.btn-secondary:hover {
+    background-color: #212529;
+    border-color: #212529;
+    color: var(--primary-color);
+    /* Yellow text on hover for attractive combination */
+}
+
+.btn:disabled {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-small {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+}
+
+
+/* 2. HERO BACKGROUND FIX */
+
+.hero {
+    /* RESTORED: Original image with a strong dark gradient overlay for text legibility */
+    background: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url("https://images.unsplash.com/photo-1521791136064-7986c2920216?q=80&w=2069") center center no-repeat;
+    background-size: cover;
+    color: var(--white-color);
+    height: 70vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    border-bottom-left-radius: 50% 15%;
+    border-bottom-right-radius: 50% 15%;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+.hero-content h2 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.hero-content p {
+    color: var(--light-color);
+    font-size: 1.2rem;
+    animation: slideUpFadeIn 1s ease-out 0.5s forwards;
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+@keyframes slideUpFadeIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* 3. PROMINENT & DARK SEARCH BAR (STYLED FOR SEEKER DASHBOARD FILTER) */
+
+.home-search-section {
+    position: relative;
+    z-index: 50;
+    margin-top: -60px;
+    padding: 0 5%;
+}
+
+.home-search-bar-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    background-color: var(--dark-bg);
+    /* Dark prominent background */
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    max-width: 1000px;
+    margin: 0 auto;
+    gap: 15px;
+}
+
+.search-field-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1 1 200px;
+    border-right: 1px solid #444;
+    /* Darker border */
+    padding-right: 15px;
+}
+
+
+/* Remove border from the last field */
+
+.search-field-wrapper:last-of-type {
+    border-right: none;
+    padding-right: 0;
+}
+
+.home-search-bar-form .search-icon {
+    position: absolute;
+    left: 15px;
+    color: var(--primary-color);
+    /* Primary color for icons */
+    font-size: 1rem;
+}
+
+.home-search-bar-form input[type="text"],
+.home-search-bar-form select {
+    flex-grow: 1;
+    padding: 12px 15px 12px 45px;
+    border: none;
+    outline: none;
+    font-size: 1rem;
+    color: var(--light-color);
+    /* Light text for contrast */
+    background: transparent;
+    appearance: none;
+    width: 100%;
+}
+
+.home-search-bar-form select {
+    padding-right: 35px;
+}
+
+.home-search-bar-form .select-arrow {
+    position: absolute;
+    right: 15px;
+    color: var(--primary-color);
+    /* Primary color for arrow */
+    pointer-events: none;
+}
+
+
+/* FIX: Smaller, high-contrast search button */
+
+.btn-home-search {
+    background-color: var(--primary-color);
+    color: var(--secondary-color);
+    border: 1px solid var(--primary-color);
+    padding: 10px 25px;
+    /* Reduced padding for smaller size */
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    flex-shrink: 0;
+    height: 48px;
+    /* Fixed height to align with fields */
+}
+
+.btn-home-search:hover {
+    background-color: var(--primary-hover-color);
+    border-color: var(--primary-hover-color);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+
+/* Hive/Services Section */
+
+.services-section {
+    padding: 4rem 2rem;
+    text-align: center;
+    background-color: var(--light-color);
+}
+
+.hive-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.hive-cell {
+    width: 180px;
+    height: 200px;
+    background-color: var(--primary-color);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    color: var(--secondary-color);
+    font-weight: 600;
+    transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+}
+
+.hive-cell:hover {
+    transform: scale(1.1);
+    background-color: var(--primary-hover-color);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+.hive-cell span i {
+    display: block;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+
+/* Small Design Globe Container */
+
+#design-globe-container {
+    width: 100%;
+    padding: 40px 0;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    height: 200px;
+}
+
+
+/* Central Globe (Honeycomb Image) */
+
+.globe-center-small {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 0 0 20px rgba(255, 193, 7, 0.8);
+    z-index: 2;
+}
+
+.honeycomb-globe-small {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    animation: pulseGlow 3s infinite alternate;
+}
+
+@keyframes pulseGlow {
+    from {
+        box-shadow: 0 0 10px rgba(255, 193, 7, 0.4);
+    }
+    to {
+        box-shadow: 0 0 20px rgba(255, 193, 7, 0.8), 0 0 30px rgba(255, 193, 7, 0.2);
+    }
+}
+
+
+/* ROTATING ORBIT CONTAINER */
+
+.opportunity-orbit-container-small {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    height: 300px;
+    animation: rotateOrbit 25s linear infinite;
+    z-index: 1;
+}
+
+@keyframes rotateOrbit {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+
+/* ORBITING DOMAIN CELLS */
+
+.orbit-item-small {
+    position: absolute;
+    width: 65px;
+    height: 75px;
+    background-color: var(--primary-color);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    color: var(--secondary-color);
+    font-weight: 600;
+    font-size: 0.6rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    animation: counterRotate 25s linear infinite reverse;
+    top: 50%;
+    left: 50%;
+    margin-top: -37.5px;
+    margin-left: -32.5px;
+}
+
+@keyframes counterRotate {
+    to {
+        transform: translate(-50%, -50%) rotate(-360deg);
+    }
+}
+
+.orbit-item-small span {
+    transform: rotate(0deg);
+    display: block;
+    text-align: center;
+}
+
+.orbit-item-small span i {
+    font-size: 1.2rem;
+    margin-bottom: 0.3rem;
+}
+
+
+/* Positioning for each orbit item (150px radius) */
+
+.item-1-small {
+    transform: rotate(0deg) translate(150px) rotate(0deg);
+}
+
+.item-2-small {
+    transform: rotate(60deg) translate(150px) rotate(-60deg);
+}
+
+.item-3-small {
+    transform: rotate(120deg) translate(150px) rotate(-120deg);
+}
+
+.item-4-small {
+    transform: rotate(180deg) translate(150px) rotate(-180deg);
+}
+
+.item-5-small {
+    transform: rotate(240deg) translate(150px) rotate(-240deg);
+}
+
+.item-6-small {
+    transform: rotate(300deg) translate(150px) rotate(-300deg);
+}
+
+
+/* Blog Section */
+
+.blog-section {
+    padding: 4rem 5%;
+    text-align: center;
+    background-color: var(--soft-bg);
+}
+
+.blog-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+    text-align: left;
+}
+
+.blog-card {
+    background: var(--white-color);
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.blog-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.blog-card-image {
+    width: 100%;
+    height: 180px;
+    background-color: var(--secondary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.blog-card-image i {
+    font-size: 4rem;
+    color: var(--primary-color);
+}
+
+.blog-card-content {
+    padding: 1.5rem;
+}
+
+.blog-card-content h3 {
+    margin-bottom: 0.5rem;
+}
+
+.blog-card-content p {
+    color: #666;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.blog-card-content a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+    margin-top: 1rem;
+    display: inline-block;
+}
+
+.blog-card-content a:hover {
+    text-decoration: underline;
+}
+
+
+/* 3. SIMPLE CONTENT PAGES (About, Contact, Career Growth) */
+
+.simple-content-page {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 4rem 5%;
+    background-color: var(--white-color);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+    border-top: 5px solid var(--primary-color);
+}
+
+.info-section h2.view-title {
+    color: var(--secondary-color);
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 10px;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.info-section h3 {
+    margin-top: 1.5rem;
+    color: var(--secondary-color);
+}
+
+.info-section p {
+    margin-bottom: 1rem;
+}
+
+.contact-details {
+    padding: 1.5rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: var(--light-color);
+}
+
+.contact-details i {
+    color: var(--primary-color);
+    margin-right: 0.5rem;
+}
+
+.contact-form input,
+.contact-form textarea {
+    width: 100%;
+    padding: 0.7rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.contact-form button[type="submit"] {
+    margin-top: 0.5rem;
+}
+
+.return-home-container {
+    margin-top: 3rem;
+    text-align: center;
+}
+
+
+/* 4. DASHBOARD ALIGNMENT FIXES */
+
+.dashboard-container,
+.admin-container {
+    padding: 2rem 5%;
+    background-color: var(--soft-bg);
+}
+
+.seeker-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 2rem;
+    padding: 2rem 5%;
+}
+
+.seeker-sidebar {
+    position: sticky;
+    top: var(--nav-height);
+    align-self: flex-start;
+}
+
+.seeker-main-content {
+    min-width: 0;
+}
+
+.card {
+    background: var(--white-color);
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1.5rem;
+}
+
+.profile-completion-card {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.profile-completion-card h3 {
+    color: var(--secondary-color);
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+}
+
+.progress-container {
+    width: 100%;
+    background-color: #e9ecef;
+    border-radius: 5px;
+    margin: 1rem 0;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 15px;
+    background-color: var(--success-color);
+    transition: width 0.5s ease-in-out;
+}
+
+.profile-completion-card p {
+    font-weight: 600;
+    color: var(--secondary-color);
+    margin-bottom: 1rem;
+}
+
+.profile-completion-card hr {
+    margin: 1.5rem 0;
+    border: 0;
+    border-top: 1px solid #eee;
+}
+
+.sidebar-link {
+    display: block;
+    text-align: left;
+    color: var(--secondary-color) !important;
+    text-decoration: none;
+    padding: 0.5rem 0;
+    transition: color 0.3s ease, transform 0.2s ease, background-color 0.2s ease;
+}
+
+.sidebar-link:hover {
+    color: var(--primary-color) !important;
+    transform: translateX(3px);
+    background-color: #f0f0f0;
+}
+
+.sidebar-link i {
+    margin-right: 0.5rem;
+    width: 20px;
+}
+
+
+/* Filter Widget Styling */
+
+.filter-widget label {
+    font-weight: 500;
+    display: block;
+    margin-top: 1rem;
+    margin-bottom: 0.3rem;
+    font-size: 0.9rem;
+}
+
+.filter-widget select,
+.filter-widget input[type="text"],
+.filter-widget input[type="number"] {
+    width: 100%;
+    padding: 0.7rem;
+    margin-bottom: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+#jobFilterForm button {
+    width: 100%;
+    margin-top: 1rem;
+}
+
+#resetFiltersBtn {
+    margin-top: 0.5rem;
+}
+
+
+/* End Seeker Layout */
+
+form label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 0.2rem;
+    font-size: 0.9rem;
+}
+
+form input,
+form textarea,
+form select {
+    width: 100%;
+    padding: 0.7rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.profile-section {
+    max-width: 600px;
+    margin: 2rem auto;
+}
+
+.cv-status {
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: -0.5rem;
+    margin-bottom: 1rem;
+}
+
+
+/* Employer View Layout */
+
+.full-width-dashboard {
+    padding: 2rem 5%;
+    /* FIX: Attractive Black/Yellow Gradient Background */
+    background-color: var(--secondary-color);
+    background-image: linear-gradient(145deg, var(--dark-bg) 0%, #303030 40%, #1a1a1a 100%);
+    color: var(--light-color);
+    /* Ensure top-level text is visible */
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+}
+
+.employer-dashboard h2 {
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 10px;
+}
+
+
+/* Revert text and element backgrounds inside dashboard views/cards */
+
+.full-width-dashboard .full-screen-view {
+    background: var(--white-color);
+    /* Inner content blocks should be white */
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.full-width-dashboard .job-detail-header h3,
+.full-width-dashboard h4,
+.full-width-dashboard p,
+.full-width-dashboard span,
+.full-width-dashboard label,
+.full-width-dashboard .job-card p {
+    color: var(--secondary-color);
+    /* Dark text on white/light card */
+}
+
+
+/* FIX: Ensure empty list placeholder text is visible */
+
+.full-width-dashboard .job-list p {
+    color: var(--secondary-color) !important;
+}
+
+
+/* Employer Tabs */
+
+#employer-nav-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 2rem;
+    padding: 0;
+}
+
+.employer-tab-btn {
+    flex-grow: 1;
+    text-align: center;
+    /* Ensuring all buttons use the yellow/black primary theme */
+    background-color: var(--light-color);
+    border-color: #ccc;
+    color: var(--secondary-color);
+    transition: all 0.3s ease;
+}
+
+.employer-tab-btn.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-hover-color);
+    color: var(--secondary-color);
+    font-weight: 600;
+}
+
+.employer-post-header,
+.employer-management-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--primary-color);
+    /* Ensure border is visible */
+}
+
+.employer-post-header .employer-subscription-status-small {
+    font-size: 0.9rem;
+    color: var(--primary-color);
+    cursor: pointer;
+}
+
+.employer-post-header .employer-subscription-status-small a:hover {
+    text-decoration: underline;
+}
+
+.employer-post-header .employer-subscription-status-small.premium {
+    color: var(--success-color);
+}
+
+
+/* Job Post/Edit Form Styling Enhancement */
+
+.job-step-form {
+    background-color: var(--light-color);
+    border: 1px solid #ddd;
+    border-left: 5px solid var(--accent-color);
+    margin: 0 auto 1.5rem;
+}
+
+.job-step-form h4 {
+    color: var(--accent-color);
+}
+
+
+/* Styling for Screening Questions Form */
+
+#screening-questions-container input {
+    margin-bottom: 0.5rem;
+}
+
+.screening-title {
+    color: var(--secondary-color);
+    font-size: 1rem;
+}
+
+
+/* Job/Applicant Data Styles */
+
+.job-list {
+    overflow-y: auto;
+    max-height: none;
+}
+
+
+/* Job Card Styling for better list presentation (more compact) */
+
+.job-card {
+    border: 1px solid #ddd;
+    padding: 1.2rem;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.job-card:hover {
+    border-color: var(--accent-color);
+    /* Highlight on hover */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+    /* Slight lift */
+}
+
+.job-card h4 {
+    margin-bottom: 0.5rem;
+    color: var(--secondary-color);
+    font-size: 1.15rem;
+}
+
+.job-card p {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+.job-card .skills {
+    margin-top: 0.75rem;
+    padding-top: 0.5rem;
+    border-top: 1px dashed #eee;
+}
+
+.job-card .skills span {
+    background: var(--light-color);
+    color: var(--secondary-color);
+    padding: 0.3rem 0.6rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    margin-right: 0.3rem;
+    display: inline-block;
+    margin-top: 5px;
+    border: 1px solid #e9ecef;
+}
+
+.job-card .apply-btn,
+.view-applicants-btn {
+    margin-top: 1rem;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+}
+
+.form-actions button {
+    width: 48%;
+}
+
+.job-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+}
+
+.job-card-meta {
+    font-size: 0.85rem;
+    color: #999;
+    display: flex;
+    gap: 1rem;
+}
+
+.job-card-meta i {
+    margin-right: 0.25rem;
+}
+
+
+/* Job Seeker Sub-Navigation */
+
+.seeker-job-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--light-color);
+}
+
+.job-filter-nav {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+.job-filter-nav .btn {
+    flex: 0 1 auto;
+}
+
+.job-view-section {
+    margin-top: 1.5rem;
+}
+
+.job-view-section h3 {
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+}
+
+
+/* Modal Styling */
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 2rem;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 400px;
+    border-radius: 10px;
+    position: relative;
+    text-align: center;
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-content h3 {
+    margin-bottom: 1.5rem;
+}
+
+.modal-content p a {
+    color: var(--primary-color);
+    text-decoration: underline;
+    font-weight: 500;
+}
+
+.modal-content p a:hover {
+    text-decoration: none;
+}
+
+.modal-content.large-modal {
+    max-width: 90%;
+    margin: 5% auto;
+}
+
+.modal-content.small-modal {
+    max-width: 350px;
+}
+
+.close-btn {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    position: absolute;
+    right: 15px;
+    top: 5px;
+}
+
+.close-btn:hover,
+.close-btn:focus {
+    color: #333;
+    text-decoration: none;
+}
+
+
+/* Auth Modal Specifics */
+
+#authModal input,
+#authModal select {
+    margin-bottom: 1.25rem;
+}
+
+#authModal .btn {
+    margin-bottom: 1rem;
+}
+
+#authModal .btn-google i {
+    margin-right: 0.5rem;
+}
+
+
+/* Applicant Data Table Styling */
+
+#applicants-list table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1.5rem;
+    text-align: left;
+    font-size: 0.9rem;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+#applicants-list th,
+#applicants-list td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    word-wrap: break-word;
+}
+
+#applicants-list th {
+    background-color: var(--light-color);
+    color: var(--secondary-color);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+#applicants-list tr:hover {
+    background-color: #f8f8f8;
+}
+
+#applicants-list .cv-link {
+    color: var(--primary-color);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+
+/* Admin Page Specifics */
+
+.admin-lists {
+    margin-top: 2rem;
+}
+
+.admin-lists ul {
+    list-style: none;
+    padding: 0;
+}
+
+.admin-lists li {
+    padding: 0.75rem;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.95rem;
+}
+
+.admin-lists li:last-child {
+    border-bottom: none;
+}
+
+.admin-lists a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    text-align: center;
+}
+
+.stat-card {
+    background: var(--white-color);
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.stat-card i {
+    font-size: 3rem;
+    color: var(--primary-color);
+}
+
+.stat-card h3 {
+    margin: 1rem 0 0.5rem;
+}
+
+.stat-card p {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+
+/* FOOTER STYLING */
+
+footer {
+    background-color: var(--secondary-color);
+    color: var(--light-color);
+    padding: 3rem 5%;
+    margin-top: 3rem;
+}
+
+.footer-container {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.footer-col {
+    flex: 1 1 200px;
+}
+
+.footer-col h4 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+}
+
+.footer-col ul {
+    list-style: none;
+    padding: 0;
+}
+
+.footer-col ul li {
+    margin-bottom: 0.5rem;
+}
+
+.footer-col ul li a {
+    color: var(--light-color);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.footer-col ul li a:hover {
+    color: var(--primary-color);
+}
+
+.footer-col.social {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+}
+
+.footer-col.social i {
+    font-size: 1.5rem;
+    margin-right: 1rem;
+    cursor: pointer;
+    transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.footer-col.social i:hover {
+    color: var(--primary-color);
+    transform: translateY(-2px);
+}
+
+
+/* 5. RESPONSIVE ALIGNMENT FIXES */
+
+@media (max-width: 992px) {
+    .navbar {
+        display: flex;
+        /* Switch back to flex for mobile */
+        position: relative;
+    }
+    .nav-links {
+        display: none;
+        flex-direction: column;
+        position: absolute;
+        top: 100%;
+        /* Position directly under navbar */
+        left: 0;
+        width: 100%;
+        background: var(--white-color);
+        padding: 20px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        z-index: 999;
+    }
+    .nav-links.active {
+        display: flex;
+        /* This class is toggled by app.js */
+    }
+}
+
+.nav-links a {
+    padding: 0.8rem 1rem;
+    border-top: 1px solid var(--light-color);
+    margin: 0;
+}
+
+.menu-toggle {
+    display: block;
+    /* Show the three dots */
+    order: 3;
+    margin-left: 1rem;
+}
+
+
+/* Logo and Auth Buttons alignment in mobile navbar row */
+
+.auth-buttons {
+    order: 2;
+    margin-left: auto;
+    /* Push buttons to the right */
+    gap: 5px;
+    /* Tighter button spacing on small screen */
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    flex-shrink: 0;
+    /* Prevents logo from squishing */
+}
+
+
+/* Logo size adjustment for smaller devices */
+
+.logo h1 {
+    width: 120px;
+    height: 35px;
+    line-height: 35px;
+}
+
+
+/* Search Bar Collapse (styles kept for integrity, though element removed) */
+
+.home-search-bar-form {
+    flex-direction: column;
+}
+
+.search-field-wrapper {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #444;
+    padding-right: 0;
+    padding-bottom: 15px;
+}
+
+.search-field-wrapper:last-of-type {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.btn-home-search {
+    width: 100%;
+}
+
+
+/* Dashboard Layout Collapse */
+
+.seeker-layout {
+    grid-template-columns: 1fr;
+    padding: 1rem 5%;
+}
+
+.seeker-sidebar {
+    position: static;
+    top: auto;
+}
+
+
+/* Orbital globe adjustments */
+
+.opportunity-orbit-container-small {
+    width: 280px;
+    height: 280px;
+}
+
+.item-1-small {
+    transform: rotate(0deg) translate(140px) rotate(0deg);
+}
+
+.item-2-small {
+    transform: rotate(60deg) translate(140px) rotate(-60deg);
+}
+
+.item-3-small {
+    transform: rotate(120deg) translate(140px) rotate(-120deg);
+}
+
+.item-4-small {
+    transform: rotate(180deg) translate(140px) rotate(-180deg);
+}
+
+.item-5-small {
+    transform: rotate(240deg) translate(140px) rotate(-240deg);
+}
+
+.item-6-small {
+    transform: rotate(300deg) translate(140px) rotate(-300deg);
+}
+
+@media (max-width: 768px) {
+    /* Footer Fix: Ensures social icons are centered when stacking */
+    .footer-col.social {
+        justify-content: center;
+        gap: 1rem;
+    }
+    /* Font Size adjustments for small devices */
+    .hero-content h2 {
+        font-size: 2.5rem;
+    }
+    /* Further orbital globe adjustments */
+    .opportunity-orbit-container-small {
+        width: 220px;
+        height: 220px;
+    }
+    .item-1-small {
+        transform: rotate(0deg) translate(110px) rotate(0deg);
+    }
+    .item-2-small {
+        transform: rotate(60deg) translate(110px) rotate(-60deg);
+    }
+    .item-3-small {
+        transform: rotate(120deg) translate(110px) rotate(-120deg);
+    }
+    .item-4-small {
+        transform: rotate(180deg) translate(110px) rotate(-180deg);
+    }
+    .item-5-small {
+        transform: rotate(240deg) translate(110px) rotate(-240deg);
+    }
+    .item-6-small {
+        transform: rotate(300deg) translate(110px) rotate(-300deg);
+    }
+}
+
+
+/* ------------------------------------------------------------------ */
+
+
+/* 6. CHATBOT STYLING & GUIDE POPUP */
+
+
+/* ------------------------------------------------------------------ */
+
+
+/* Floating Icon */
+
+#chat-icon-btn {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    padding: 0;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1010;
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    color: var(--white-color);
+}
+
+#chat-icon-btn:hover {
+    background-color: #0069d9;
+    transform: scale(1.05) translateY(-2px);
+}
+
+
+/* Chat Window */
+
+#chat-window {
+    position: fixed;
+    bottom: 95px;
+    right: 25px;
+    width: 350px;
+    height: 450px;
+    background-color: var(--white-color);
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 1009;
+    border: 1px solid #ddd;
+}
+
+.chat-header {
+    background-color: var(--secondary-color);
+    color: var(--white-color);
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.1rem;
+}
+
+#chat-close-btn {
+    background: none;
+    border: none;
+    color: var(--white-color);
+    padding: 5px;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.chat-body {
+    flex-grow: 1;
+    padding: 15px;
+    overflow-y: auto;
+    background-color: var(--light-color);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.chat-input {
+    display: flex;
+    padding: 10px;
+    background-color: var(--white-color);
+    border-top: 1px solid #ccc;
+}
+
+#chat-input-field {
+    flex-grow: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-right: 10px;
+}
+
+#chat-send-btn {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+}
+
+
+/* Message Styles */
+
+.chat-message {
+    max-width: 80%;
+    padding: 8px 12px;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    line-height: 1.3;
+}
+
+.bot-message {
+    background-color: var(--white-color);
+    color: var(--secondary-color);
+    align-self: flex-start;
+    border-bottom-left-radius: 2px;
+    border: 1px solid #e0e0e0;
+}
+
+.user-message {
+    background-color: var(--primary-color);
+    color: var(--secondary-color);
+    align-self: flex-end;
+    border-bottom-right-radius: 2px;
+}
+
+
+/* Guide Popup */
+
+#guideModal .modal-content {
+    border-top: 5px solid var(--success-color);
+}
+
+.guide-close-btn {
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+#guideNextBtn {
+    margin-top: 1rem;
+    width: 100%;
+}
+
+
+/* Confetti/Balloon Container (Visual Effect Overlay) */
+
+#success-effect-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    /* Allows clicks to pass through */
+    z-index: 9998;
+    /* Below modals, above everything else */
+    overflow: hidden;
+}
+
+
+/* Print Styles (Unchanged) */
+
+@media print {
+    body {
+        padding-top: 0;
+        background-color: var(--white-color);
+        color: #000;
+    }
+    header,
+    footer,
+    .menu-toggle,
+    .auth-buttons,
+    .home-search-section,
+    .modal,
+    #chat-icon-btn,
+    #chat-window,
+    #success-effect-container {
+        display: none !important;
+    }
+    .page-view,
+    .simple-content-page,
+    .card {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 auto;
+        max-width: 100%;
+    }
+    .hero {
+        height: auto;
+        padding: 1rem 5%;
+        background: var(--white-color) !important;
+        color: #000;
+        border-radius: 0;
+    }
+}
+
+#welcome-message {
+    font-weight: 600;
+    color: var(--secondary-color);
+    background: #fff9e6;
+    /* Soft amber background */
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--primary-color);
+    font-size: 0.9rem;
+}
+
+
+/* Fix for Google Button icon spacing */
+
+.btn-google i {
+    margin-right: 10px;
+}
+
+.shortlisted-highlight {
+    border-left: 5px solid var(--success-color) !important;
+    background-color: #f0fff4;
+}
+
+
+/* Password Visibility Toggle Styling */
+
+.password-wrapper {
+    position: relative;
+    width: 100%;
+    margin-bottom: 1rem;
+    /* Matches your existing form spacing */
+}
+
+.password-wrapper input {
+    margin-bottom: 0;
+    /* Remove bottom margin from input so wrapper handles it */
+    padding-right: 40px;
+    /* Make room for the eye icon so text doesn't overlap */
+}
+
+#toggleLoginPassword {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #666;
+    transition: color 0.3s;
+    z-index: 10;
+}
+
+#toggleLoginPassword:hover {
+    color: var(--primary-color);
+}
+
+
+/* Recent Jobs Section */
+
+.recent-jobs-container {
+    padding: 4rem 5%;
+    background-color: #fff;
+    text-align: center;
+}
+
+.section-title {
+    font-size: 2.2rem;
+    color: var(--secondary-color);
+    margin-bottom: 0.5rem;
+}
+
+.section-subtitle {
+    color: #666;
+    margin-bottom: 3rem;
+}
+
+.home-job-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+
+/* Homepage Job Card (Simplified Version) */
+
+.home-job-card {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: left;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.home-job-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary-color);
+}
+
+.home-job-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--primary-color);
+}
+
+.home-job-card h4 {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+    color: var(--secondary-color);
+}
+
+.home-job-company {
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.home-job-details {
+    display: flex;
+    gap: 15px;
+    font-size: 0.9rem;
+    color: #777;
+    margin-bottom: 1.5rem;
+}
+
+.home-job-card .btn {
+    width: 100%;
+}
+
+.view-all-container {
+    margin-top: 3rem;
+}
+
+
+/* Applicant Filter Styling */
+
+.applicant-filters input,
+.applicant-filters select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    transition: border-color 0.2s;
+}
+
+.applicant-filters input:focus,
+.applicant-filters select:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.2);
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+
+/* Status Badges */
+
+.badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge-applied {
+    background-color: #e2e3e5;
+    color: #383d41;
+}
+
+.badge-shortlisted {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.badge-rejected {
+    background-color: #f8d7da;
+    color: #721c24;
+}
