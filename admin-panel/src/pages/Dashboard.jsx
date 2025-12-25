@@ -7,6 +7,7 @@ const Dashboard = () => {
     const [stats, setStats] = useState({ totalClients: 0, totalCandidates: 0, activeJobs: 0, totalRevenue: 0 });
     const [chartData, setChartData] = useState([]);
     const [logs, setLogs] = useState([]);
+    const [loading, setLoading] = useState(true); // Added Loading State
 
     useEffect(() => {
         const fetchData = async () => {
@@ -24,6 +25,14 @@ const Dashboard = () => {
                 setLogs(logsRes.data);
             } catch (err) {
                 console.error("Failed to fetch dashboard data", err);
+                // If 401, redirect to login might be needed, but for now just log it
+                if (err.response && err.response.status === 401) {
+                    alert("Session expired. Please login again.");
+                    localStorage.removeItem('adminToken'); // Clear bad token
+                    window.location.href = '/'; 
+                }
+            } finally {
+                setLoading(false);
             }
         };
         fetchData();
@@ -42,6 +51,8 @@ const Dashboard = () => {
         </div>
     );
 
+    if (loading) return <div style={{ padding: '50px', textAlign: 'center' }}>Loading Admin Panel...</div>;
+
     return (
         <div style={{ padding: '30px', background: '#f8f9fa', minHeight: '100vh' }}>
             <h1 style={{ marginBottom: '30px' }}>Dashboard Overview</h1>
@@ -55,21 +66,27 @@ const Dashboard = () => {
             </div>
 
             {/* 2. CHARTS SECTION */}
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px' }}>
                 
                 {/* Revenue Graph */}
-                <div style={{ background: 'white', padding: '20px', borderRadius: '10px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                <div style={{ background: 'white', padding: '20px', borderRadius: '10px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', minHeight: '400px' }}>
                     <h3 style={{ marginBottom: '20px' }}>Revenue Trends</h3>
-                    <div style={{ height: '300px' }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={chartData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="name" />
-                                <YAxis />
-                                <Tooltip />
-                                <Bar dataKey="revenue" fill="#007bff" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
+                    
+                    {/* SAFE CHART RENDERING */}
+                    <div style={{ width: '100%', height: '300px' }}>
+                        {chartData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={chartData}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis dataKey="name" />
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Bar dataKey="revenue" fill="#007bff" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <p style={{ padding: '20px', color: '#999', textAlign: 'center' }}>No revenue data yet</p>
+                        )}
                     </div>
                 </div>
 
