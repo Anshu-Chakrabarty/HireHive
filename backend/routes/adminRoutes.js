@@ -2,9 +2,12 @@ import express from 'express';
 import pg from 'pg';
 import dotenv from 'dotenv';
 import multer from 'multer'; // Handles file uploads
-import pdf from 'pdf-parse'; // Reads PDF text
 import bcrypt from 'bcryptjs'; // Hashes passwords
 import { createClient } from '@supabase/supabase-js'; // Storage
+import { createRequire } from 'module';
+const require = createRequire(
+    import.meta.url);
+const pdf = require('pdf-parse'); // ✅ This works perfectly
 
 dotenv.config();
 
