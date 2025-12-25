@@ -9,8 +9,6 @@ import publicRoutes from './routes/public.js';
 import adminRoutes from './routes/adminRoutes.js';
 import adminAuth from './middleware/adminAuth.js';
 
-
-
 dotenv.config();
 
 // --- CRITICAL STARTUP CHECK ---
@@ -22,12 +20,6 @@ if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
         "CRITICAL ERROR: Supabase configuration environment variables is missing."
     );
 }
-// RAZORPAY COMMENTED OUT
-// if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-//     console.warn(
-//         "WARNING: Razorpay environment variables are missing. Payment API will fail."
-//     );
-// }
 
 console.log(`Server starting on Node version: ${process.version}`);
 console.log(`Running in environment: ${process.env.NODE_ENV || "development"}`);
@@ -40,20 +32,25 @@ const allowedOrigins = [
     "http://127.0.0.1:5500",
     "http://localhost:3000",
     "http://localhost:5500",
+    "http://localhost:5173", // Added for local Vite Admin testing
     "https://hirehive.in",
     "https://www.hirehive.in",
     "https://hirehive-frontend.onrender.com",
     "https://hirehive.vercel.app",
+    "https://hirehive-admin.onrender.com" // <--- ADDED YOUR ADMIN URL HERE
 ];
 
 // If process.env.CLIENT_ORIGIN exists, add it to the list
 if (process.env.CLIENT_ORIGIN) {
     allowedOrigins.push(process.env.CLIENT_ORIGIN);
 }
+
 app.use(
     cors({
         origin: (origin, callback) => {
+            // Allow requests with no origin (like mobile apps or curl requests)
             if (!origin) return callback(null, true);
+
             const isAllowed = allowedOrigins.includes(origin) ||
                 origin.endsWith(".onrender.com") ||
                 origin.endsWith(".vercel.app");
@@ -65,11 +62,12 @@ app.use(
                 callback(new Error(`Not allowed by CORS: ${origin}`), false);
             }
         },
-        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Added OPTIONS
-        allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"], // Added X-Requested-With
-        credentials: true // Crucial for session/auth persistence
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+        credentials: true
     })
 );
+
 app.use(express.json());
 
 // --- Status Check Endpoints ---
@@ -83,13 +81,13 @@ app.get("/", (req, res) => res.send("HireHive API is running."));
 
 // --- Route Mounting ---
 app.use('/api/public', publicRoutes);
-app.use("/api/auth", authRoutes);
+app.use("/api/auth", authRoutes); // This is where /login lives
 app.use("/api/seeker", seekerRoutes);
 app.use("/api/employer", employerRoutes);
 app.use("/api/contact", contactRoutes);
+
+// Protected Admin Routes
 app.use('/api/admin', adminAuth, adminRoutes);
-
-
 
 // --- Global Error Handling Middleware ---
 app.use((err, req, res, next) => {

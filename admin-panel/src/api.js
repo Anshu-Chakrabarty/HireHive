@@ -2,7 +2,8 @@ import axios from 'axios';
 
 // 1. Point to your Backend Server
 const API = axios.create({
-    baseURL: 'https://hirehive-api.onrender.com',
+    baseURL: 'https://hirehive-api.onrender.com/api',
+
 });
 
 // 2. Automatically add Token to requests

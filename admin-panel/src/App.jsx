@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import AddCandidate from './pages/AddCandidate';
 
 // Simple protection wrapper
 const PrivateRoute = ({ children }) => {
@@ -21,6 +22,11 @@ function App() {
                         <Dashboard />
                     </PrivateRoute>
                 } />
+          <Route path="/add-candidate" element={
+    <PrivateRoute>
+        <AddCandidate />
+    </PrivateRoute>
+} />
             </Routes>
         </BrowserRouter>
     );
