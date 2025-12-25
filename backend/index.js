@@ -6,6 +6,10 @@ import seekerRoutes from "./routes/seeker.js";
 import employerRoutes from "./routes/employer.js";
 import contactRoutes from "./routes/contact.js";
 import publicRoutes from './routes/public.js';
+import adminRoutes from './routes/adminRoutes.js';
+import adminAuth from './middleware/adminAuth.js';
+
+
 
 dotenv.config();
 
@@ -83,6 +87,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/seeker", seekerRoutes);
 app.use("/api/employer", employerRoutes);
 app.use("/api/contact", contactRoutes);
+app.use('/api/admin', adminAuth, adminRoutes);
+
 
 
 // --- Global Error Handling Middleware ---
