@@ -1,34 +1,24 @@
 import express from 'express';
-import pg from 'pg';
+import { pool, supabase } from '../db.js'; // <--- KEY FIX: Import shared connections
 import dotenv from 'dotenv';
 import multer from 'multer'; // Handles file uploads
 import bcrypt from 'bcryptjs'; // Hashes passwords
-import { createClient } from '@supabase/supabase-js'; // Storage
 import { createRequire } from 'module';
+
 const require = createRequire(
     import.meta.url);
-const pdf = require('pdf-parse'); // ✅ This works perfectly
+const pdf = require('pdf-parse'); // ✅ Works perfectly now
 
 dotenv.config();
 
 const router = express.Router();
-const { Pool } = pg;
 
-// 1. Database Connection
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-});
-
-// 2. Setup Supabase Storage
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-
-// 3. Setup Multer (Stores file in memory temporarily)
+// Setup Multer (Stores file in memory temporarily)
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // ==========================================
-// EXISTING DASHBOARD ROUTES
+// DASHBOARD STATS & LOGS
 // ==========================================
 
 router.get('/stats', async(req, res) => {
@@ -79,20 +69,20 @@ router.get('/logs', async(req, res) => {
         `);
         res.json(result.rows);
     } catch (err) {
-        console.error("Logs Error:", err.message);
+        // Return empty array if logs table is missing so app doesn't crash
         res.json([]);
     }
 });
 
 // ==========================================
-// NEW: AI CV UPLOAD & ONBOARDING ROUTE
+// AI CV UPLOAD & ONBOARDING ROUTE
 // ==========================================
 
 router.post('/upload-cv', upload.single('cv'), async(req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
-        // A. Upload PDF to Supabase Storage
+        // A. Upload PDF to Supabase Storage (Using shared supabase client)
         const fileName = `${Date.now()}_${req.file.originalname}`;
         const { data: uploadData, error: uploadError } = await supabase
             .storage
@@ -118,6 +108,7 @@ router.post('/upload-cv', upload.single('cv'), async(req, res) => {
         const phoneMatch = text.match(/(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/);
         const phone = phoneMatch ? phoneMatch[0] : null;
 
+        // Simple name detection (first non-empty line)
         const lines = text.split('\n').filter(line => line.trim().length > 0);
         const name = lines[0] || "Unknown Candidate";
 
@@ -134,8 +125,7 @@ router.post('/upload-cv', upload.single('cv'), async(req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash("HireHive123", salt);
 
-        // --- UPDATED SQL QUERY HERE ---
-        // Using 'cvfilename' instead of 'resume_url'
+        // Insert into DB using 'cvfilename' column
         const newUser = await pool.query(
             `INSERT INTO users (name, email, password, phone, role, cvfilename) 
              VALUES ($1, $2, $3, $4, 'candidate', $5) RETURNING *`, [name, email, hashedPassword, phone, publicUrl]
