@@ -1,5 +1,5 @@
 import express from 'express';
-import { pool, supabase } from '../db.js'; // <--- KEY FIX: Import shared connections
+import { pool, supabase } from '../db.js';
 import dotenv from 'dotenv';
 import multer from 'multer'; // Handles file uploads
 import bcrypt from 'bcryptjs'; // Hashes passwords
@@ -7,7 +7,15 @@ import { createRequire } from 'module';
 
 const require = createRequire(
     import.meta.url);
-const pdf = require('pdf-parse'); // ✅ Works perfectly now
+
+// --- 🛠️ FIX START: SAFE PDF IMPORT ---
+// We import the library as a generic variable first
+const pdfLib = require('pdf-parse');
+
+// We safely determine which one is the actual function
+// If 'pdfLib' is a function, use it. If not, try 'pdfLib.default' (CommonJS fix)
+const pdf = (typeof pdfLib === 'function') ? pdfLib : pdfLib.default;
+// --- FIX END ---
 
 dotenv.config();
 
@@ -98,6 +106,7 @@ router.post('/upload-cv', upload.single('cv'), async(req, res) => {
         const publicUrl = urlData.publicUrl;
 
         // B. Extract Text from PDF (AI/Parsing)
+        // Now using the "safe" pdf function we defined at the top
         const pdfData = await pdf(req.file.buffer);
         const text = pdfData.text;
 
