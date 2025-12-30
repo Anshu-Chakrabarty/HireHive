@@ -3,7 +3,7 @@ import { pool, supabase } from '../db.js';
 import dotenv from 'dotenv';
 import multer from 'multer';
 import bcrypt from 'bcryptjs';
-import PDFParser from 'pdf2json'; // <--- NEW LIBRARY
+import PDFParser from 'pdf2json';
 
 dotenv.config();
 
@@ -12,23 +12,13 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // ==========================================
-// 🛠️ NEW PDF PARSER (Using pdf2json)
+// 🛠️ PDF PARSER WRAPPER
 // ==========================================
 const parsePDF = (buffer) => {
     return new Promise((resolve, reject) => {
         const parser = new PDFParser(this, 1); // 1 = Text Content Only
-
-        parser.on("pdfParser_dataError", (errData) => {
-            console.error("PDF2JSON Error:", errData.parserError);
-            reject(errData.parserError);
-        });
-
-        parser.on("pdfParser_dataReady", (pdfData) => {
-            // Extract raw text content
-            const text = parser.getRawTextContent();
-            resolve(text);
-        });
-
+        parser.on("pdfParser_dataError", (errData) => reject(errData.parserError));
+        parser.on("pdfParser_dataReady", (pdfData) => resolve(parser.getRawTextContent()));
         parser.parseBuffer(buffer);
     });
 };
@@ -75,14 +65,12 @@ router.get('/logs', async(req, res) => {
 });
 
 // ==========================================
-// ✅ UPLOAD CV & AUTO-FILL ROUTE
+// ✅ SMART AUTO-FILL ROUTE
 // ==========================================
 
 router.post('/upload-cv', upload.single('cv'), async(req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: "No file uploaded" });
-
-        console.log("📂 Processing File:", req.file.originalname);
 
         // 1. Upload to Supabase
         const fileName = `${Date.now()}_${req.file.originalname}`;
@@ -96,53 +84,67 @@ router.post('/upload-cv', upload.single('cv'), async(req, res) => {
         const { data: urlData } = supabase.storage.from('resumes').getPublicUrl(fileName);
         const publicUrl = urlData.publicUrl;
 
-        // 2. Extract Text using NEW Library
+        // 2. Extract Text
         let text = "";
         try {
             text = await parsePDF(req.file.buffer);
-            console.log("✅ Text Extracted (Length):", text.length);
         } catch (parseErr) {
             console.warn("⚠️ PDF Parse Failed:", parseErr);
         }
 
-        // 3. Smart Data Extraction (Regex)
+        // 3. Smart Data Extraction
         let name = "Unknown Candidate";
         let email = null;
         let phone = null;
 
         if (text) {
-            // Clean up the text (remove URL encodings often left by pdf2json)
-            const cleanText = decodeURIComponent(text);
+            const cleanText = decodeURIComponent(text); // Fix %20 spaces
 
-            // Extract Email
+            // A. Extract Email (Regex Pattern) - THIS WILL STILL WORK
             const emailMatch = cleanText.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/);
             email = emailMatch ? emailMatch[0] : null;
 
-            // Extract Phone
+            // B. Extract Phone (Regex Pattern) - THIS WILL STILL WORK
             const phoneMatch = cleanText.match(/(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/);
             phone = phoneMatch ? phoneMatch[0] : null;
 
-            // Extract Name (Heuristic: First valid line of text)
-            // We split by newlines, trim, and ignore lines that look like emails or junk
+            // C. Extract Name (Line Logic) - THIS IS THE FIXED PART
+            // List of header words to IGNORE
+            const ignoreList = [
+                "resume", "cv", "curriculum", "vitae",
+                "contact", "details", "info", "information",
+                "email", "phone", "mobile", "address", "location",
+                "summary", "profile", "objective", "experience", "education",
+                "skills", "projects", "languages", "hobbies"
+            ];
+
             const lines = cleanText.split(/\r\n|\n|\r/);
+
             for (let line of lines) {
                 line = line.trim();
-                if (line.length > 2 && !line.includes('@') && !line.match(/resume|cv|curriculum/i)) {
-                    name = line; // Assume first good line is the name
-                    break;
+                const lowerLine = line.toLowerCase();
+
+                // Check: Is this line a valid name?
+                const hasNumbers = /\d/.test(line); // Does it have numbers?
+                const isIgnored = ignoreList.some(word => lowerLine.includes(word)); // Is it a header?
+
+                if (line.length > 2 && !line.includes('@') && !hasNumbers && !isIgnored) {
+                    // One final check: Is it too long to be a name? (Max 30 chars)
+                    if (line.length < 30) {
+                        name = line; // Found "Rohit Tiwari"
+                        break; // Stop looking!
+                    }
                 }
             }
         }
 
-        // 4. Fallback if AI fails
-        let message = "Candidate Onboarded Successfully!";
+        // 4. Fallback Logic
         if (!email) {
             email = `pending_${Date.now()}@hirehive.temp`;
-            message = "File Uploaded! (Could not auto-read email - please edit manually)";
             name = "Manual Entry Required";
         }
 
-        // 5. Create User
+        // 5. DB Insert
         const userCheck = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
         if (userCheck.rows.length > 0) {
             return res.status(400).json({ error: "Candidate already exists" });
@@ -157,9 +159,9 @@ router.post('/upload-cv', upload.single('cv'), async(req, res) => {
         );
 
         res.json({
-            message: message,
+            message: "Candidate Onboarded Successfully!",
             candidate: newUser.rows[0],
-            detectedData: { name, email, phone } // Send back to frontend
+            detectedData: { name, email, phone }
         });
 
     } catch (err) {
