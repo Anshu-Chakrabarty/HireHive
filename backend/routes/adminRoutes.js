@@ -1,21 +1,9 @@
 import express from 'express';
 import { pool, supabase } from '../db.js';
 import dotenv from 'dotenv';
-import multer from 'multer'; // Handles file uploads
-import bcrypt from 'bcryptjs'; // Hashes passwords
+import multer from 'multer';
+import bcrypt from 'bcryptjs';
 import { createRequire } from 'module';
-
-const require = createRequire(
-    import.meta.url);
-
-// --- 🛠️ FIX START: SAFE PDF IMPORT ---
-// We import the library as a generic variable first
-const pdfLib = require('pdf-parse');
-
-// We safely determine which one is the actual function
-// If 'pdfLib' is a function, use it. If not, try 'pdfLib.default' (CommonJS fix)
-const pdf = (typeof pdfLib === 'function') ? pdfLib : pdfLib.default;
-// --- FIX END ---
 
 dotenv.config();
 
@@ -26,9 +14,37 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // ==========================================
-// DASHBOARD STATS & LOGS
+// 🛠️ UNIVERSAL PDF PARSER (The Fix)
+// ==========================================
+const require = createRequire(
+    import.meta.url);
+let pdfLib;
+
+try {
+    // Force load the library
+    pdfLib = require('pdf-parse');
+} catch (e) {
+    console.error("CRITICAL ERROR: Could not require 'pdf-parse'. Is it installed?");
+}
+
+// Wrapper function to handle "Default Export" vs "Named Export" confusion
+const parsePDF = async(buffer) => {
+    // 1. Try using it directly (Standard CommonJS)
+    if (typeof pdfLib === 'function') {
+        return pdfLib(buffer);
+    }
+    // 2. Try using .default (ES Module Compat)
+    if (pdfLib && typeof pdfLib.default === 'function') {
+        return pdfLib.default(buffer);
+    }
+    // 3. Fail gracefully with debug info
+    console.error("PDF Library State:", pdfLib);
+    throw new Error("pdf-parse library loaded but is not a function. Check logs.");
+};
 // ==========================================
 
+
+// --- STATS ---
 router.get('/stats', async(req, res) => {
     try {
         const [employers, candidates, jobs, revenue] = await Promise.all([
@@ -50,6 +66,7 @@ router.get('/stats', async(req, res) => {
     }
 });
 
+// --- REVENUE CHART ---
 router.get('/revenue-chart', async(req, res) => {
     try {
         const result = await pool.query(`
@@ -66,6 +83,7 @@ router.get('/revenue-chart', async(req, res) => {
     }
 });
 
+// --- LOGS ---
 router.get('/logs', async(req, res) => {
     try {
         const result = await pool.query(`
@@ -77,20 +95,21 @@ router.get('/logs', async(req, res) => {
         `);
         res.json(result.rows);
     } catch (err) {
-        // Return empty array if logs table is missing so app doesn't crash
         res.json([]);
     }
 });
 
 // ==========================================
-// AI CV UPLOAD & ONBOARDING ROUTE
+// AI CV UPLOAD ROUTE
 // ==========================================
 
 router.post('/upload-cv', upload.single('cv'), async(req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
-        // A. Upload PDF to Supabase Storage (Using shared supabase client)
+        console.log("📂 Received File:", req.file.originalname, "Size:", req.file.size);
+
+        // A. Upload PDF to Supabase
         const fileName = `${Date.now()}_${req.file.originalname}`;
         const { data: uploadData, error: uploadError } = await supabase
             .storage
@@ -105,27 +124,28 @@ router.post('/upload-cv', upload.single('cv'), async(req, res) => {
         const { data: urlData } = supabase.storage.from('resumes').getPublicUrl(fileName);
         const publicUrl = urlData.publicUrl;
 
-        // B. Extract Text from PDF (AI/Parsing)
-        // Now using the "safe" pdf function we defined at the top
-        const pdfData = await pdf(req.file.buffer);
+        // B. Parse PDF (Using our new Safe Wrapper)
+        console.log("🔍 Attempting to parse PDF...");
+        const pdfData = await parsePDF(req.file.buffer);
+        console.log("✅ PDF Parsed successfully! Length:", pdfData.text.length);
+
         const text = pdfData.text;
 
-        // C. Auto-Detect Info using Regex
+        // C. Extract Info
         const emailMatch = text.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/);
         const email = emailMatch ? emailMatch[0] : null;
 
         const phoneMatch = text.match(/(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/);
         const phone = phoneMatch ? phoneMatch[0] : null;
 
-        // Simple name detection (first non-empty line)
         const lines = text.split('\n').filter(line => line.trim().length > 0);
         const name = lines[0] || "Unknown Candidate";
 
         if (!email) {
-            return res.status(400).json({ error: "Could not detect an email. Please check the PDF." });
+            return res.status(400).json({ error: "Could not detect an email. Is the PDF readable?" });
         }
 
-        // D. Create User in Database
+        // D. Save to Database
         const userCheck = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
         if (userCheck.rows.length > 0) {
             return res.status(400).json({ error: "Candidate with this email already exists!" });
@@ -134,7 +154,6 @@ router.post('/upload-cv', upload.single('cv'), async(req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash("HireHive123", salt);
 
-        // Insert into DB using 'cvfilename' column
         const newUser = await pool.query(
             `INSERT INTO users (name, email, password, phone, role, cvfilename) 
              VALUES ($1, $2, $3, $4, 'candidate', $5) RETURNING *`, [name, email, hashedPassword, phone, publicUrl]
@@ -147,8 +166,9 @@ router.post('/upload-cv', upload.single('cv'), async(req, res) => {
         });
 
     } catch (err) {
-        console.error("CV Upload Error:", err);
-        res.status(500).json({ error: err.message || "Server Error" });
+        console.error("❌ CV Processing Error:", err);
+        // This will send the EXACT error to your frontend now
+        res.status(500).json({ error: `Server Error: ${err.message}` });
     }
 });
 
