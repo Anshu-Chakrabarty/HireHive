@@ -3,7 +3,7 @@ import { pool, supabase } from '../db.js';
 import dotenv from 'dotenv';
 import multer from 'multer';
 import bcrypt from 'bcryptjs';
-import { createRequire } from 'module';
+import PDFParser from 'pdf2json'; // <--- NEW LIBRARY
 
 dotenv.config();
 
@@ -12,47 +12,31 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // ==========================================
-// 🛡️ SAFE PDF LOADER
+// 🛠️ NEW PDF PARSER (Using pdf2json)
 // ==========================================
-const require = createRequire(
-    import.meta.url);
-let pdfParser = null;
+const parsePDF = (buffer) => {
+    return new Promise((resolve, reject) => {
+        const parser = new PDFParser(this, 1); // 1 = Text Content Only
 
-try {
-    // We try to load it. If it fails, we just don't use it.
-    pdfParser = require('pdf-parse');
-} catch (err) {
-    console.warn("⚠️ PDF Library could not be loaded. Skipping text analysis.");
-}
+        parser.on("pdfParser_dataError", (errData) => {
+            console.error("PDF2JSON Error:", errData.parserError);
+            reject(errData.parserError);
+        });
 
-// Helper to safely parse or fail gracefully
-async function safeParsePDF(buffer) {
-    if (!pdfParser) return "";
+        parser.on("pdfParser_dataReady", (pdfData) => {
+            // Extract raw text content
+            const text = parser.getRawTextContent();
+            resolve(text);
+        });
 
-    try {
-        // Try standard function call
-        if (typeof pdfParser === 'function') {
-            const data = await pdfParser(buffer);
-            return data.text;
-        }
-        // Try .default (ESM compat)
-        if (pdfParser.default && typeof pdfParser.default === 'function') {
-            const data = await pdfParser.default(buffer);
-            return data.text;
-        }
-        // If we get here, the library is loaded but weird (like your logs show).
-        // We return empty string instead of crashing.
-        console.warn("⚠️ PDF Library format unrecognized. Skipping.");
-        return "";
-    } catch (err) {
-        console.warn("⚠️ PDF Parsing error (ignored):", err.message);
-        return "";
-    }
-}
+        parser.parseBuffer(buffer);
+    });
+};
+
+// ==========================================
+// ROUTES
 // ==========================================
 
-
-// --- STATS ROUTES ---
 router.get('/stats', async(req, res) => {
     try {
         const [employers, candidates, jobs, revenue] = await Promise.all([
@@ -91,14 +75,16 @@ router.get('/logs', async(req, res) => {
 });
 
 // ==========================================
-// ✅ CRASH-PROOF UPLOAD ROUTE
+// ✅ UPLOAD CV & AUTO-FILL ROUTE
 // ==========================================
 
 router.post('/upload-cv', upload.single('cv'), async(req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
-        // 1. Upload to Supabase (Critical - Must Work)
+        console.log("📂 Processing File:", req.file.originalname);
+
+        // 1. Upload to Supabase
         const fileName = `${Date.now()}_${req.file.originalname}`;
         const { data: uploadData, error: uploadError } = await supabase
             .storage
@@ -110,39 +96,55 @@ router.post('/upload-cv', upload.single('cv'), async(req, res) => {
         const { data: urlData } = supabase.storage.from('resumes').getPublicUrl(fileName);
         const publicUrl = urlData.publicUrl;
 
-        // 2. Try to Read Text (Non-Critical - Can Fail safely)
-        console.log("🔍 Attempting to extract text...");
-        const text = await safeParsePDF(req.file.buffer);
-        console.log("📝 Extracted characters:", text.length);
+        // 2. Extract Text using NEW Library
+        let text = "";
+        try {
+            text = await parsePDF(req.file.buffer);
+            console.log("✅ Text Extracted (Length):", text.length);
+        } catch (parseErr) {
+            console.warn("⚠️ PDF Parse Failed:", parseErr);
+        }
 
-        // 3. Determine Data (Use Fallbacks)
-        let name = "Manual Entry Required";
+        // 3. Smart Data Extraction (Regex)
+        let name = "Unknown Candidate";
         let email = null;
         let phone = null;
 
-        if (text.length > 0) {
-            const emailMatch = text.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/);
+        if (text) {
+            // Clean up the text (remove URL encodings often left by pdf2json)
+            const cleanText = decodeURIComponent(text);
+
+            // Extract Email
+            const emailMatch = cleanText.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/);
             email = emailMatch ? emailMatch[0] : null;
 
-            const phoneMatch = text.match(/(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/);
+            // Extract Phone
+            const phoneMatch = cleanText.match(/(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/);
             phone = phoneMatch ? phoneMatch[0] : null;
 
-            const lines = text.split('\n').filter(line => line.trim().length > 0);
-            name = lines[0] || "Unknown Candidate";
+            // Extract Name (Heuristic: First valid line of text)
+            // We split by newlines, trim, and ignore lines that look like emails or junk
+            const lines = cleanText.split(/\r\n|\n|\r/);
+            for (let line of lines) {
+                line = line.trim();
+                if (line.length > 2 && !line.includes('@') && !line.match(/resume|cv|curriculum/i)) {
+                    name = line; // Assume first good line is the name
+                    break;
+                }
+            }
         }
 
-        // 4. Handle Missing Data (Prevent DB Crash)
-        let statusMessage = "Candidate Onboarded Successfully!";
+        // 4. Fallback if AI fails
+        let message = "Candidate Onboarded Successfully!";
         if (!email) {
-            // Generate a fake email so DB doesn't reject the row
             email = `pending_${Date.now()}@hirehive.temp`;
-            statusMessage = "File Uploaded! (AI could not read text - please edit details manually)";
+            message = "File Uploaded! (Could not auto-read email - please edit manually)";
+            name = "Manual Entry Required";
         }
 
-        // 5. Check Duplicates & Insert
+        // 5. Create User
         const userCheck = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
         if (userCheck.rows.length > 0) {
-            // If duplicate exists (rare with timestamp email), just return error
             return res.status(400).json({ error: "Candidate already exists" });
         }
 
@@ -155,14 +157,13 @@ router.post('/upload-cv', upload.single('cv'), async(req, res) => {
         );
 
         res.json({
-            message: statusMessage,
+            message: message,
             candidate: newUser.rows[0],
-            detectedData: { name, email, phone }
+            detectedData: { name, email, phone } // Send back to frontend
         });
 
     } catch (err) {
         console.error("❌ Fatal Error:", err);
-        // Returns 500 only if Supabase or DB completely fails
         res.status(500).json({ error: `Server Error: ${err.message}` });
     }
 });
