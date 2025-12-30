@@ -65,7 +65,7 @@ router.get('/logs', async(req, res) => {
 });
 
 // ==========================================
-// ✅ SMART AUTO-FILL ROUTE
+// ✅ HYBRID AUTO-FILL ROUTE
 // ==========================================
 
 router.post('/upload-cv', upload.single('cv'), async(req, res) => {
@@ -84,64 +84,45 @@ router.post('/upload-cv', upload.single('cv'), async(req, res) => {
         const { data: urlData } = supabase.storage.from('resumes').getPublicUrl(fileName);
         const publicUrl = urlData.publicUrl;
 
-        // 2. Extract Text
-        let text = "";
-        try {
-            text = await parsePDF(req.file.buffer);
-        } catch (parseErr) {
-            console.warn("⚠️ PDF Parse Failed:", parseErr);
-        }
+        // 2. Determine Name from FILENAME (Reliable)
+        // e.g., "Rohit_Tiwari_Resume.pdf" -> "Rohit Tiwari Resume"
+        let name = req.file.originalname
+            .replace(/\.pdf$/i, '') // Remove .pdf extension
+            .replace(/[-_]/g, ' ') // Replace dashes and underscores with spaces
+            .trim(); // Remove extra spaces
 
-        // 3. Smart Data Extraction
-        let name = "Unknown Candidate";
+        // Capitalize words safely
+        name = name.split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ');
+
+        // 3. Extract Text (For Email & Phone Only)
+        let text = "";
         let email = null;
         let phone = null;
 
-        if (text) {
-            const cleanText = decodeURIComponent(text); // Fix %20 spaces
+        try {
+            text = await parsePDF(req.file.buffer);
+            if (text) {
+                const cleanText = decodeURIComponent(text);
 
-            // A. Extract Email (Regex Pattern) - THIS WILL STILL WORK
-            const emailMatch = cleanText.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/);
-            email = emailMatch ? emailMatch[0] : null;
+                // Extract Email
+                const emailMatch = cleanText.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/);
+                email = emailMatch ? emailMatch[0] : null;
 
-            // B. Extract Phone (Regex Pattern) - THIS WILL STILL WORK
-            const phoneMatch = cleanText.match(/(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/);
-            phone = phoneMatch ? phoneMatch[0] : null;
-
-            // C. Extract Name (Line Logic) - THIS IS THE FIXED PART
-            // List of header words to IGNORE
-            const ignoreList = [
-                "resume", "cv", "curriculum", "vitae",
-                "contact", "details", "info", "information",
-                "email", "phone", "mobile", "address", "location",
-                "summary", "profile", "objective", "experience", "education",
-                "skills", "projects", "languages", "hobbies"
-            ];
-
-            const lines = cleanText.split(/\r\n|\n|\r/);
-
-            for (let line of lines) {
-                line = line.trim();
-                const lowerLine = line.toLowerCase();
-
-                // Check: Is this line a valid name?
-                const hasNumbers = /\d/.test(line); // Does it have numbers?
-                const isIgnored = ignoreList.some(word => lowerLine.includes(word)); // Is it a header?
-
-                if (line.length > 2 && !line.includes('@') && !hasNumbers && !isIgnored) {
-                    // One final check: Is it too long to be a name? (Max 30 chars)
-                    if (line.length < 30) {
-                        name = line; // Found "Rohit Tiwari"
-                        break; // Stop looking!
-                    }
-                }
+                // Extract Phone
+                const phoneMatch = cleanText.match(/(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/);
+                phone = phoneMatch ? phoneMatch[0] : null;
             }
+        } catch (parseErr) {
+            console.warn("⚠️ PDF Parse Failed (Skipping Email/Phone):", parseErr);
         }
 
-        // 4. Fallback Logic
+        // 4. Fallback if Email not found
         if (!email) {
             email = `pending_${Date.now()}@hirehive.temp`;
-            name = "Manual Entry Required";
+            // If we are forcing a pending email, we might as well mark the name for review
+            if (name.length < 3) name = "Manual Entry Required";
         }
 
         // 5. DB Insert
