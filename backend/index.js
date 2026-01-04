@@ -1,14 +1,18 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+
+// Import Routes
 import authRoutes from "./routes/auth.js";
 import seekerRoutes from "./routes/seeker.js";
-import employerRoutes from "./routes/employer.js";
 import contactRoutes from "./routes/contact.js";
 import publicRoutes from './routes/public.js';
 import adminRoutes from './routes/adminRoutes.js';
 import adminAuth from './middleware/adminAuth.js';
-import employerRoutes from './routes/employerRoutes.js';
+
+// --- FIX: IMPORT BOTH EMPLOYER FILES WITH DIFFERENT NAMES ---
+import employerMainRoutes from "./routes/employer.js";       // Your original file (Jobs, etc.)
+import employerSearchRoutes from './routes/employerRoutes.js'; // The new file (Find Applicants)
 
 dotenv.config();
 
@@ -17,9 +21,7 @@ if (!process.env.JWT_SECRET) {
     console.error("CRITICAL ERROR: JWT_SECRET environment variable is missing.");
 }
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
-    console.error(
-        "CRITICAL ERROR: Supabase configuration environment variables is missing."
-    );
+    console.error("CRITICAL ERROR: Supabase configuration environment variables are missing.");
 }
 
 console.log(`Server starting on Node version: ${process.version}`);
@@ -33,15 +35,14 @@ const allowedOrigins = [
     "http://127.0.0.1:5500",
     "http://localhost:3000",
     "http://localhost:5500",
-    "http://localhost:5173", // Added for local Vite Admin testing
+    "http://localhost:5173",
     "https://hirehive.in",
     "https://www.hirehive.in",
     "https://hirehive-frontend.onrender.com",
     "https://hirehive.vercel.app",
-    "https://hirehive-admin.onrender.com" // <--- ADDED YOUR ADMIN URL HERE
+    "https://hirehive-admin.onrender.com"
 ];
 
-// If process.env.CLIENT_ORIGIN exists, add it to the list
 if (process.env.CLIENT_ORIGIN) {
     allowedOrigins.push(process.env.CLIENT_ORIGIN);
 }
@@ -49,9 +50,7 @@ if (process.env.CLIENT_ORIGIN) {
 app.use(
     cors({
         origin: (origin, callback) => {
-            // Allow requests with no origin (like mobile apps or curl requests)
             if (!origin) return callback(null, true);
-
             const isAllowed = allowedOrigins.includes(origin) ||
                 origin.endsWith(".onrender.com") ||
                 origin.endsWith(".vercel.app");
@@ -82,14 +81,17 @@ app.get("/", (req, res) => res.send("HireHive API is running."));
 
 // --- Route Mounting ---
 app.use('/api/public', publicRoutes);
-app.use("/api/auth", authRoutes); // This is where /login lives
+app.use("/api/auth", authRoutes);
 app.use("/api/seeker", seekerRoutes);
-app.use("/api/employer", employerRoutes);
 app.use("/api/contact", contactRoutes);
+
+// --- MOUNT BOTH EMPLOYER ROUTES ---
+// Express will check employerMainRoutes first, then employerSearchRoutes
+app.use("/api/employer", employerMainRoutes);
+app.use("/api/employer", employerSearchRoutes);
 
 // Protected Admin Routes
 app.use('/api/admin', adminAuth, adminRoutes);
-
 
 // --- Global Error Handling Middleware ---
 app.use((err, req, res, next) => {
