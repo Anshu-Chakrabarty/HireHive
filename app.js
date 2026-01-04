@@ -1210,27 +1210,40 @@ document.addEventListener("DOMContentLoaded", () => {
         switchEmployerView("employer-job-view-details");
     }
 
-    function switchEmployerView(targetViewId) {
+// --- EMPLOYER LOGIC ---
+
+    // EXPORT TO WINDOW (Fixes "ReferenceError")
+    window.switchEmployerView = function(targetViewId) {
+        
+        // 1. Hide all employer sub-views
         document.querySelectorAll("#employer-dashboard .full-screen-view").forEach(view => {
             view.classList.add("hidden");
         });
-        document.querySelectorAll('#employer-dashboard .job-filter-nav button').forEach(btn => {
-            if (btn.dataset.viewTarget === targetViewId) {
-                btn.classList.add('btn-primary');
-            } else if (btn.id !== 'choosePlanTab') {
-                btn.classList.remove('btn-primary');
-            }
-        });
-        document.getElementById('choosePlanTab').classList.remove('btn-primary');
 
+        // 2. Show the target view
         const targetView = document.getElementById(targetViewId);
         if (targetView) {
             targetView.classList.remove("hidden");
+
+            // Load specific data depending on the view
             if (targetViewId === "employer-post-view") loadEmployerPostForm();
             if (targetViewId === "employer-management-view") loadPostedJobs();
-            if (targetViewId === "employer-find-applicants-view") loadFindApplicants();
+            if (targetViewId === "employer-find-applicants-view") loadFindApplicants(); // <--- Key for Find Talent
         }
-    }
+
+        // 3. Update Navigation Buttons (Highlight the active tab)
+        document.querySelectorAll('#employer-nav-tabs button').forEach(btn => {
+            btn.classList.remove('btn-primary');
+            
+            // Check if this button targets the current view (via data attribute OR click handler)
+            const target = btn.getAttribute('data-view-target');
+            const onClickAttr = btn.getAttribute('onclick') || "";
+            
+            if (target === targetViewId || onClickAttr.includes(targetViewId)) {
+                btn.classList.add('btn-primary');
+            }
+        });
+    };
     document.getElementById("postNewJobBtn").onclick = () => switchEmployerView("employer-post-view");
     document.getElementById("postJobTab").onclick = () => switchEmployerView("employer-post-view");
     document.getElementById("manageJobsTab").onclick = () => switchEmployerView("employer-management-view");
