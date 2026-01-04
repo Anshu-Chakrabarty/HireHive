@@ -1558,7 +1558,7 @@ async function loadFindApplicants() {
 
     try {
         // Fetch from backend
-        const candidates = await fetchApi('employer/candidates', 'GET');
+        const candidates = await fetchApi('talent/candidates', 'GET');
         allCandidatesData = candidates; // Save for filtering
         renderCandidateGrid(candidates);
     } catch (error) {

@@ -88,8 +88,7 @@ app.use("/api/contact", contactRoutes);
 // --- MOUNT BOTH EMPLOYER ROUTES ---
 // Express will check employerMainRoutes first, then employerSearchRoutes
 app.use("/api/employer", employerMainRoutes);
-app.use("/api/employer", employerSearchRoutes);
-
+app.use("/api/talent", employerSearchRoutes);  // <--- CHANGED THIS LINE
 // Protected Admin Routes
 app.use('/api/admin', adminAuth, adminRoutes);
 

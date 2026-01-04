@@ -409,8 +409,10 @@
                 <div id="employer-nav-tabs" class="job-filter-nav">
                     <button id="postJobTab" class="btn employer-tab-btn" data-view-target="employer-post-view">Post Job</button>
                     <button id="manageJobsTab" class="btn btn-primary employer-tab-btn" data-view-target="employer-management-view">Manage Posted Jobs</button>
-                    <button id="findTalentTab" class="btn employer-tab-btn" data-view-target="employer-find-applicants-view">Find Talent</button>
-                    <button id="choosePlanTab" class="btn employer-tab-btn">Choose Hive Plan</button>
+<button id="findTalentTab" class="btn employer-tab-btn" 
+        onclick="switchEmployerView('employer-find-applicants-view')">
+    Find Talent
+</button>                    <button id="choosePlanTab" class="btn employer-tab-btn">Choose Hive Plan</button>
                 </div>
 
                 <div id="employer-job-view-details" class="full-screen-view card hidden">
