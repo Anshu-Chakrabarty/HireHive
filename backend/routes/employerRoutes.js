@@ -6,17 +6,17 @@ const router = express.Router();
 // 1. GET ALL CANDIDATES (For the Grid View)
 router.get('/candidates', async (req, res) => {
     try {
-        // We only fetch essential info for the card to keep it fast
+        // FIX: Now fetches 'seeker' OR 'candidate' so everyone appears
         const result = await pool.query(
-            `SELECT id, name, email, phone, bio, cvfilename 
+            `SELECT id, name, email, phone, cvfilename 
              FROM users 
-             WHERE role = 'candidate' 
+             WHERE role IN ('candidate', 'seeker') 
              ORDER BY created_at DESC`
         );
         res.json(result.rows);
     } catch (err) {
         console.error("Fetch Candidates Error:", err);
-        res.status(500).json({ error: "Server error fetching candidates" });
+        res.status(500).json({ error: "Server error fetching candidates: " + err.message });
     }
 });
 
@@ -25,7 +25,8 @@ router.get('/candidate/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const result = await pool.query(
-            `SELECT * FROM users WHERE id = $1 AND role = 'candidate'`, 
+            `SELECT * FROM users 
+             WHERE id = $1 AND role IN ('candidate', 'seeker')`, 
             [id]
         );
 
