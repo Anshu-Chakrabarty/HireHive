@@ -86,7 +86,6 @@ app.use("/api/auth", authRoutes); // This is where /login lives
 app.use("/api/seeker", seekerRoutes);
 app.use("/api/employer", employerRoutes);
 app.use("/api/contact", contactRoutes);
-app.use('/api/employer', employerRoutes);
 
 // Protected Admin Routes
 app.use('/api/admin', adminAuth, adminRoutes);
