@@ -409,6 +409,7 @@
                 <div id="employer-nav-tabs" class="job-filter-nav">
                     <button id="postJobTab" class="btn employer-tab-btn" data-view-target="employer-post-view">Post Job</button>
                     <button id="manageJobsTab" class="btn btn-primary employer-tab-btn" data-view-target="employer-management-view">Manage Posted Jobs</button>
+                    <button id="findTalentTab" class="btn employer-tab-btn" data-view-target="employer-find-applicants-view">Find Talent</button>
                     <button id="choosePlanTab" class="btn employer-tab-btn">Choose Hive Plan</button>
                 </div>
 
@@ -499,6 +500,31 @@
                         </div>
                     </div>
                 </div>
+
+<div id="employer-find-applicants-view" class="full-screen-view hidden">
+    <div class="view-header" style="margin-bottom: 30px;">
+        <h2 style="color: var(--secondary-color);">Find Talent</h2>
+        <p>Browse our database of qualified professionals.</p>
+        
+        <div style="position: relative; max-width: 500px; margin-top: 15px;">
+            <i class="fas fa-search" style="position: absolute; left: 15px; top: 12px; color: #aaa;"></i>
+            <input type="text" id="candidateSearchInput" placeholder="Search applicants by name..." 
+                   style="width: 100%; padding: 10px 10px 10px 40px; border-radius: 20px; border: 1px solid #ccc;">
+        </div>
+    </div>
+
+    <div id="all-candidates-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+        <p>Loading candidates...</p>
+    </div>
+</div>
+
+<div id="candidateDetailsModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <span class="close-btn" id="closeCandidateModal">&times;</span>
+        <div id="candidate-modal-body">
+            </div>
+    </div>
+</div>
 
                 <div id="employer-management-view" class="full-screen-view card">
 

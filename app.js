@@ -1228,6 +1228,7 @@ document.addEventListener("DOMContentLoaded", () => {
             targetView.classList.remove("hidden");
             if (targetViewId === "employer-post-view") loadEmployerPostForm();
             if (targetViewId === "employer-management-view") loadPostedJobs();
+            if (targetViewId === "employer-find-applicants-view") loadFindApplicants();
         }
     }
     document.getElementById("postNewJobBtn").onclick = () => switchEmployerView("employer-post-view");
@@ -1545,7 +1546,117 @@ document.addEventListener("DOMContentLoaded", () => {
             listElement.innerHTML = `<p style='color:red;'>Failed to load applicants: ${error.message}</p>`;
         }
     }
+// ==========================================
+// NEW: FIND APPLICANTS LOGIC (Vanilla JS)
+// ==========================================
 
+let allCandidatesData = []; // Store data globally for search filtering
+
+async function loadFindApplicants() {
+    const grid = document.getElementById("all-candidates-grid");
+    grid.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Loading talent pool...</p>';
+
+    try {
+        // Fetch from backend
+        const candidates = await fetchApi('employer/candidates', 'GET');
+        allCandidatesData = candidates; // Save for filtering
+        renderCandidateGrid(candidates);
+    } catch (error) {
+        grid.innerHTML = `<p style="color:red;">Error loading candidates: ${error.message}</p>`;
+    }
+}
+
+function renderCandidateGrid(candidates) {
+    const grid = document.getElementById("all-candidates-grid");
+    
+    if (candidates.length === 0) {
+        grid.innerHTML = '<p>No candidates found.</p>';
+        return;
+    }
+
+    grid.innerHTML = candidates.map(c => `
+        <div class="candidate-card" style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #eee;">
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                <div style="width: 50px; height: 50px; background: #007bff; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold;">
+                    ${c.name.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                    <h3 style="margin: 0; font-size: 18px; color: #333;">${c.name}</h3>
+                    <span style="font-size: 14px; color: #666;">Job Seeker</span>
+                </div>
+            </div>
+            
+            <div style="font-size: 14px; color: #555; margin-bottom: 15px;">
+                <div style="margin-bottom: 5px;"><i class="fas fa-envelope"></i> ${c.email}</div>
+                <div><i class="fas fa-phone"></i> ${c.phone || "N/A"}</div>
+            </div>
+
+            <button class="btn btn-primary view-candidate-btn" data-id="${c.id}" style="width: 100%;">
+                View Profile
+            </button>
+        </div>
+    `).join('');
+
+    // Attach click listeners to new buttons
+    document.querySelectorAll('.view-candidate-btn').forEach(btn => {
+        btn.onclick = () => showCandidateModal(btn.dataset.id);
+    });
+}
+
+// Search Logic
+document.getElementById('candidateSearchInput').addEventListener('keyup', (e) => {
+    const term = e.target.value.toLowerCase();
+    const filtered = allCandidatesData.filter(c => c.name.toLowerCase().includes(term));
+    renderCandidateGrid(filtered);
+});
+
+// Modal Logic
+function showCandidateModal(candidateId) {
+    // Find candidate from local data (no need to fetch again if we have basic info)
+    // Or fetch full details if needed: await fetchApi(`employer/candidate/${id}`)
+    const candidate = allCandidatesData.find(c => c.id == candidateId);
+    if (!candidate) return;
+
+    const modalBody = document.getElementById("candidate-modal-body");
+    modalBody.innerHTML = `
+        <div style="text-align: center; margin-bottom: 20px;">
+            <div style="width: 80px; height: 80px; background: #007bff; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; margin: 0 auto 10px auto;">
+                ${candidate.name.charAt(0).toUpperCase()}
+            </div>
+            <h2>${candidate.name}</h2>
+            <p style="color: #666;">Ready to work</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                <label style="font-size: 12px; font-weight: bold; color: #999;">EMAIL</label>
+                <div>${candidate.email}</div>
+            </div>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                <label style="font-size: 12px; font-weight: bold; color: #999;">PHONE</label>
+                <div>${candidate.phone || "Not Provided"}</div>
+            </div>
+        </div>
+
+        <div style="border-top: 1px solid #eee; padding-top: 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <strong>Resume / CV</strong><br>
+                <span style="font-size: 12px; color: #666;">PDF Document</span>
+            </div>
+            ${candidate.cvfilename ? 
+                `<a href="${candidate.cvfilename}" target="_blank" class="btn btn-primary">Download CV</a>` : 
+                `<span style="color: #999;">No CV Uploaded</span>`
+            }
+        </div>
+    `;
+
+    document.getElementById("candidateDetailsModal").style.display = "block";
+}
+
+// Close Modal Logic
+document.getElementById("closeCandidateModal").onclick = () => {
+    document.getElementById("candidateDetailsModal").style.display = "none";
+};
     /**
      * Core Filter Logic
      * Runs every time a user types in a filter box
