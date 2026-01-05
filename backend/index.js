@@ -9,6 +9,7 @@ import contactRoutes from "./routes/contact.js";
 import publicRoutes from './routes/public.js';
 import adminRoutes from './routes/adminRoutes.js';
 import adminAuth from './middleware/adminAuth.js';
+import paymentRoutes from './routes/paymentRoutes.js';
 
 // --- FIX: IMPORT BOTH EMPLOYER FILES WITH DIFFERENT NAMES ---
 import employerMainRoutes from "./routes/employer.js";       // Your original file (Jobs, etc.)
@@ -89,6 +90,7 @@ app.use("/api/contact", contactRoutes);
 // Express will check employerMainRoutes first, then employerSearchRoutes
 app.use("/api/employer", employerMainRoutes);
 app.use("/api/talent", employerSearchRoutes);  // <--- CHANGED THIS LINE
+app.use("/api/payment", paymentRoutes);
 // Protected Admin Routes
 app.use('/api/admin', adminAuth, adminRoutes);
 

@@ -829,114 +829,161 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             };
 
-            const showSubscriptionModal = () => {
-                const user = getLocalUser();
-                if (!user || user.role !== 'employer') return;
-                const modalContent = document.querySelector("#subscriptionModal .modal-content");
-                const currentPlanKey = user.subscriptionstatus || 'buzz';
-                const isEmployer = user.role === 'employer';
+  const showSubscriptionModal = () => {
+    const user = getLocalUser();
+    if (!user || user.role !== 'employer') return;
 
-                let planCardsHTML = `<span class="close-btn" id="close-subscription-modal">&times;</span><h2 style="margin-bottom: 1rem;">Choose Your Hive Plan</h2><p>Your Current Plan: <strong style="color: ${HIVE_PLANS[currentPlanKey].color}">${HIVE_PLANS[currentPlanKey].name}</strong></p><div class="plans-container" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 1.5rem;">`;
+    const modalContent = document.querySelector("#subscriptionModal .modal-content");
+    const currentPlanKey = user.subscriptionstatus || 'buzz';
+    const isEmployer = user.role === 'employer';
 
-                for (const [key, plan] of Object.entries(HIVE_PLANS)) {
-                    const isCurrent = currentPlanKey === key;
-                    const priceText = plan.price;
-                    const buttonClass = isCurrent ? 'btn-secondary disabled' : 'btn-primary';
-                    const buttonText = isCurrent ? 'Current Plan' : 'Select Plan';
-                    const priceColor = key === 'buzz' ? plan.color : '#333';
+    // 1. GENERATE UI
+    let planCardsHTML = `
+        <span class="close-btn" id="close-subscription-modal">&times;</span>
+        <h2 style="margin-bottom: 1rem;">Choose Your Hive Plan</h2>
+        <p>Your Current Plan: <strong style="color: ${HIVE_PLANS[currentPlanKey].color}">${HIVE_PLANS[currentPlanKey].name}</strong></p>
+        <div class="plans-container" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 1.5rem;">`;
 
-                    planCardsHTML += `
-                <div class="subscription-card" style="border: 2px solid ${isCurrent ? plan.color : '#ccc'}; padding: 1rem; border-radius: 8px; text-align: center;">
-                    <h3 style="color:${plan.color}; font-size:1.3rem;"><i class="${plan.icon}"></i> ${plan.name}</h3>
-                    <p style="font-weight: bold; font-size: 1.1rem; margin-bottom: 0.5rem; color: ${priceColor};">${priceText}</p>
-                    <p style="font-size: 0.8rem; margin-bottom: 1rem; color: #666; height: 100px; overflow-y: hidden;">${plan.description.split('. ').join('.<br/>')}</p>
-                    <button class="btn ${buttonClass} select-plan-btn" data-plan-key="${key}" ${isCurrent || !isEmployer ? 'disabled' : ''}>
-                        ${buttonText}
-                    </button>
-                </div>
-            `;
-                }
-                planCardsHTML += `</div>`;
-                modalContent.innerHTML = planCardsHTML;
+    for (const [key, plan] of Object.entries(HIVE_PLANS)) {
+        const isCurrent = currentPlanKey === key;
+        const priceText = plan.price;
+        // Disable button if it's the current plan OR if it's the free plan (buzz) which can't be bought
+        const isDisabled = isCurrent || key === 'buzz'; 
+        const buttonClass = isDisabled ? 'btn-secondary disabled' : 'btn-primary';
+        const buttonText = isCurrent ? 'Current Plan' : (key === 'buzz' ? 'Free Plan' : 'Select Plan');
+        const priceColor = key === 'buzz' ? plan.color : '#333';
 
-                document.getElementById("close-subscription-modal").onclick = () => {
-                    subscriptionModal.style.display = "none";
-                };
+        planCardsHTML += `
+            <div class="subscription-card" style="border: 2px solid ${isCurrent ? plan.color : '#ccc'}; padding: 1rem; border-radius: 8px; text-align: center; position: relative; background: #fff;">
+                ${isCurrent ? '<div style="position:absolute; top:-10px; right:10px; background:#22c55e; color:white; padding:2px 8px; border-radius:10px; font-size:0.7rem; font-weight:bold;">ACTIVE</div>' : ''}
+                <h3 style="color:${plan.color}; font-size:1.3rem;"><i class="${plan.icon}"></i> ${plan.name}</h3>
+                <p style="font-weight: bold; font-size: 1.1rem; margin-bottom: 0.5rem; color: ${priceColor};">${priceText}</p>
+                <p style="font-size: 0.8rem; margin-bottom: 1rem; color: #666; height: 100px; overflow-y: hidden;">${plan.description.split('. ').join('.<br/>')}</p>
+                <button class="btn ${buttonClass} select-plan-btn" data-plan-key="${key}" ${isDisabled || !isEmployer ? 'disabled' : ''}>
+                    ${buttonText}
+                </button>
+            </div>
+        `;
+    }
+    planCardsHTML += `</div>`;
+    
+    // 2. INJECT HTML & SETUP LISTENERS
+    modalContent.innerHTML = planCardsHTML;
+    const subscriptionModal = document.getElementById("subscriptionModal");
+    subscriptionModal.style.display = "block";
 
-                modalContent.querySelectorAll('.select-plan-btn').forEach(btn => {
-                    if (isEmployer && !btn.disabled) {
-                        btn.addEventListener('click', async(e) => {
-                            const planKey = e.currentTarget.dataset.planKey;
-                            const selectedPlan = HIVE_PLANS[planKey];
-                            const btnElement = e.currentTarget;
-                            const originalText = btnElement.textContent;
+    document.getElementById("close-subscription-modal").onclick = () => {
+        subscriptionModal.style.display = "none";
+    };
 
-                            btnElement.disabled = true;
-                            btnElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    // 3. HANDLE PAYMENT CLICK
+    modalContent.querySelectorAll('.select-plan-btn').forEach(btn => {
+        if (isEmployer && !btn.disabled) {
+            btn.addEventListener('click', async (e) => {
+                const planKey = e.currentTarget.dataset.planKey;
+                const btnElement = e.currentTarget;
+                const originalText = btnElement.textContent;
 
-                            try {
-                                const data = await fetchApi('employer/subscription', 'PUT', { newPlanKey: planKey });
-                                setLocalUser(data.user);
-                                switchEmployerView("employer-management-view");
-                                window.showStatusMessage("Plan Updated", `${selectedPlan.name} is now your active plan.`, false);
-                                subscriptionModal.style.display = "none";
-                                initDashboard(null);
-                            } catch (error) {
-                                window.showStatusMessage("Plan Update Failed", error.message, true);
-                                btnElement.disabled = false;
-                                btnElement.innerHTML = originalText;
-                            }
-                        });
+                // A. Show Loading State
+                btnElement.disabled = true;
+                btnElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Redirecting...';
+
+                try {
+                    // B. Call Backend to Initiate Payment
+                    // Note: 'payment/pay' matches your new backend route structure (/api/payment/pay)
+                    const response = await fetchApi('payment/pay', 'POST', { 
+                        planKey: planKey, 
+                        userId: user.id 
+                    });
+
+                    // C. Redirect to PhonePe
+                    if (response.url) {
+                        window.location.href = response.url; 
+                    } else {
+                        throw new Error("No payment URL received from server.");
                     }
-                });
-                subscriptionModal.style.display = "block";
-            };
-            window.showSubscriptionModal = showSubscriptionModal;
+
+                } catch (error) {
+                    console.error("Payment Initiation Error:", error);
+                    window.showStatusMessage("Payment Failed", "Could not connect to PhonePe. Please try again.", true);
+                    
+                    // Reset Button
+                    btnElement.disabled = false;
+                    btnElement.innerHTML = originalText;
+                }
+            });
+        }
+    });
+};
+
+window.showSubscriptionModal = showSubscriptionModal;
 
             // ------------------------------------------------------------------
             // 6. DASHBOARD LOGIC
             // ------------------------------------------------------------------
 
-            function initDashboard(filters = null) {
-                const currentUser = getLocalUser();
-                if (!currentUser) {
-                    showView('home', true, null);
-                    return;
-                }
-                const seekerDashboard = document.getElementById("seeker-dashboard");
-                const employerDashboard = document.getElementById("employer-dashboard");
+function initDashboard(filters = null) {
+    const currentUser = getLocalUser();
+    if (!currentUser) {
+        showView('home', true, null);
+        return;
+    }
 
-                if (currentUser.role === "seeker") {
-                    seekerDashboard.classList.remove("hidden");
-                    employerDashboard.classList.add("hidden");
-                    loadSeekerProfileForm();
+    const seekerDashboard = document.getElementById("seeker-dashboard");
+    const employerDashboard = document.getElementById("employer-dashboard");
 
-                    // Set filter inputs if passed
-                    const filterKeywordsEl = document.getElementById("filter-keywords");
-                    if (filters) {
-                        if (filterKeywordsEl) filterKeywordsEl.value = filters.keywords || '';
-                        document.getElementById("filter-location").value = filters.location || '';
-                        document.getElementById("filter-experience").value = filters.experience || '0';
-                        document.getElementById("filter-category").value = filters.category || '';
-                    } else {
-                        document.getElementById("jobFilterForm").reset();
-                        if (filterKeywordsEl) filterKeywordsEl.value = '';
-                    }
+    // ==========================================
+    // 🎁 BONUS: HANDLE PAYMENT RETURN
+    // ==========================================
+    // Check if URL has ?status=success (Returning from PhonePe)
+    const urlParams = new URLSearchParams(window.location.hash.split('?')[1]); 
+    const status = urlParams.get('status');
+    const plan = urlParams.get('plan');
 
-                    document.querySelectorAll(".job-filter-btn").forEach(b => b.classList.remove('btn-primary'));
-                    document.querySelector(".job-filter-btn[data-filter='all']").classList.add('btn-primary');
-                    document.querySelectorAll(".job-view-section").forEach(section => section.classList.add('hidden'));
-                    document.getElementById('shortlisted-jobs').classList.remove('hidden');
-                    document.getElementById('all-jobs').classList.remove('hidden');
-                    document.getElementById('applied-jobs').classList.add('hidden');
+    if (status === 'success' && currentUser.role === 'employer') {
+        window.showStatusMessage("Payment Successful! 🎉", `You have been upgraded to the ${plan ? plan.toUpperCase() : 'Premium'} plan.`, false);
+        // Clean URL so message doesn't persist on refresh
+        window.history.replaceState({}, document.title, window.location.pathname + window.location.hash.split('?')[0]);
+        
+        // Refresh user data immediately to reflect new plan limits
+        fetchUserData(); 
+    } else if (status === 'failed') {
+        window.showStatusMessage("Payment Failed ❌", "The transaction was declined or cancelled.", true);
+        window.history.replaceState({}, document.title, window.location.pathname + window.location.hash.split('?')[0]);
+    }
+    // ==========================================
 
-                    loadJobs(filters || {});
-                } else if (currentUser.role === "employer") {
-                    employerDashboard.classList.remove("hidden");
-                    seekerDashboard.classList.add("hidden");
-                    switchEmployerView("employer-management-view");
-                }
-            }
+    if (currentUser.role === "seeker") {
+        seekerDashboard.classList.remove("hidden");
+        employerDashboard.classList.add("hidden");
+        loadSeekerProfileForm();
+
+        // Set filter inputs if passed
+        const filterKeywordsEl = document.getElementById("filter-keywords");
+        if (filters) {
+            if (filterKeywordsEl) filterKeywordsEl.value = filters.keywords || '';
+            document.getElementById("filter-location").value = filters.location || '';
+            document.getElementById("filter-experience").value = filters.experience || '0';
+            document.getElementById("filter-category").value = filters.category || '';
+        } else {
+            document.getElementById("jobFilterForm").reset();
+            if (filterKeywordsEl) filterKeywordsEl.value = '';
+        }
+
+        document.querySelectorAll(".job-filter-btn").forEach(b => b.classList.remove('btn-primary'));
+        document.querySelector(".job-filter-btn[data-filter='all']").classList.add('btn-primary');
+        document.querySelectorAll(".job-view-section").forEach(section => section.classList.add('hidden'));
+        document.getElementById('shortlisted-jobs').classList.remove('hidden');
+        document.getElementById('all-jobs').classList.remove('hidden');
+        document.getElementById('applied-jobs').classList.add('hidden');
+
+        loadJobs(filters || {});
+    } else if (currentUser.role === "employer") {
+        employerDashboard.classList.remove("hidden");
+        seekerDashboard.classList.add("hidden");
+        switchEmployerView("employer-management-view");
+    }
+}
 
             // ------------------------------------------------------------------
             // 7. SEEKER LOGIC
