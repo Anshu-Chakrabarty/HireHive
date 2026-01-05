@@ -798,7 +798,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 for (const [key, plan] of Object.entries(HIVE_PLANS)) {
                     const isCurrent = currentPlanKey === key;
                     const priceText = plan.price;
-                    const buttonText = isCurrent ? 'Current Plan' : isEmployer ? 'Select Plan (Demo)' : 'Sign Up to Select';
+                    const buttonText = isCurrent ? 'Current Plan' : isEmployer ? 'Select Plan' : 'Sign Up to Select';
                     const buttonClass = isCurrent ? 'btn-secondary disabled' : 'btn-primary';
                     const priceColor = key === 'buzz' ? plan.color : '#333';
 
@@ -842,7 +842,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     const isCurrent = currentPlanKey === key;
                     const priceText = plan.price;
                     const buttonClass = isCurrent ? 'btn-secondary disabled' : 'btn-primary';
-                    const buttonText = isCurrent ? 'Current Plan' : 'Select Plan (Demo)';
+                    const buttonText = isCurrent ? 'Current Plan' : 'Select Plan';
                     const priceColor = key === 'buzz' ? plan.color : '#333';
 
                     planCardsHTML += `
