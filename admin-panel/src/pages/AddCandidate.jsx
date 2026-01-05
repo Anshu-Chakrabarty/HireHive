@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import API from '../api';
-import { Upload, CheckCircle, AlertCircle, Loader, FileText, X } from 'lucide-react';
+import { Upload, CheckCircle, AlertCircle, Loader, FileText, X, Tag } from 'lucide-react';
 
 const AddCandidate = () => {
     const [file, setFile] = useState(null);
@@ -131,25 +131,53 @@ const AddCandidate = () => {
 
             {/* SUCCESS RESULT (Below Everything) */}
             {result && (
-                <div style={{ marginTop: '30px', padding: '25px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', animation: 'fadeIn 0.5s ease' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#16a34a', marginBottom: '20px', fontSize: '18px' }}>
-                        <CheckCircle size={28} /> <strong>Success! Account Created.</strong>
+                <div style={{ marginTop: '30px', padding: '30px', background: 'white', border: '1px solid #e2e8f0', borderRadius: '16px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', animation: 'fadeIn 0.5s ease' }}>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#16a34a', marginBottom: '25px', fontSize: '20px', borderBottom: '1px solid #f1f5f9', paddingBottom: '20px' }}>
+                        <CheckCircle size={32} fill="#dcfce7" /> 
+                        <strong>Success! Candidate Onboarded.</strong>
                     </div>
                     
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '30px', marginBottom: '30px' }}>
                         <div>
-                            <label style={{ display: 'block', fontSize: '12px', color: '#64748b', fontWeight: 'bold' }}>FULL NAME</label>
-                            <div style={{ fontSize: '16px', color: '#334155' }}>{result.detectedData.name}</div>
+                            <label style={{ display: 'block', fontSize: '11px', color: '#64748b', fontWeight: '800', letterSpacing: '0.5px', marginBottom: '5px' }}>FULL NAME</label>
+                            <div style={{ fontSize: '16px', color: '#1e293b', fontWeight: '500' }}>{result.detectedData.name}</div>
                         </div>
                         <div>
-                            <label style={{ display: 'block', fontSize: '12px', color: '#64748b', fontWeight: 'bold' }}>EMAIL ADDRESS</label>
-                            <div style={{ fontSize: '16px', color: '#334155' }}>{result.detectedData.email}</div>
+                            <label style={{ display: 'block', fontSize: '11px', color: '#64748b', fontWeight: '800', letterSpacing: '0.5px', marginBottom: '5px' }}>EMAIL ADDRESS</label>
+                            <div style={{ fontSize: '16px', color: '#1e293b', fontWeight: '500' }}>{result.detectedData.email}</div>
                         </div>
                         <div>
-                            <label style={{ display: 'block', fontSize: '12px', color: '#64748b', fontWeight: 'bold' }}>PHONE</label>
-                            <div style={{ fontSize: '16px', color: '#334155' }}>{result.detectedData.phone || "Not Detected"}</div>
+                            <label style={{ display: 'block', fontSize: '11px', color: '#64748b', fontWeight: '800', letterSpacing: '0.5px', marginBottom: '5px' }}>PHONE</label>
+                            <div style={{ fontSize: '16px', color: '#1e293b', fontWeight: '500' }}>{result.detectedData.phone || "Not Detected"}</div>
                         </div>
                     </div>
+
+                    {/* NEW SKILLS SECTION */}
+                    <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#475569', fontWeight: '800', letterSpacing: '0.5px', marginBottom: '15px' }}>
+                            <Tag size={14} /> SKILLS DETECTED ({result.detectedData.skills?.length || 0})
+                        </label>
+                        
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                            {result.detectedData.skills && result.detectedData.skills.length > 0 ? (
+                                result.detectedData.skills.map((skill, index) => (
+                                    <span key={index} style={{ 
+                                        background: '#e0f2fe', color: '#0369a1', padding: '6px 14px', 
+                                        borderRadius: '20px', fontSize: '14px', fontWeight: '600',
+                                        border: '1px solid #bae6fd', textTransform: 'capitalize'
+                                    }}>
+                                        {skill}
+                                    </span>
+                                ))
+                            ) : (
+                                <span style={{ color: '#94a3b8', fontSize: '14px', fontStyle: 'italic' }}>
+                                    No specific technical skills detected in resume text.
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
                 </div>
             )}
         </div>

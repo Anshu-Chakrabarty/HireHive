@@ -12,6 +12,92 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // ==========================================
+// 🧠 SKILL DICTIONARY (Expand as needed)
+// ==========================================
+const SKILL_KEYWORDS = [
+    // 💻 Tech & Coding
+    "javascript", "python", "java", "c++", "c#", "ruby", "php", "swift", "go", "rust",
+    "html", "css", "react", "angular", "vue", "node.js", "express", "django", "flask",
+    "sql", "mysql", "postgresql", "mongodb", "firebase", "redis",
+    "aws", "azure", "google cloud", "docker", "kubernetes", "git", "jenkins", "linux",
+    "machine learning", "data analysis", "artificial intelligence", "nlp", "pandas", "numpy",
+
+    // 📢 Marketing & Sales
+    "seo", "sem", "content marketing", "social media marketing", "email marketing", "google analytics",
+    "sales", "b2b", "b2c", "lead generation", "cold calling", "crm", "salesforce", "hubspot",
+    "negotiation", "account management", "business development", "market research", "branding",
+
+    // 🤝 Management & Soft Skills
+    "project management", "agile", "scrum", "leadership", "teamwork", "communication",
+    "time management", "problem solving", "critical thinking", "public speaking", 
+    "human resources", "recruitment", "financial analysis", "accounting", "excel"
+];
+
+// ==========================================
+// 🛠️ HELPER: SAFE DECODE (Crash Prevention)
+// ==========================================
+const safeDecode = (text) => {
+    try {
+        return decodeURIComponent(text);
+    } catch (e) {
+        return text; // Return raw text if decoding fails
+    }
+};
+
+// ==========================================
+// 🧠 HELPER: INTELLIGENT EXTRACTION
+// Extracts Email, Phone, and Skills
+// ==========================================
+const extractDataFromText = (text) => {
+    // 1. Clean the text slightly for better matching
+    const cleanText = text.replace(/\s+/g, ' ').trim(); 
+    const lowerText = cleanText.toLowerCase();
+
+    // --- EMAIL EXTRACTION ---
+    const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i;
+    const emailMatch = cleanText.match(emailRegex);
+    const email = emailMatch ? emailMatch[0].toLowerCase() : null;
+
+    // --- PHONE EXTRACTION ---
+    let phone = null;
+    const phoneIntl = /(\+|00)(\d{1,3})[-.\s]?\d{3,}[-.\s]?\d{3,}/;
+    const phoneStd = /\b[6-9]\d{9}\b/; 
+    const phoneSpaced = /\b\d{3,5}[-.\s]\d{3,5}[-.\s]?\d{0,5}\b/;
+
+    if (cleanText.match(phoneIntl)) {
+        phone = cleanText.match(phoneIntl)[0];
+    } else if (cleanText.match(phoneStd)) {
+        phone = cleanText.match(phoneStd)[0];
+    } else if (cleanText.match(phoneSpaced)) {
+        const match = cleanText.match(phoneSpaced)[0];
+        if (match.replace(/\D/g, '').length > 6) { 
+            phone = match; 
+        }
+    }
+
+    // --- SKILL EXTRACTION ---
+    const foundSkills = new Set();
+    
+    SKILL_KEYWORDS.forEach(skill => {
+        // Create regex to match whole words only (avoids "go" matching inside "google")
+        const escapedSkill = skill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); 
+        // Special check for C++ and C# which have symbols that \b might miss
+        if (skill.includes('+') || skill.includes('#')) {
+             if (lowerText.includes(skill)) foundSkills.add(skill);
+        } else {
+             const regex = new RegExp(`\\b${escapedSkill}\\b`, 'i');
+             if (regex.test(cleanText)) foundSkills.add(skill);
+        }
+    });
+
+    return { 
+        email, 
+        phone, 
+        skills: Array.from(foundSkills) 
+    };
+};
+
+// ==========================================
 // 🛠️ PDF PARSER WRAPPER
 // ==========================================
 const parsePDF = (buffer) => {
@@ -65,7 +151,7 @@ router.get('/logs', async(req, res) => {
 });
 
 // ==========================================
-// ✅ HYBRID AUTO-FILL ROUTE
+// ✅ HYBRID AUTO-FILL ROUTE (Enhanced)
 // ==========================================
 
 router.post('/upload-cv', upload.single('cv'), async(req, res) => {
@@ -85,44 +171,53 @@ router.post('/upload-cv', upload.single('cv'), async(req, res) => {
         const publicUrl = urlData.publicUrl;
 
         // 2. Determine Name from FILENAME (Reliable)
-        // e.g., "Rohit_Tiwari_Resume.pdf" -> "Rohit Tiwari Resume"
         let name = req.file.originalname
-            .replace(/\.pdf$/i, '') // Remove .pdf extension
-            .replace(/[-_]/g, ' ') // Replace dashes and underscores with spaces
-            .trim(); // Remove extra spaces
+            .replace(/\.pdf$/i, '') 
+            .replace(/[-_]/g, ' ')   
+            .trim();                 
 
-        // Capitalize words safely
+        // Capitalize words
         name = name.split(' ')
             .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
             .join(' ');
 
-        // 3. Extract Text (For Email & Phone Only)
-        let text = "";
+        // 3. Extract Info (Email, Phone, Skills)
         let email = null;
         let phone = null;
+        let skills = [];
 
         try {
-            text = await parsePDF(req.file.buffer);
-            if (text) {
-                const cleanText = decodeURIComponent(text);
+            const rawText = await parsePDF(req.file.buffer);
+            if (rawText) {
+                // Pass 1: Try with Decoded Text (Best for standard PDFs)
+                const decodedText = safeDecode(rawText);
+                const info1 = extractDataFromText(decodedText);
+                
+                // Pass 2: Try with Raw Text (Fallback for weird encodings)
+                const info2 = extractDataFromText(rawText);
 
-                // Extract Email
-                const emailMatch = cleanText.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/);
-                email = emailMatch ? emailMatch[0] : null;
-
-                // Extract Phone
-                const phoneMatch = cleanText.match(/(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/);
-                phone = phoneMatch ? phoneMatch[0] : null;
+                // Prioritize findings (decoded is usually cleaner)
+                email = info1.email || info2.email;
+                phone = info1.phone || info2.phone;
+                
+                // Merge unique skills found in both passes
+                const skillSet = new Set([...info1.skills, ...info2.skills]);
+                skills = Array.from(skillSet);
             }
         } catch (parseErr) {
-            console.warn("⚠️ PDF Parse Failed (Skipping Email/Phone):", parseErr);
+            console.warn("⚠️ PDF Parse Warning:", parseErr.message);
         }
 
         // 4. Fallback if Email not found
         if (!email) {
-            email = `pending_${Date.now()}@hirehive.temp`;
-            // If we are forcing a pending email, we might as well mark the name for review
-            if (name.length < 3) name = "Manual Entry Required";
+            // Try extracting from filename
+            const filenameEmail = name.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/);
+            if (filenameEmail) {
+                email = filenameEmail[0];
+            } else {
+                email = `pending_${Date.now()}@hirehive.temp`;
+                if (name.length < 3) name += " (Review Required)";
+            }
         }
 
         // 5. DB Insert
@@ -134,15 +229,17 @@ router.post('/upload-cv', upload.single('cv'), async(req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash("HireHive123", salt);
 
+        // Store extracted data including Skills
         const newUser = await pool.query(
-            `INSERT INTO users (name, email, password, phone, role, cvfilename) 
-             VALUES ($1, $2, $3, $4, 'candidate', $5) RETURNING *`, [name, email, hashedPassword, phone, publicUrl]
+            `INSERT INTO users (name, email, password, phone, role, cvfilename, skills) 
+             VALUES ($1, $2, $3, $4, 'candidate', $5, $6) RETURNING *`, 
+            [name, email, hashedPassword, phone, publicUrl, skills]
         );
 
         res.json({
             message: "Candidate Onboarded Successfully!",
             candidate: newUser.rows[0],
-            detectedData: { name, email, phone }
+            detectedData: { name, email, phone, skills }
         });
 
     } catch (err) {
