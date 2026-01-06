@@ -1629,33 +1629,62 @@ async function loadFindApplicants() {
 function renderCandidateGrid(candidates) {
     const grid = document.getElementById("all-candidates-grid");
     
-    if (candidates.length === 0) {
+    if (!candidates || candidates.length === 0) {
         grid.innerHTML = '<p>No candidates found.</p>';
         return;
     }
 
-    grid.innerHTML = candidates.map(c => `
-        <div class="candidate-card" style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #eee;">
+    grid.innerHTML = candidates.map(c => {
+        // 1. Handle Skills (Ensure it's an array)
+        let skillsArray = [];
+        if (Array.isArray(c.skills)) {
+            skillsArray = c.skills;
+        } else if (typeof c.skills === 'string') {
+            skillsArray = c.skills.split(',').map(s => s.trim());
+        }
+
+        // 2. Format Field of Work
+        const fieldOfWork = c.category || c.title || 'Job Seeker';
+
+        return `
+        <div class="candidate-card" style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #eee; display: flex; flex-direction: column; justify-content: space-between;">
+            
             <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
-                <div style="width: 50px; height: 50px; background: #007bff; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold;">
+                <div style="width: 50px; height: 50px; background: #007bff; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; flex-shrink: 0;">
                     ${c.name.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                    <h3 style="margin: 0; font-size: 18px; color: #333;">${c.name}</h3>
-                    <span style="font-size: 14px; color: #666;">Job Seeker</span>
+                    <h3 style="margin: 0; font-size: 18px; color: #333; word-break: break-word;">${c.name}</h3>
+                    <span style="font-size: 14px; color: #666; font-weight: 500;">
+                        <i class="fas fa-briefcase" style="font-size:0.8rem;"></i> ${fieldOfWork}
+                    </span>
                 </div>
             </div>
             
             <div style="font-size: 14px; color: #555; margin-bottom: 15px;">
-                <div style="margin-bottom: 5px;"><i class="fas fa-envelope"></i> ${c.email}</div>
-                <div><i class="fas fa-phone"></i> ${c.phone || "N/A"}</div>
+                <div style="margin-bottom: 10px;">
+                    <i class="fas fa-envelope" style="color: #007bff;"></i> ${c.email}
+                </div>
+
+                <div style="margin-top: 10px;">
+                    <div style="font-weight: bold; font-size: 0.85rem; margin-bottom: 5px; color: #444;">Top Skills:</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                        ${skillsArray.length > 0 
+                            ? skillsArray.slice(0, 4).map(skill => 
+                                `<span style="background: #f0f2f5; color: #333; padding: 2px 8px; border-radius: 4px; font-size: 12px; border: 1px solid #ddd;">${skill}</span>`
+                              ).join('')
+                            : '<span style="color:#999; font-style:italic;">No skills listed</span>'
+                        }
+                        ${skillsArray.length > 4 ? `<span style="font-size: 11px; color: #666; padding-top:4px;">+${skillsArray.length - 4} more</span>` : ''}
+                    </div>
+                </div>
             </div>
 
-            <button class="btn btn-primary view-candidate-btn" data-id="${c.id}" style="width: 100%;">
+            <button class="btn btn-primary view-candidate-btn" data-id="${c.id}" style="width: 100%; margin-top: auto;">
                 View Profile
             </button>
         </div>
-    `).join('');
+    `}).join('');
 
     // Attach click listeners to new buttons
     document.querySelectorAll('.view-candidate-btn').forEach(btn => {
