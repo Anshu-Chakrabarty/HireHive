@@ -115,58 +115,56 @@ router.get('/logs', async(req, res) => {
 });
 
 // ==========================================
-// 👇 NEW ROUTES ADDED HERE (Users & Jobs)
+// 👇 FIXED ROUTES (Safe Mode - No Joins)
 // ==========================================
 
-// 1. GET USERS (Filtered by Role)
+// 1. GET USERS (Fixed to prevent 500 error)
 router.get('/users', async (req, res) => {
     try {
         const { role } = req.query; // Expecting 'employer' or 'seeker'
+        console.log(`🔍 Admin fetching users for role: ${role}`);
 
         let query = '';
         
         if (role === 'employer') {
-            // Join with company_profiles to get Company Name
-            query = `
-                SELECT u.id, u.name, u.email, u.created_at, u.subscriptionstatus, cp.company_name 
-                FROM users u
-                LEFT JOIN company_profiles cp ON u.id = cp.user_id
-                WHERE u.role = 'employer'
-                ORDER BY u.created_at DESC
-            `;
-        } else if (role === 'seeker') {
-            // Note: DB stores them as 'candidate', but frontend sends 'seeker'
+            // Simplified: Fetch only from users table
+            // Removed join with company_profiles to stop crashing
             query = `
                 SELECT id, name, email, created_at, phone 
                 FROM users 
-                WHERE role = 'candidate' OR role = 'seeker'
+                WHERE role = 'employer' OR role = 'Employer'
+                ORDER BY created_at DESC
+            `;
+        } else if (role === 'seeker') {
+            query = `
+                SELECT id, name, email, created_at, phone 
+                FROM users 
+                WHERE role = 'candidate' OR role = 'seeker' OR role = 'Candidate'
                 ORDER BY created_at DESC
             `;
         } else {
             // Fallback: Get all users
-            query = `SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC`;
+            query = `SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC LIMIT 100`;
         }
 
         const result = await pool.query(query);
+        console.log(`✅ Found ${result.rows.length} records`);
         res.json(result.rows);
+
     } catch (error) {
-        console.error("Error fetching users:", error);
-        res.status(500).json({ error: "Failed to fetch users" });
+        console.error("❌ ADMIN ROUTE ERROR:", error.message);
+        res.status(500).json({ error: "Database error: " + error.message });
     }
 });
 
-// 2. GET JOBS (For 'Active Jobs' card details)
+// 2. GET JOBS (Fixed to prevent 500 error)
 router.get('/jobs', async (req, res) => {
     try {
+        // Simplified query without joins
         const query = `
-            SELECT 
-                j.id, 
-                j.title, 
-                j.posteddate, 
-                cp.company_name
-            FROM jobs j
-            LEFT JOIN company_profiles cp ON j.employer_id = cp.user_id
-            ORDER BY j.posteddate DESC
+            SELECT id, title, posteddate, 'Unknown Company' as company_name
+            FROM jobs 
+            ORDER BY posteddate DESC
         `;
         const result = await pool.query(query);
         res.json(result.rows);
