@@ -54,20 +54,24 @@ app.use(
             if (!origin) return callback(null, true);
             const isAllowed = allowedOrigins.includes(origin) ||
                 origin.endsWith(".onrender.com") ||
-                origin.endsWith(".vercel.app");
+                origin.endsWith(".vercel.app"); 
 
             if (isAllowed) {
                 callback(null, true);
             } else {
                 console.warn(`CORS blocked request from origin: ${origin}`);
-                callback(new Error(`Not allowed by CORS: ${origin}`), false);
+                // Use null, false to reject gracefully
+                callback(null, false);
             }
         },
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+        // 👇 UPDATED: Added headers required for PhonePe integration
+        allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "X-Verify", "X-Merchant-Id"],
         credentials: true
     })
 );
+
+app.options('*', cors());
 
 app.use(express.json());
 
