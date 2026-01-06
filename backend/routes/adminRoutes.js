@@ -12,59 +12,47 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // ==========================================
-// 🧠 SKILL DICTIONARY (Keywords to Find)
+// 🧠 SKILL DICTIONARY
 // ==========================================
 const SKILL_KEYWORDS = [
-    // 💻 Tech
     "javascript", "python", "java", "c++", "c#", "ruby", "php", "swift", "go", "rust",
     "html", "css", "react", "angular", "vue", "node.js", "express", "django", "flask",
     "sql", "mysql", "postgresql", "mongodb", "firebase", "redis", "aws", "azure", "docker", "kubernetes",
     "git", "linux", "machine learning", "ai", "pandas", "numpy",
-    // 📢 Marketing & Sales
     "seo", "sem", "content marketing", "social media", "email marketing", "google analytics",
     "sales", "b2b", "b2c", "lead generation", "cold calling", "crm", "salesforce", "hubspot",
     "negotiation", "account management", "business development", "branding",
-    // 🤝 Soft Skills & Management
     "project management", "agile", "scrum", "leadership", "teamwork", "communication",
     "time management", "problem solving", "human resources", "recruitment", "excel", "financial analysis"
 ];
 
 // ==========================================
-// 🛠️ HELPER: SAFE DECODE (Prevents URI Malformed Crash)
+// 🛠️ HELPERS
 // ==========================================
 const safeDecode = (text) => {
-    try {
-        return decodeURIComponent(text);
-    } catch (e) {
-        return text; // Returns raw text if decoding fails
-    }
+    try { return decodeURIComponent(text); } catch (e) { return text; }
 };
 
-// ==========================================
-// 🧠 HELPER: INTELLIGENT EXTRACTION
-// ==========================================
 const extractDataFromText = (text) => {
     const cleanText = text.replace(/\s+/g, ' ').trim();
     const lowerText = cleanText.toLowerCase();
 
-    // 1. Email Extraction
+    // Email
     const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i;
     const emailMatch = cleanText.match(emailRegex);
     const email = emailMatch ? emailMatch[0].toLowerCase() : null;
 
-    // 2. Phone Extraction (Strict to Loose)
+    // Phone
     let phone = null;
     const phoneIntl = /(\+|00)(\d{1,3})[-.\s]?\d{3,}[-.\s]?\d{3,}/;
     const phoneStd = /\b[6-9]\d{9}\b/;
-    
     if (cleanText.match(phoneIntl)) phone = cleanText.match(phoneIntl)[0];
     else if (cleanText.match(phoneStd)) phone = cleanText.match(phoneStd)[0];
 
-    // 3. Skill Extraction
+    // Skills
     const foundSkills = new Set();
     SKILL_KEYWORDS.forEach(skill => {
         const escaped = skill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        // Check word boundary unless it's a special symbol skill like C++
         if (skill.includes('+') || skill.includes('#')) {
             if (lowerText.includes(skill)) foundSkills.add(skill);
         } else {
@@ -76,9 +64,6 @@ const extractDataFromText = (text) => {
     return { email, phone, skills: Array.from(foundSkills) };
 };
 
-// ==========================================
-// 🛠️ PDF PARSER WRAPPER
-// ==========================================
 const parsePDF = (buffer) => {
     return new Promise((resolve, reject) => {
         const parser = new PDFParser(this, 1);
@@ -89,7 +74,7 @@ const parsePDF = (buffer) => {
 };
 
 // ==========================================
-// ROUTES
+// 📊 DASHBOARD ROUTES (Stats, Charts, Logs)
 // ==========================================
 
 router.get('/stats', async(req, res) => {
@@ -130,13 +115,75 @@ router.get('/logs', async(req, res) => {
 });
 
 // ==========================================
-// ✅ ROBUST UPLOAD ROUTE
+// 👇 NEW ROUTES ADDED HERE (Users & Jobs)
+// ==========================================
+
+// 1. GET USERS (Filtered by Role)
+router.get('/users', async (req, res) => {
+    try {
+        const { role } = req.query; // Expecting 'employer' or 'seeker'
+
+        let query = '';
+        
+        if (role === 'employer') {
+            // Join with company_profiles to get Company Name
+            query = `
+                SELECT u.id, u.name, u.email, u.created_at, u.subscriptionstatus, cp.company_name 
+                FROM users u
+                LEFT JOIN company_profiles cp ON u.id = cp.user_id
+                WHERE u.role = 'employer'
+                ORDER BY u.created_at DESC
+            `;
+        } else if (role === 'seeker') {
+            // Note: DB stores them as 'candidate', but frontend sends 'seeker'
+            query = `
+                SELECT id, name, email, created_at, phone 
+                FROM users 
+                WHERE role = 'candidate' OR role = 'seeker'
+                ORDER BY created_at DESC
+            `;
+        } else {
+            // Fallback: Get all users
+            query = `SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC`;
+        }
+
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        res.status(500).json({ error: "Failed to fetch users" });
+    }
+});
+
+// 2. GET JOBS (For 'Active Jobs' card details)
+router.get('/jobs', async (req, res) => {
+    try {
+        const query = `
+            SELECT 
+                j.id, 
+                j.title, 
+                j.posteddate, 
+                cp.company_name
+            FROM jobs j
+            LEFT JOIN company_profiles cp ON j.employer_id = cp.user_id
+            ORDER BY j.posteddate DESC
+        `;
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (error) {
+        console.error("Error fetching jobs:", error);
+        res.status(500).json({ error: "Failed to fetch jobs" });
+    }
+});
+
+// ==========================================
+// ✅ CV UPLOAD (Existing Route)
 // ==========================================
 router.post('/upload-cv', upload.single('cv'), async(req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
-        // 1. Upload to Supabase
+        // Supabase Upload
         const fileName = `${Date.now()}_${req.file.originalname}`;
         const { data: uploadData, error: uploadError } = await supabase
             .storage.from('resumes')
@@ -146,11 +193,11 @@ router.post('/upload-cv', upload.single('cv'), async(req, res) => {
         const { data: urlData } = supabase.storage.from('resumes').getPublicUrl(fileName);
         const publicUrl = urlData.publicUrl;
 
-        // 2. Name from Filename
+        // Parse Name
         let name = req.file.originalname.replace(/\.pdf$/i, '').replace(/[-_]/g, ' ').trim();
         name = name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
 
-        // 3. Extract Data (Safely)
+        // Extract Info
         let email = null;
         let phone = null;
         let skills = [];
@@ -158,22 +205,17 @@ router.post('/upload-cv', upload.single('cv'), async(req, res) => {
         try {
             const rawText = await parsePDF(req.file.buffer);
             if (rawText) {
-                // Try decoded text (better accuracy)
                 const decodedText = safeDecode(rawText); 
                 const info1 = extractDataFromText(decodedText);
-                
-                // Try raw text (fallback for weird encoding)
                 const info2 = extractDataFromText(rawText);
-
                 email = info1.email || info2.email;
                 phone = info1.phone || info2.phone;
                 skills = Array.from(new Set([...info1.skills, ...info2.skills]));
             }
         } catch (parseErr) {
-            console.warn("⚠️ PDF Parse Failed, using fallback logic:", parseErr.message);
+            console.warn("⚠️ PDF Parse Failed:", parseErr.message);
         }
 
-        // 4. Fallback if Email missing
         if (!email) {
             const filenameEmail = name.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/);
             if (filenameEmail) email = filenameEmail[0];
@@ -183,7 +225,6 @@ router.post('/upload-cv', upload.single('cv'), async(req, res) => {
             }
         }
 
-        // 5. DB Insert
         const userCheck = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
         if (userCheck.rows.length > 0) return res.status(400).json({ error: "Candidate already exists" });
 
