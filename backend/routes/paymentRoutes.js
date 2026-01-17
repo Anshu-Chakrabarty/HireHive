@@ -1,38 +1,71 @@
 import express from 'express';
 import axios from 'axios';
-import crypto from 'crypto';
 import { pool } from '../db.js';
 import dotenv from 'dotenv';
+import { v4 as uuidv4 } from 'uuid';
 
 dotenv.config();
-
 const router = express.Router();
 
-// --- 1. CONFIGURATION & DIAGNOSTICS ---
-const MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID;
-const SALT_KEY = process.env.PHONEPE_SALT_KEY;
-const SALT_INDEX = process.env.PHONEPE_SALT_INDEX || 1;
-const HOST_URL = process.env.PHONEPE_HOST_URL || "https://api.phonepe.com/apis/hermes";
-const BACKEND_URL = "https://hirehive-api.onrender.com"; // Ensure this matches your live URL
+// ==================================================================
+// 1. CONFIGURATION (V2 STANDARD)
+// ==================================================================
 
-// Print connection status to logs (Masked for security)
-console.log("🔌 PHONEPE CONFIG CHECK:");
-console.log(`   MID: ${MERCHANT_ID ? "✅ Loaded" : "❌ MISSING"}`);
-console.log(`   KEY: ${SALT_KEY ? "✅ Loaded" : "❌ MISSING"}`);
-console.log(`   URL: ${HOST_URL}`);
+// Determine Environment (Sandbox vs Production)
+const IS_PROD = process.env.PHONEPE_ENV === 'production';
 
-// --- PLAN DETAILS ---
+// ✅ FIXED: Hardcoded correct URLs to prevent 404 errors
+// Production Payment URL must include '/hermes'
+const HOST_URL = IS_PROD 
+    ? "https://api.phonepe.com/apis/hermes" 
+    : "https://api-preprod.phonepe.com/apis/pg-sandbox";
+
+const AUTH_ENDPOINT = IS_PROD
+    ? "https://api.phonepe.com/apis/identity-manager/v1/oauth/token"
+    : "https://api-preprod.phonepe.com/apis/pg-sandbox/v1/oauth/token";
+
+// Standard V2 Endpoint
+const PAY_ENDPOINT = `${HOST_URL}/pg/v1/pay`; 
+
+// Your Frontend URL
+const FRONTEND_URL = "https://hirehive.in";
+const BACKEND_URL = "https://hirehive-api.onrender.com";
+
+// Plan Details
 const PLANS = {
-    // ⚠️ TEST MODE: Price is set to 1 (₹1) for testing. Change amount to 1999 before public launch.
-    'worker': { amount: 1, name: "Worker Plan", limit: 5 }, 
-    
-    'colony': { amount: 4999, name: "Colony Plan", limit: 15 },
-    'queen': { amount: 8999, name: "Queen Plan", limit: 30 },
-    'hive_master': { amount: 14999, name: "Hive Master Plan", limit: 9999 }
+    'worker': { amount: 1, name: "Worker Plan" }, // ₹1 for testing
+    'colony': { amount: 4999, name: "Colony Plan" },
+    'queen': { amount: 8999, name: "Queen Plan" },
+    'hive_master': { amount: 14999, name: "Hive Master Plan" }
 };
 
 // ==================================================================
-// 1. INITIATE PAYMENT
+// 2. HELPER: GET OAUTH TOKEN (The "V2" Requirement)
+// ==================================================================
+const getAuthToken = async () => {
+    try {
+        const params = new URLSearchParams();
+        params.append('client_id', process.env.PHONEPE_CLIENT_ID);
+        params.append('client_secret', process.env.PHONEPE_CLIENT_SECRET);
+        params.append('grant_type', 'client_credentials');
+        params.append('client_version', process.env.PHONEPE_CLIENT_VERSION || '1');
+
+        console.log("🔑 Fetching Auth Token...");
+
+        const response = await axios.post(AUTH_ENDPOINT, params, {
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        });
+
+        console.log("✅ Auth Token Received");
+        return response.data.access_token;
+    } catch (error) {
+        console.error("❌ Auth Token Error:", error.response?.data || error.message);
+        throw new Error("Failed to authenticate with PhonePe V2");
+    }
+};
+
+// ==================================================================
+// 3. INITIATE PAYMENT (V2)
 // ==================================================================
 router.post('/pay', async (req, res) => {
     try {
@@ -40,50 +73,49 @@ router.post('/pay', async (req, res) => {
         
         const { planKey, userId } = req.body;
 
-        // 1. Validation
+        // Validation
         if (!userId) return res.status(400).json({ error: "User ID missing" });
-        if (!MERCHANT_ID || !SALT_KEY) {
-            console.error("❌ CRITICAL: Credentials missing in environment variables.");
-            return res.status(500).json({ error: "Server configuration error (Missing Keys)" });
+        if (!process.env.PHONEPE_CLIENT_ID || !process.env.PHONEPE_CLIENT_SECRET) {
+            console.error("❌ CRITICAL: V2 Credentials missing in env.");
+            return res.status(500).json({ error: "Server config error" });
         }
 
         const plan = PLANS[planKey];
         if (!plan) return res.status(400).json({ error: `Invalid Plan: ${planKey}` });
 
-        // 2. Prepare Data
-        const transactionId = "TXN_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+        // Generate Transaction ID
+        const merchantTransactionId = `TXN_${Date.now()}_${uuidv4().slice(0, 5)}`;
         const amountInPaise = plan.amount * 100; 
-        
-        // Safety: Convert userId to string to prevent ".replace is not a function" error
-        const cleanUserId = "USER" + String(userId).replace(/[^a-zA-Z0-9]/g, "").substring(0, 10);
 
+        // 1. Get OAuth Token
+        const token = await getAuthToken();
+
+        // 2. Prepare Payload
         const payload = {
-            merchantId: MERCHANT_ID,
-            merchantTransactionId: transactionId,
-            merchantUserId: cleanUserId,
+            merchantId: process.env.PHONEPE_MERCHANT_ID, // Use 'merchantId' (lowercase m usually for payload)
+            merchantTransactionId: merchantTransactionId,
+            merchantUserId: `USER_${userId}`,
             amount: amountInPaise,
-            redirectUrl: `${BACKEND_URL}/api/payment/callback/${transactionId}/${planKey}/${userId}`,
+            redirectUrl: `${BACKEND_URL}/api/payment/callback/${merchantTransactionId}/${planKey}/${userId}`,
             redirectMode: "POST",
-            callbackUrl: `${BACKEND_URL}/api/payment/callback/${transactionId}/${planKey}/${userId}`,
-            paymentInstrument: { type: "PAY_PAGE" }
+            callbackUrl: `${BACKEND_URL}/api/payment/callback/${merchantTransactionId}/${planKey}/${userId}`,
+            paymentInstrument: {
+                type: "PAY_PAGE"
+            }
         };
 
-        // 3. Cryptography
-        const bufferObj = Buffer.from(JSON.stringify(payload), "utf8");
-        const base64EncodedPayload = bufferObj.toString("base64");
-        const stringToHash = base64EncodedPayload + "/pg/v1/pay" + SALT_KEY;
-        const sha256Value = crypto.createHash('sha256').update(stringToHash).digest('hex');
-        const xVerify = sha256Value + "###" + SALT_INDEX;
+        // 3. Encode Base64 (Standard requirement)
+        const base64Payload = Buffer.from(JSON.stringify(payload)).toString('base64');
 
-        // 4. Send Request
-        console.log(`📤 Sending to PhonePe (${amountInPaise} paise)...`);
+        // 4. Send Request with Bearer Token
+        console.log(`📤 Sending V2 Payment Request (${amountInPaise} paise) to ${PAY_ENDPOINT}...`);
         
-        const response = await axios.post(`${HOST_URL}/pg/v1/pay`, 
-            { request: base64EncodedPayload }, 
+        const response = await axios.post(PAY_ENDPOINT, 
+            { request: base64Payload }, 
             {
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-VERIFY': xVerify
+                    'Authorization': `O-Bearer ${token}` // <--- O-Bearer is required for V2
                 }
             }
         );
@@ -91,53 +123,55 @@ router.post('/pay', async (req, res) => {
         console.log("✅ PhonePe Response:", response.data);
 
         if (response.data.success) {
+            // Log Pending Transaction
+            await pool.query(
+                `INSERT INTO payments (transaction_id, user_id, amount, status, created_at) 
+                 VALUES ($1, $2, $3, 'PENDING', NOW())`,
+                [merchantTransactionId, userId, plan.amount]
+            );
+
             res.json({ 
+                success: true,
                 url: response.data.data.instrumentResponse.redirectInfo.url,
-                transactionId: transactionId 
+                transactionId: merchantTransactionId 
             });
         } else {
-            console.error("❌ PhonePe Error:", response.data);
+            console.error("❌ PhonePe Rejection:", response.data);
             res.status(500).json({ error: "Payment Gateway Rejected Request" });
         }
 
     } catch (error) {
-        // Detailed Error Logging
-        if (error.response) {
-            console.error("❌ Axios Error:", error.response.status, error.response.data);
-            res.status(500).json({ error: error.response.data.message || "Payment Gateway Error" });
-        } else {
-            console.error("❌ Internal Server Error:", error.message);
-            res.status(500).json({ error: "Internal Server Error during Payment" });
-        }
+        console.error("❌ Payment Error:", error.response?.data || error.message);
+        res.status(500).json({ error: "Payment initiation failed" });
     }
 });
 
 // ==================================================================
-// 2. PAYMENT CALLBACK & VERIFICATION
+// 4. CALLBACK & STATUS CHECK (V2)
 // ==================================================================
 router.post('/callback/:txnId/:planKey/:userId', async (req, res) => {
-    const { txnId, planKey, userId } = req.params;
-    
-    console.log(`🔄 Callback Received for TXN: ${txnId}`);
-
-    const stringToHash = `/pg/v1/status/${MERCHANT_ID}/${txnId}` + SALT_KEY;
-    const sha256Value = crypto.createHash('sha256').update(stringToHash).digest('hex');
-    const xVerify = sha256Value + "###" + SALT_INDEX;
-
     try {
-        const statusResponse = await axios.get(`${HOST_URL}/pg/v1/status/${MERCHANT_ID}/${txnId}`, {
+        const { txnId, planKey, userId } = req.params;
+        console.log(`🔄 Callback Received for TXN: ${txnId}`);
+
+        // 1. Get Token again for Status Check
+        const token = await getAuthToken();
+
+        // 2. Check Status
+        // Note: Status check URL also needs correct host. We use HOST_URL here.
+        const statusUrl = `${HOST_URL}/pg/v1/status/${process.env.PHONEPE_MERCHANT_ID}/${txnId}`;
+        
+        const statusResponse = await axios.get(statusUrl, {
             headers: {
                 'Content-Type': 'application/json',
-                'X-MERCHANT-ID': MERCHANT_ID,
-                'X-VERIFY': xVerify
+                'Authorization': `O-Bearer ${token}` // V2 Auth
             }
         });
 
         if (statusResponse.data.code === 'PAYMENT_SUCCESS') {
-            const plan = PLANS[planKey];
-            
-            // ✅ Success: Update DB
-            // We set jobpostcount = 0 so they get a fresh start with their new limit
+            console.log(`✅ Payment SUCCESS: ${txnId}`);
+
+            // Update Database
             await pool.query(
                 `UPDATE users 
                  SET subscriptionstatus = $1, 
@@ -151,26 +185,19 @@ router.post('/callback/:txnId/:planKey/:userId', async (req, res) => {
                 [planKey, userId]
             );
 
-            // Log Transaction
-            try {
-                await pool.query(
-                    `INSERT INTO payments (amount, status, transaction_id, user_id) VALUES ($1, 'success', $2, $3)`,
-                    [plan.amount, txnId, userId]
-                );
-            } catch(dbErr) {
-                console.warn("⚠️ Could not log payment history (non-critical):", dbErr.message);
-            }
+            // Update Payment Log
+            await pool.query("UPDATE payments SET status = 'SUCCESS' WHERE transaction_id = $1", [txnId]);
 
-            console.log(`✅ Payment Verified & User Upgraded: ${userId}`);
-            res.redirect(`https://hirehive.in/#dashboard?status=success&plan=${planKey}`);
+            res.redirect(`${FRONTEND_URL}/#dashboard?status=success&plan=${planKey}`);
         } else {
-            console.warn(`⚠️ Payment Failed/Pending: ${statusResponse.data.code}`);
-            res.redirect(`https://hirehive.in/#dashboard?status=failed`);
+            console.warn(`⚠️ Payment FAILED/PENDING: ${statusResponse.data.code}`);
+            await pool.query("UPDATE payments SET status = 'FAILED' WHERE transaction_id = $1", [txnId]);
+            res.redirect(`${FRONTEND_URL}/#dashboard?status=failed`);
         }
 
     } catch (error) {
         console.error("❌ Verification Error:", error.message);
-        res.redirect(`https://hirehive.in/#dashboard?status=error`);
+        res.redirect(`${FRONTEND_URL}/#dashboard?status=error`);
     }
 });
 
