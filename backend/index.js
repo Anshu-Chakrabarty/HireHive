@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from 'path';              // Required for file paths
+import { fileURLToPath } from 'url';  // Required for ES Modules
 
 // Import Routes
 import authRoutes from "./routes/auth.js";
@@ -11,9 +13,9 @@ import adminRoutes from './routes/adminRoutes.js';
 import adminAuth from './middleware/adminAuth.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 
-// --- FIX: IMPORT BOTH EMPLOYER FILES WITH DIFFERENT NAMES ---
-import employerMainRoutes from "./routes/employer.js";       // Your original file (Jobs, etc.)
-import employerSearchRoutes from './routes/employerRoutes.js'; // The new file (Find Applicants)
+// Import Employer Files
+import employerMainRoutes from "./routes/employer.js";
+import employerSearchRoutes from './routes/employerRoutes.js';
 
 dotenv.config();
 
@@ -30,6 +32,10 @@ console.log(`Running in environment: ${process.env.NODE_ENV || "development"}`);
 console.log(`Attempting to bind to PORT: ${process.env.PORT || 5005}`);
 
 const app = express();
+
+// --- 1. DEFINE __dirname (Required for ES Modules) ---
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // --- Middleware Setup ---
 const allowedOrigins = [
@@ -60,12 +66,10 @@ app.use(
                 callback(null, true);
             } else {
                 console.warn(`CORS blocked request from origin: ${origin}`);
-                // Use null, false to reject gracefully
                 callback(null, false);
             }
         },
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        // 👇 UPDATED: Added headers required for PhonePe integration
         allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "X-Verify", "X-Merchant-Id"],
         credentials: true
     })
@@ -82,21 +86,48 @@ app.get("/api/status", (req, res) => {
         port: process.env.PORT || 5005,
     });
 });
-app.get("/", (req, res) => res.send("HireHive API is running."));
 
 // --- Route Mounting ---
 app.use('/api/public', publicRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/seeker", seekerRoutes);
 app.use("/api/contact", contactRoutes);
-
-// --- MOUNT BOTH EMPLOYER ROUTES ---
-// Express will check employerMainRoutes first, then employerSearchRoutes
 app.use("/api/employer", employerMainRoutes);
-app.use("/api/talent", employerSearchRoutes);  // <--- CHANGED THIS LINE
+app.use("/api/talent", employerSearchRoutes);
 app.use("/api/payment", paymentRoutes);
-// Protected Admin Routes
 app.use('/api/admin', adminAuth, adminRoutes);
+
+// ==========================================
+// 🚀 SERVE FRONTEND (MANUAL CACHE BUSTING)
+// ==========================================
+
+// 1. Serve Static Assets (CSS, JS, Images)
+// This serves files from your 'frontend' folder.
+// ⚠️ CHECK: Ensure your folder is named 'frontend' and is next to the 'backend' folder.
+app.use(express.static(path.join(__dirname, '../frontend'), {
+    etag: false,
+    index: false // 👈 IMPORTANT: Don't serve index.html here, let the route below handle it
+}));
+
+// 2. Serve index.html with STRICT NO-CACHE
+// This catches the root URL ('/') and any other non-API routes.
+// It forces the browser to check for updates every single time.
+app.get('*', (req, res) => {
+    // Safety: Don't serve HTML for failed API calls
+    if (req.path.startsWith('/api')) {
+         return res.status(404).json({ error: "API endpoint not found" });
+    }
+
+    // Force browser to revalidate index.html every single time
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
+    // Serve the file
+    res.sendFile(path.join(__dirname, '../frontend', 'index.html'));
+});
+
+// ==========================================
 
 // --- Global Error Handling Middleware ---
 app.use((err, req, res, next) => {
