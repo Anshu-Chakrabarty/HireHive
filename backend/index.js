@@ -98,20 +98,18 @@ app.use("/api/payment", paymentRoutes);
 app.use('/api/admin', adminAuth, adminRoutes);
 
 // ==========================================
-// 🚀 SERVE FRONTEND (MANUAL CACHE BUSTING)
+// 🚀 SERVE FRONTEND (FROM ROOT / PARENT FOLDER)
 // ==========================================
 
 // 1. Serve Static Assets (CSS, JS, Images)
-// This serves files from your 'frontend' folder.
-// ⚠️ CHECK: Ensure your folder is named 'frontend' and is next to the 'backend' folder.
-app.use(express.static(path.join(__dirname, '../frontend'), {
+// We go UP one level ('../') to find style.css and app.js
+app.use(express.static(path.join(__dirname, '../'), {
     etag: false,
-    index: false // 👈 IMPORTANT: Don't serve index.html here, let the route below handle it
+    index: false // 👈 We handle index.html manually below
 }));
 
 // 2. Serve index.html with STRICT NO-CACHE
 // This catches the root URL ('/') and any other non-API routes.
-// It forces the browser to check for updates every single time.
 app.get('*', (req, res) => {
     // Safety: Don't serve HTML for failed API calls
     if (req.path.startsWith('/api')) {
@@ -123,8 +121,8 @@ app.get('*', (req, res) => {
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
     
-    // Serve the file
-    res.sendFile(path.join(__dirname, '../frontend', 'index.html'));
+    // Serve the file from the parent directory
+    res.sendFile(path.join(__dirname, '../index.html'));
 });
 
 // ==========================================

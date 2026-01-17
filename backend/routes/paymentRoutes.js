@@ -2,7 +2,7 @@ import express from 'express';
 import axios from 'axios';
 import { pool } from '../db.js';
 import dotenv from 'dotenv';
-import { v4 as uuidv4 } from 'uuid';
+// REMOVED: uuid import to prevent "Module Not Found" crashes
 
 dotenv.config();
 const router = express.Router();
@@ -11,11 +11,10 @@ const router = express.Router();
 // 1. CONFIGURATION (V2 STANDARD)
 // ==================================================================
 
-// Determine Environment (Sandbox vs Production)
+// Determine Environment
 const IS_PROD = process.env.PHONEPE_ENV === 'production';
 
 // ✅ FIXED: Hardcoded correct URLs to prevent 404 errors
-// Production Payment URL must include '/hermes'
 const HOST_URL = IS_PROD 
     ? "https://api.phonepe.com/apis/hermes" 
     : "https://api-preprod.phonepe.com/apis/pg-sandbox";
@@ -33,14 +32,14 @@ const BACKEND_URL = "https://hirehive-api.onrender.com";
 
 // Plan Details
 const PLANS = {
-    'worker': { amount: 1, name: "Worker Plan" }, // ₹1 for testing
+    'worker': { amount: 1, name: "Worker Plan" },
     'colony': { amount: 4999, name: "Colony Plan" },
     'queen': { amount: 8999, name: "Queen Plan" },
     'hive_master': { amount: 14999, name: "Hive Master Plan" }
 };
 
 // ==================================================================
-// 2. HELPER: GET OAUTH TOKEN (The "V2" Requirement)
+// 2. HELPER: GET OAUTH TOKEN
 // ==================================================================
 const getAuthToken = async () => {
     try {
@@ -83,18 +82,23 @@ router.post('/pay', async (req, res) => {
         const plan = PLANS[planKey];
         if (!plan) return res.status(400).json({ error: `Invalid Plan: ${planKey}` });
 
-        // Generate Transaction ID
-        const merchantTransactionId = `TXN_${Date.now()}_${uuidv4().slice(0, 5)}`;
+        // ✅ FIXED: Vanilla JS ID Generation (No 'uuid' dependency needed)
+        const uniqueId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+        const merchantTransactionId = `TXN_${uniqueId}`;
         const amountInPaise = plan.amount * 100; 
+
+        // ✅ FIXED: CLEAN USER ID (Remove dashes)
+        // PhonePe throws 400 Error if ID has special chars. We strip them here.
+        const cleanUserId = userId.toString().replace(/[^a-zA-Z0-9]/g, "");
 
         // 1. Get OAuth Token
         const token = await getAuthToken();
 
         // 2. Prepare Payload
         const payload = {
-            merchantId: process.env.PHONEPE_MERCHANT_ID, // Use 'merchantId' (lowercase m usually for payload)
+            merchantId: process.env.PHONEPE_MERCHANT_ID, 
             merchantTransactionId: merchantTransactionId,
-            merchantUserId: `USER_${userId}`,
+            merchantUserId: `USER${cleanUserId}`, // <--- Using Clean ID
             amount: amountInPaise,
             redirectUrl: `${BACKEND_URL}/api/payment/callback/${merchantTransactionId}/${planKey}/${userId}`,
             redirectMode: "POST",
@@ -104,7 +108,7 @@ router.post('/pay', async (req, res) => {
             }
         };
 
-        // 3. Encode Base64 (Standard requirement)
+        // 3. Encode Base64
         const base64Payload = Buffer.from(JSON.stringify(payload)).toString('base64');
 
         // 4. Send Request with Bearer Token
@@ -115,7 +119,7 @@ router.post('/pay', async (req, res) => {
             {
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `O-Bearer ${token}` // <--- O-Bearer is required for V2
+                    'Authorization': `O-Bearer ${token}` // V2 Auth Header
                 }
             }
         );
@@ -158,13 +162,12 @@ router.post('/callback/:txnId/:planKey/:userId', async (req, res) => {
         const token = await getAuthToken();
 
         // 2. Check Status
-        // Note: Status check URL also needs correct host. We use HOST_URL here.
         const statusUrl = `${HOST_URL}/pg/v1/status/${process.env.PHONEPE_MERCHANT_ID}/${txnId}`;
         
         const statusResponse = await axios.get(statusUrl, {
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `O-Bearer ${token}` // V2 Auth
+                'Authorization': `O-Bearer ${token}`
             }
         });
 
@@ -185,9 +188,7 @@ router.post('/callback/:txnId/:planKey/:userId', async (req, res) => {
                 [planKey, userId]
             );
 
-            // Update Payment Log
             await pool.query("UPDATE payments SET status = 'SUCCESS' WHERE transaction_id = $1", [txnId]);
-
             res.redirect(`${FRONTEND_URL}/#dashboard?status=success&plan=${planKey}`);
         } else {
             console.warn(`⚠️ Payment FAILED/PENDING: ${statusResponse.data.code}`);
