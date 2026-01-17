@@ -2,19 +2,17 @@ import express from 'express';
 import axios from 'axios';
 import { pool } from '../db.js';
 import dotenv from 'dotenv';
-// REMOVED: uuid import to prevent "Module Not Found" crashes
+// We use vanilla JS for IDs now, no uuid import needed
 
 dotenv.config();
 const router = express.Router();
 
 // ==================================================================
-// 1. CONFIGURATION (V2 STANDARD)
+// 1. CONFIGURATION
 // ==================================================================
-
-// Determine Environment
 const IS_PROD = process.env.PHONEPE_ENV === 'production';
 
-// ✅ FIXED: Hardcoded correct URLs to prevent 404 errors
+// URLs
 const HOST_URL = IS_PROD 
     ? "https://api.phonepe.com/apis/hermes" 
     : "https://api-preprod.phonepe.com/apis/pg-sandbox";
@@ -23,14 +21,11 @@ const AUTH_ENDPOINT = IS_PROD
     ? "https://api.phonepe.com/apis/identity-manager/v1/oauth/token"
     : "https://api-preprod.phonepe.com/apis/pg-sandbox/v1/oauth/token";
 
-// Standard V2 Endpoint
 const PAY_ENDPOINT = `${HOST_URL}/pg/v1/pay`; 
 
-// Your Frontend URL
 const FRONTEND_URL = "https://hirehive.in";
 const BACKEND_URL = "https://hirehive-api.onrender.com";
 
-// Plan Details
 const PLANS = {
     'worker': { amount: 1, name: "Worker Plan" },
     'colony': { amount: 4999, name: "Colony Plan" },
@@ -39,7 +34,7 @@ const PLANS = {
 };
 
 // ==================================================================
-// 2. HELPER: GET OAUTH TOKEN
+// 2. HELPER: GET TOKEN
 // ==================================================================
 const getAuthToken = async () => {
     try {
@@ -49,13 +44,9 @@ const getAuthToken = async () => {
         params.append('grant_type', 'client_credentials');
         params.append('client_version', process.env.PHONEPE_CLIENT_VERSION || '1');
 
-        console.log("🔑 Fetching Auth Token...");
-
         const response = await axios.post(AUTH_ENDPOINT, params, {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
         });
-
-        console.log("✅ Auth Token Received");
         return response.data.access_token;
     } catch (error) {
         console.error("❌ Auth Token Error:", error.response?.data || error.message);
@@ -64,72 +55,62 @@ const getAuthToken = async () => {
 };
 
 // ==================================================================
-// 3. INITIATE PAYMENT (V2)
+// 3. INITIATE PAYMENT
 // ==================================================================
 router.post('/pay', async (req, res) => {
     try {
         console.log("💰 Payment Request Received:", req.body);
-        
         const { planKey, userId } = req.body;
 
-        // Validation
         if (!userId) return res.status(400).json({ error: "User ID missing" });
-        if (!process.env.PHONEPE_CLIENT_ID || !process.env.PHONEPE_CLIENT_SECRET) {
-            console.error("❌ CRITICAL: V2 Credentials missing in env.");
-            return res.status(500).json({ error: "Server config error" });
-        }
+        if (!process.env.PHONEPE_CLIENT_ID) return res.status(500).json({ error: "Server config error" });
 
         const plan = PLANS[planKey];
         if (!plan) return res.status(400).json({ error: `Invalid Plan: ${planKey}` });
 
-        // ✅ FIXED: Vanilla JS ID Generation (No 'uuid' dependency needed)
-        const uniqueId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+        // Generate IDs
+        const uniqueId = Date.now().toString(36);
         const merchantTransactionId = `TXN_${uniqueId}`;
         const amountInPaise = plan.amount * 100; 
 
-        // ✅ FIXED: CLEAN USER ID (Remove dashes)
-        // PhonePe throws 400 Error if ID has special chars. We strip them here.
-        const cleanUserId = userId.toString().replace(/[^a-zA-Z0-9]/g, "");
+        // ✅ FIX 1: Shorten User ID to be safe (Max 36 chars allowed)
+        // Taking last 12 chars of UUID ensures uniqueness but stays short
+        const shortUserId = userId.replace(/-/g, "").slice(-12);
+        const cleanMerchantUserId = `USER${shortUserId}`;
 
-        // 1. Get OAuth Token
         const token = await getAuthToken();
 
-       
-        // 2. Prepare Payload
+        // ✅ FIX 2: Add Mobile Number (Often required)
         const payload = {
             merchantId: process.env.PHONEPE_MERCHANT_ID, 
             merchantTransactionId: merchantTransactionId,
-            merchantUserId: `USER${cleanUserId}`,
+            merchantUserId: cleanMerchantUserId,
             amount: amountInPaise,
             redirectUrl: `${BACKEND_URL}/api/payment/callback/${merchantTransactionId}/${planKey}/${userId}`,
             redirectMode: "POST",
             callbackUrl: `${BACKEND_URL}/api/payment/callback/${merchantTransactionId}/${planKey}/${userId}`,
-            mobileNumber: "9999999999", // 👈 ADD THIS (PhonePe sometimes requires it)
+            mobileNumber: "9999999999", // Dummy number required by V2 standard
             paymentInstrument: {
                 type: "PAY_PAGE"
             }
         };
 
-        // 3. Encode Base64
         const base64Payload = Buffer.from(JSON.stringify(payload)).toString('base64');
 
-        // 4. Send Request with Bearer Token
-        console.log(`📤 Sending V2 Payment Request (${amountInPaise} paise) to ${PAY_ENDPOINT}...`);
+        console.log(`📤 Sending V2 Payment Request to ${PAY_ENDPOINT}...`);
         
         const response = await axios.post(PAY_ENDPOINT, 
             { request: base64Payload }, 
             {
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `O-Bearer ${token}` // V2 Auth Header
+                    'Authorization': `O-Bearer ${token}`
                 }
             }
         );
 
-        console.log("✅ PhonePe Response:", response.data);
-
         if (response.data.success) {
-            // Log Pending Transaction
+            // Save to DB
             await pool.query(
                 `INSERT INTO payments (transaction_id, user_id, amount, status, created_at) 
                  VALUES ($1, $2, $3, 'PENDING', NOW())`,
@@ -142,28 +123,29 @@ router.post('/pay', async (req, res) => {
                 transactionId: merchantTransactionId 
             });
         } else {
-            console.error("❌ PhonePe Rejection:", response.data);
+            console.error("❌ PhonePe Rejection:", JSON.stringify(response.data));
             res.status(500).json({ error: "Payment Gateway Rejected Request" });
         }
 
     } catch (error) {
-        console.error("❌ Payment Error:", error.response?.data || error.message);
-        res.status(500).json({ error: "Payment initiation failed" });
+        // ✅ FIX 3: Detailed Error Logging
+        // This will print the EXACT reason PhonePe rejected it (e.g., "Invalid field")
+        const errorData = error.response ? JSON.stringify(error.response.data) : error.message;
+        console.error("❌ Payment Error (Full Details):", errorData);
+        
+        res.status(500).json({ error: "Payment initiation failed", details: errorData });
     }
 });
 
 // ==================================================================
-// 4. CALLBACK & STATUS CHECK (V2)
+// 4. CALLBACK
 // ==================================================================
 router.post('/callback/:txnId/:planKey/:userId', async (req, res) => {
     try {
         const { txnId, planKey, userId } = req.params;
         console.log(`🔄 Callback Received for TXN: ${txnId}`);
 
-        // 1. Get Token again for Status Check
         const token = await getAuthToken();
-
-        // 2. Check Status
         const statusUrl = `${HOST_URL}/pg/v1/status/${process.env.PHONEPE_MERCHANT_ID}/${txnId}`;
         
         const statusResponse = await axios.get(statusUrl, {
@@ -174,9 +156,6 @@ router.post('/callback/:txnId/:planKey/:userId', async (req, res) => {
         });
 
         if (statusResponse.data.code === 'PAYMENT_SUCCESS') {
-            console.log(`✅ Payment SUCCESS: ${txnId}`);
-
-            // Update Database
             await pool.query(
                 `UPDATE users 
                  SET subscriptionstatus = $1, 
@@ -193,7 +172,6 @@ router.post('/callback/:txnId/:planKey/:userId', async (req, res) => {
             await pool.query("UPDATE payments SET status = 'SUCCESS' WHERE transaction_id = $1", [txnId]);
             res.redirect(`${FRONTEND_URL}/#dashboard?status=success&plan=${planKey}`);
         } else {
-            console.warn(`⚠️ Payment FAILED/PENDING: ${statusResponse.data.code}`);
             await pool.query("UPDATE payments SET status = 'FAILED' WHERE transaction_id = $1", [txnId]);
             res.redirect(`${FRONTEND_URL}/#dashboard?status=failed`);
         }
