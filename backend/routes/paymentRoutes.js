@@ -94,15 +94,17 @@ router.post('/pay', async (req, res) => {
         // 1. Get OAuth Token
         const token = await getAuthToken();
 
+       
         // 2. Prepare Payload
         const payload = {
             merchantId: process.env.PHONEPE_MERCHANT_ID, 
             merchantTransactionId: merchantTransactionId,
-            merchantUserId: `USER${cleanUserId}`, // <--- Using Clean ID
+            merchantUserId: `USER${cleanUserId}`,
             amount: amountInPaise,
             redirectUrl: `${BACKEND_URL}/api/payment/callback/${merchantTransactionId}/${planKey}/${userId}`,
             redirectMode: "POST",
             callbackUrl: `${BACKEND_URL}/api/payment/callback/${merchantTransactionId}/${planKey}/${userId}`,
+            mobileNumber: "9999999999", // 👈 ADD THIS (PhonePe sometimes requires it)
             paymentInstrument: {
                 type: "PAY_PAGE"
             }
