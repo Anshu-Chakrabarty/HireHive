@@ -1,3 +1,6 @@
+console.log("🔥🔥🔥 BACKEND INDEX.JS LOADED 🔥🔥🔥");
+
+
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
