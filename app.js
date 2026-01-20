@@ -3,6 +3,16 @@
 // ------------------------------------------------------------------
 // 0. GLOBAL HELPER FUNCTIONS (Available everywhere)
 // ------------------------------------------------------------------
+window.showView = (view) => {
+    document.querySelectorAll('.page-view')
+        .forEach(v => v.classList.add('hidden'));
+
+    const target = document.getElementById(`${view}-view`);
+    if (target) {
+        target.classList.remove('hidden');
+        window.location.hash = `#${view}`;
+    }
+};
 
 /**
  * Share Job Logic (Web Share API)
@@ -188,6 +198,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     description: "Unlimited job postings. Full database access. Dedicated support."
                 },
             };
+            async function fetchUserData() {
+                const data = await fetchApi('auth/me', 'GET');
+                setLocalUser(data.user);
+                updateHeaderUI();
+            }
+
 
             async function fetchApi(endpoint, method = 'GET', data = null, isFormData = false) {
                 const token = getToken();
@@ -421,6 +437,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     dashboardLink.classList.remove("hidden");
                     welcomeMessage.classList.remove("hidden");
                     welcomeMessage.textContent = `Hi, ${user.name.split(' ')[0]}`;
+
+                    document.getElementById("plansNavLink")?.classList.remove("hidden");
+
 
                     if (user.role === 'admin') {
                         adminLink.classList.remove("hidden");
@@ -936,7 +955,8 @@ function initDashboard(filters = null) {
     // 🎁 BONUS: HANDLE PAYMENT RETURN
     // ==========================================
     // Check if URL has ?status=success (Returning from PhonePe)
-    const urlParams = new URLSearchParams(window.location.hash.split('?')[1]); 
+    const hashParts = window.location.hash.split('?');
+    const urlParams = new URLSearchParams(hashParts[1] || '');
     const status = urlParams.get('status');
     const plan = urlParams.get('plan');
 
