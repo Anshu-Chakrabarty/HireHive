@@ -139,9 +139,11 @@ app.use((err, req, res, next) => {
     });
 });
 
+// Use the port Render provides dynamically, or default to 5005 for local development
 const PORT = process.env.PORT || 5005;
 
-app.listen(PORT, () => {
+// Binding to '0.0.0.0' allows the server to accept connections from outside the container
+app.listen(PORT, '0.0.0.0', () => {
     console.log("-----------------------------------------");
     console.log(`🚀 HireHive API Integrated & Running`);
     console.log(`📡 Port: ${PORT}`);
