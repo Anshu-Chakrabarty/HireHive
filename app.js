@@ -14,6 +14,31 @@ window.showView = (view) => {
     }
 };
 
+window.triggerViewAllJobs = () => {
+    const user = getLocalUser();
+    
+    if (!user) {
+        // 1. Show the status message popup
+        window.showStatusMessage(
+            "Login Required", 
+            "Please login as a Job Seeker to view the full dashboard and all available jobs.", 
+            false
+        );
+        
+        // 2. Automatically open the login form after a tiny delay
+        setTimeout(() => {
+            const loginForm = document.getElementById("login-form-container");
+            if (typeof showForm === 'function') {
+                showForm(loginForm);
+            }
+        }, 500);
+        
+    } else {
+        // User is logged in, take them to the dashboard
+        showView('dashboard');
+    }
+};
+
 /**
  * Share Job Logic (Web Share API)
  */
