@@ -20,8 +20,9 @@ const HOST_URL = IS_PROD
 
 
 const AUTH_ENDPOINT = IS_PROD
-    ? "https://api.phonepe.com/apis/pg/v1/oauth/token"
+    ? "https://api.phonepe.com/apis/identity-manager/v1/oauth/token"
     : "https://api-preprod.phonepe.com/apis/pg-sandbox/v1/oauth/token";
+
 
 
 const PAY_ENDPOINT = `${HOST_URL}/checkout/v2/pay`;
