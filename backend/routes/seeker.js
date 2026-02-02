@@ -147,6 +147,27 @@ router.get('/applications', auth, isSeeker, async(req, res) => {
     }
 });
 
+// --- NEW ROUTE: FETCH SINGLE JOB DETAILS ---
+router.get('/jobs/:jobId', auth, isSeeker, async (req, res) => {
+    try {
+        const { jobId } = req.params;
+
+        const { data: job, error } = await supabase
+            .from('jobs')
+            .select(`*, employer:employerid (name)`)
+            .eq('id', jobId)
+            .single();
+
+        if (error || !job) {
+            return res.status(404).json({ error: 'Job not found' });
+        }
+
+        res.json(job);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
 // --- UPDATED APPLICATION ROUTE IN seeker.js ---
 
 router.post('/apply/:jobId', auth, isSeeker, async(req, res) => {
