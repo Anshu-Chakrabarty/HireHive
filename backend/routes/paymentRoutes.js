@@ -27,7 +27,7 @@ const BACKEND_URL = "https://hirehive-api.onrender.com";
 const FRONTEND_URL = "https://hirehive.in";
 
 const PLANS = {
-  worker: { amount: 1, name: "Worker Plan" },
+  worker: { amount: 100, name: "Worker Plan" },
   colony: { amount: 4999, name: "Colony Plan" },
   queen: { amount: 8999, name: "Queen Plan" },
   hive_master: { amount: 14999, name: "Hive Master Plan" },
