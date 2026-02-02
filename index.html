@@ -438,25 +438,45 @@
 
                         <div id="multi-step-job-form-container">
 
-                            <form id="jobStep1Form" class="job-step-form">
+                           <form id="jobStep1Form" class="job-step-form">
+    <h4>Step 1: Basic Information</h4>
+    
+    <label for="job-title" class="hidden">Job Title</label>
+    <input type="text" id="job-title" name="job-title" placeholder="Job Title" required>
 
-                                <h4>Step 1: Basic Information</h4>
-                                <label for="job-title" class="hidden">Job Title</label>
-                                <input type="text" id="job-title" name="job-title" placeholder="Job Title" required>
-                                <label for="job-category" class="hidden">Job Category</label>
-                                <select id="job-category" name="job-category" required>
-                                    <option value="" disabled selected>Select Job Branch/Category</option>
-                                    <option value="IT & Tech">IT & Tech</option>
-                                    <option value="Marketing & Finance">Marketing & Finance</option>
-                                    <option value="Manufacturing">Manufacturing</option>
-                                    <option value="Hospitality">Hospitality</option>
-                                    <option value="Sales">Sales</option>
-                                    <option value="Management">Management</option>
-                                </select>
-                                <label for="job-location" class="hidden">Location</label>
-                                <input type="text" id="job-location" name="job-location" placeholder="Location (e.g., Mumbai, India)" required>
-                                <button type="button" class="btn btn-primary next-step-btn" data-step="1">Next (Requirements)</button>
-                            </form>
+    <label for="job-category" class="hidden">Job Category</label>
+    <select id="job-category" name="job-category" required>
+        <option value="" disabled selected>Select Job Branch/Category</option>
+        <option value="IT & Tech">IT & Tech</option>
+        <option value="Marketing & Finance">Marketing & Finance</option>
+        <option value="Manufacturing">Manufacturing</option>
+        <option value="Hospitality">Hospitality</option>
+        <option value="Sales">Sales</option>
+        <option value="Management">Management</option>
+    </select>
+
+    <label for="job-location" class="hidden">Location</label>
+    <input type="text" id="job-location" name="job-location" placeholder="Location (e.g., Mumbai, India)" required>
+
+    <label for="job-work-mode" class="hidden">Work Mode</label>
+    <select id="job-work-mode" name="job-work-mode" required>
+        <option value="" disabled selected>Select Work Mode</option>
+        <option value="Onsite">Onsite</option>
+        <option value="Hybrid">Hybrid</option>
+        <option value="Remote">Remote</option>
+    </select>
+
+    <label for="job-role-mode" class="hidden">Role Mode</label>
+    <select id="job-role-mode" name="job-role-mode" required>
+        <option value="" disabled selected>Select Role Mode</option>
+        <option value="Full time">Full time</option>
+        <option value="Internship">Internship</option>
+        <option value="Contractual">Contractual</option>
+        <option value="Part-time">Part-time</option>
+    </select>
+
+    <button type="button" class="btn btn-primary next-step-btn" data-step="1">Next</button>
+</form>
 
                             <form id="jobStep2Form" class="job-step-form hidden">
 
@@ -471,7 +491,7 @@
                                 <input type="text" id="job-skills" name="job-skills" placeholder="Required Skills (comma-separated)" required>
                                 <div class="form-actions">
                                     <button type="button" class="btn prev-step-btn" data-step="2">Back</button>
-                                    <button type="button" class="btn btn-primary next-step-btn" data-step="2">Next (Description)</button>
+                                    <button type="button" class="btn btn-primary next-step-btn" data-step="2">Next </button>
                                 </div>
                             </form>
 
@@ -479,7 +499,10 @@
 
                                 <h4>Step 3: Final Details & Screening</h4>
                                 <label for="job-description" class="hidden">Job Description</label>
-                                <textarea id="job-description" name="job-description" placeholder="Full Job Description" required></textarea>
+<textarea id="job-description" name="job-description" 
+          placeholder="Describe the responsibilities and requirements in detail..." 
+          required 
+          style="min-height: 250px; width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc;"></textarea>
                                 <label for="job-notice-period" class="hidden">Notice Period</label>
                                 <input type="text" id="job-notice-period" name="job-notice-period" placeholder="Notice Period (e.g., 30 days)">
                                 <div class="form-group">
@@ -490,16 +513,33 @@
                                     </select>
                                 </div>
 
-                                <div id="screening-questions-container" class="hidden">
-
-                                    <h5 class="screening-title">Add up to 3 Mandatory Questions (Q1 & Q2 are highly recommended):</h5>
-                                    <label for="sq1" class="hidden">Screening Question 1</label>
-                                    <input type="text" id="sq1" name="sq1" placeholder="Question 1 (e.g., Min 2 years React experience?)">
-                                    <label for="sq2" class="hidden">Screening Question 2</label>
-                                    <input type="text" id="sq2" name="sq2" placeholder="Question 2 (e.g., Notice Period less than 30 days?)">
-                                    <label for="sq3" class="hidden">Screening Question 3 (Optional)</label>
-                                    <input type="text" id="sq3" name="sq3" placeholder="Question 3 (Optional)">
-                                </div>
+                              <div id="screening-questions-container" class="hidden">
+    <h4>Screening Questions</h4>
+    <p style="font-size: 0.85rem; color: #666; margin-bottom: 15px;">
+        Add up to 3 questions. Check "Mandatory" if the seeker MUST answer it to apply.
+    </p>
+    
+    <div class="sq-row" style="display: flex; gap: 10px; margin-bottom: 12px; align-items: center;">
+        <input type="text" id="sq1" placeholder="e.g., Do you have a valid driver's license?" style="flex: 1;">
+        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.9rem;">
+            <input type="checkbox" id="sq1_req"> Mandatory
+        </label>
+    </div>
+    
+    <div class="sq-row" style="display: flex; gap: 10px; margin-bottom: 12px; align-items: center;">
+        <input type="text" id="sq2" placeholder="e.g., How many years of experience do you have with React?" style="flex: 1;">
+        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.9rem;">
+            <input type="checkbox" id="sq2_req"> Mandatory
+        </label>
+    </div>
+    
+    <div class="sq-row" style="display: flex; gap: 10px; margin-bottom: 12px; align-items: center;">
+        <input type="text" id="sq3" placeholder="Question 3 (Optional)" style="flex: 1;">
+        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.9rem;">
+            <input type="checkbox" id="sq3_req"> Mandatory
+        </label>
+    </div>
+</div>
 
                                 <div class="form-actions">
                                     <button type="button" class="btn prev-step-btn" data-step="3">Back</button>

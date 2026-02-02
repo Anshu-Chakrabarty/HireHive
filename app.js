@@ -15,27 +15,39 @@ window.showView = (view) => {
 };
 
 window.triggerViewAllJobs = () => {
-    const user = getLocalUser();
+    // Access sessionStorage directly since getLocalUser is scoped elsewhere
+    const user = JSON.parse(sessionStorage.getItem("localUser"));
     
     if (!user) {
-        // 1. Show the status message popup
-        window.showStatusMessage(
-            "Login Required", 
-            "Please login as a Job Seeker to view the full dashboard and all available jobs.", 
-            false
-        );
+        // 1. Show the status message popup if it exists
+        if (window.showStatusMessage) {
+            window.showStatusMessage(
+                "Login Required", 
+                "Please login as a Job Seeker to view the full dashboard and all available jobs.", 
+                false
+            );
+        } else {
+            alert("Please login as a Job Seeker to view all jobs.");
+        }
         
-        // 2. Automatically open the login form after a tiny delay
+        // 2. Open the login modal after a short delay
         setTimeout(() => {
             const loginForm = document.getElementById("login-form-container");
-            if (typeof showForm === 'function') {
-                showForm(loginForm);
+            const authModal = document.getElementById("authModal");
+            
+            if (loginForm && authModal) {
+                // Ensure all other auth containers are hidden first
+                document.querySelectorAll('#authModal .auth-container').forEach(f => f.classList.add("hidden"));
+                loginForm.classList.remove("hidden");
+                authModal.style.display = "block";
             }
         }, 500);
         
     } else {
-        // User is logged in, take them to the dashboard
-        showView('dashboard');
+        // User is logged in, use the global showView
+        if (window.showView) {
+            window.showView('dashboard');
+        }
     }
 };
 
@@ -279,20 +291,33 @@ async function openJobApplicationReview(jobId) {
             const hasCV = user.cvfilename && user.cvfilename.trim() !== "";
 
             body.innerHTML = `
-                <h2 style="color: var(--secondary-color); margin-bottom:10px;">${job.title}</h2>
-                <p style="font-weight: bold; color: var(--primary-color); margin-bottom:15px;">
-                    <i class="fas fa-tags"></i> Sector: ${job.category}
-                </p>
-                <div class="job-card-meta" style="margin: 15px 0; display: flex; gap: 20px; flex-wrap: wrap; font-size: 0.9rem; color: #555;">
-                    <span><i class="fas fa-map-marker-alt"></i> ${job.location}</span>
-                    <span><i class="fas fa-money-bill-wave"></i> ${job.salary || 'Not Disclosed'}</span>
-                    <span><i class="fas fa-briefcase"></i> ${job.experience} Yrs Exp</span>
-                </div>
-                <h3 style="margin-top:20px; border-bottom: 1px solid #eee; padding-bottom:10px;">Job Description</h3>
-                <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; line-height: 1.6; margin-top:10px; max-height: 250px; overflow-y: auto;">
-                    ${job.description ? job.description.split('\n').join('<br>') : 'No description provided.'}
-                </div>
-            `;
+    <h2 style="color: var(--secondary-color); margin-bottom:10px;">${job.title}</h2>
+    <p style="font-weight: bold; color: var(--primary-color); margin-bottom:15px;">
+        <i class="fas fa-building"></i> ${job.employer?.name || 'Company'} 
+        <span style="color: #666; font-weight: normal; margin-left: 10px;">| ${job.category}</span>
+    </p>
+    
+    <div class="job-card-meta" style="margin: 15px 0; display: flex; gap: 15px; flex-wrap: wrap; font-size: 0.9rem; color: #555;">
+        <span title="Location & Work Mode">
+            <i class="fas fa-map-marker-alt"></i> ${job.location} 
+            <b style="color: var(--secondary-color);">(${job.work_mode || 'Onsite'})</b>
+        </span>
+        <span title="Employment Type">
+            <i class="fas fa-clock"></i> ${job.role_mode || 'Full time'}
+        </span>
+        <span title="Experience Required">
+            <i class="fas fa-briefcase"></i> ${job.experience} Yrs Exp
+        </span>
+        <span title="Offered Salary">
+            <i class="fas fa-money-bill-wave"></i> ${job.salary || 'Not Disclosed'}
+        </span>
+    </div>
+
+    <h3 style="margin-top:20px; border-bottom: 1px solid #eee; padding-bottom:10px;">Job Description</h3>
+    <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; line-height: 1.6; margin-top:10px; max-height: 250px; overflow-y: auto;">
+        ${job.description ? job.description.split('\n').join('<br>') : 'No description provided.'}
+    </div>
+`;
 
             if (!hasCV) {
                 formArea.innerHTML = `
@@ -309,45 +334,79 @@ async function openJobApplicationReview(jobId) {
                     document.getElementById("seeker-job-view").classList.add('hidden');
                     if (typeof loadSeekerProfileForm === 'function') loadSeekerProfileForm();
                 };
-            } else {
-                formArea.innerHTML = `
-                    <h3 style="margin-top: 20px;">Apply for this Position</h3>
-                    <label for="cover-letter" style="display: block; margin-bottom: 5px; font-weight: 500;">Cover Letter / Message to Employer</label>
-                    <textarea id="cover-letter" placeholder="Why are you a good fit for this role?" rows="4" style="width: 100%; border-radius: 8px; border: 1px solid #ccc; padding: 10px; font-family: inherit;"></textarea>
-                    
-                    <div id="screening-questions-seeker-area" class="${job.screening_questions?.length > 0 ? '' : 'hidden'}" style="margin-top: 15px;">
-                        <h4 style="margin-bottom: 10px;">Mandatory Screening Questions</h4>
-                        <div id="seeker-questions-list">
-                            ${(job.screening_questions || []).map((q, i) => `
-                                <div style="margin-bottom: 12px;">
-                                    <label style="display:block; margin-bottom: 5px; font-size: 0.9rem;">${q}</label>
-                                    <input type="text" class="seeker-answer" data-index="${i}" placeholder="Your answer" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                                </div>
-                            `).join('')}
-                        </div>
+            }else {
+    // Show standard application form if CV exists
+    formArea.innerHTML = `
+        <h3 style="margin-top: 20px;">Apply for this Position</h3>
+        <div style="margin-bottom: 15px;">
+            <label for="cover-letter" style="display: block; margin-bottom: 5px; font-weight: 500;">Cover Letter / Message to Employer</label>
+            <textarea id="cover-letter" placeholder="Tell the employer why you are a great fit for this role..." rows="4" style="width: 100%; border-radius: 8px; border: 1px solid #ccc; padding: 10px; font-family: inherit;"></textarea>
+        </div>
+        
+        <div id="screening-questions-seeker-area" class="${job.screening_questions?.length > 0 ? '' : 'hidden'}" style="margin-bottom: 15px;">
+            <h4 style="margin-bottom: 10px;">Screening Questions</h4>
+            <div id="seeker-questions-list">
+                ${(job.screening_questions || []).map((q, i) => `
+                    <div style="margin-bottom: 12px;">
+                        <label style="display:block; margin-bottom: 5px; font-size: 0.9rem;">
+                            ${q.text} ${q.required ? '<span style="color:red;">* (Mandatory)</span>' : '<span style="color:gray;">(Optional)</span>'}
+                        </label>
+                        <input type="text" 
+                               class="seeker-answer" 
+                               data-index="${i}" 
+                               data-required="${q.required}" 
+                               placeholder="${q.required ? 'Enter mandatory answer...' : 'Optional answer...'}" 
+                               style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                     </div>
-                    <button id="finalApplyBtn" class="btn btn-primary" style="width: 100%; margin-top: 15px; padding: 12px; font-weight: 600;">
-                        <i class="fas fa-paper-plane"></i> Submit Application
-                    </button>
-                `;
+                `).join('')}
+            </div>
+        </div>
 
-                document.getElementById("finalApplyBtn").onclick = async () => {
-                    const coverLetter = document.getElementById("cover-letter").value.trim();
-                    const answers = Array.from(document.querySelectorAll('.seeker-answer')).map(input => input.value.trim());
+        <button id="finalApplyBtn" class="btn btn-primary" style="width: 100%; padding: 12px; font-weight: 600;">
+            <i class="fas fa-paper-plane"></i> Submit Application
+        </button>
+    `;
 
-                    setLoading('finalApplyBtn', true, 'Submitting...');
-                    try {
-                        await fetchApi(`seeker/apply/${jobId}`, 'POST', { coverLetter, answers });
-                        modal.style.display = "none";
-                        window.showStatusMessage("Applied! 🎉", "Your application has been sent successfully.", false);
-                        if (typeof loadJobs === 'function') loadJobs();
-                    } catch (err) {
-                        window.showStatusMessage("Error", err.message, true);
-                    } finally {
-                        setLoading('finalApplyBtn', false, 'Submit Application');
-                    }
-                };
+                // Set up the final submission click event
+    document.getElementById("finalApplyBtn").onclick = async () => {
+        const coverLetter = document.getElementById("cover-letter").value.trim();
+        const answerInputs = document.querySelectorAll('.seeker-answer');
+        const answers = Array.from(answerInputs).map(input => input.value.trim());
+
+        // Selective validation for screening questions
+        let validationPassed = true;
+        answerInputs.forEach(input => {
+            const isRequired = input.getAttribute('data-required') === 'true';
+            const value = input.value.trim();
+
+            if (isRequired && !value) {
+                // Highlight only missing mandatory fields
+                input.style.borderColor = "red";
+                validationPassed = false;
+            } else {
+                input.style.borderColor = "#ddd";
             }
+        });
+
+        if (!validationPassed) {
+            window.showStatusMessage("Missing Answers", "Please fill in all mandatory screening questions highlighted in red.", true);
+            return;
+        }
+
+        setLoading('finalApplyBtn', true, 'Submitting...');
+
+        try {
+            await fetchApi(`seeker/apply/${jobId}`, 'POST', { coverLetter, answers });
+            modal.style.display = "none";
+            window.showStatusMessage("Application Sent! 🎉", "Your CV and cover letter have been sent to the employer.", false);
+            if (typeof loadJobs === 'function') loadJobs();
+        } catch (err) {
+            window.showStatusMessage("Submission Error", err.message, true);
+        } finally {
+            setLoading('finalApplyBtn', false, 'Submit Application');
+        }
+    };
+}
 
             document.getElementById("closeJobDetails").onclick = () => modal.style.display = "none";
             modal.style.display = "block";
@@ -1520,14 +1579,16 @@ function initDashboard(filters = null) {
         };
     }
 
-    async function handleJobPost(e, jobId = null) {
+async function handleJobPost(e, jobId = null) {
     e.preventDefault();
-    
+
     // 1. Collect all data from the multi-step forms
     const jobData = {
         title: document.getElementById("job-title").value,
         category: document.getElementById("job-category").value,
         location: document.getElementById("job-location").value,
+        work_mode: document.getElementById("job-work-mode").value, // NEW: Work Mode
+        role_mode: document.getElementById("job-role-mode").value, // NEW: Role Mode
         experience: document.getElementById("job-experience").value,
         salary: document.getElementById("job-salary").value,
         ctc: document.getElementById("job-current-ctc").value,
@@ -1537,23 +1598,30 @@ function initDashboard(filters = null) {
         noticePeriod: document.getElementById("job-notice-period").value,
     };
 
+    // Screening questions logic with mandatory/optional status
     const screeningQ = [];
     if (document.getElementById("add-screening-questions").value === 'yes') {
-        const q1 = document.getElementById("sq1").value.trim();
-        const q2 = document.getElementById("sq2").value.trim();
-        const q3 = document.getElementById("sq3").value.trim();
-        
-        if (q1) screeningQ.push(q1);
-        if (q2) screeningQ.push(q2);
-        if (q3) screeningQ.push(q3);
+        for (let i = 1; i <= 3; i++) {
+            const questionText = document.getElementById(`sq${i}`).value.trim();
+            const isMandatory = document.getElementById(`sq${i}_req`).checked; 
+            
+            if (questionText) {
+                screeningQ.push({
+                    text: questionText,
+                    required: isMandatory
+                });
+            }
+        }
     }
     jobData.screeningQuestions = screeningQ;
 
-    // 2. Format a detailed Review Summary
+    // 2. Format a detailed Review Summary (updated to include new fields)
     const reviewDetails = `
 TITLE: ${jobData.title}
 SECTOR: ${jobData.category}
 LOCATION: ${jobData.location}
+WORK MODE: ${jobData.work_mode}
+ROLE MODE: ${jobData.role_mode}
 SALARY: ${jobData.salary}
 EXPERIENCE: ${jobData.experience}
 SKILLS: ${jobData.requiredSkills.join(", ")}
@@ -1566,7 +1634,6 @@ SCREENING: ${screeningQ.length > 0 ? screeningQ.length + ' questions added' : 'N
     `;
 
     // 3. Trigger the Review Modal
-    // If the user clicks 'Cancel', they stay on the current form step to edit.
     const isConfirmed = await showConfirmation(
         "Review Job Details", 
         `Please confirm the information below is correct:\n\n${reviewDetails}`, 
@@ -1574,7 +1641,7 @@ SCREENING: ${screeningQ.length > 0 ? screeningQ.length + ' questions added' : 'N
         jobId ? 'Update Job' : 'Finalize & Post'
     );
 
-    if (!isConfirmed) return; // Stop here if they want to edit
+    if (!isConfirmed) return; 
 
     // 4. Proceed to API call only after confirmation
     const postJobSubmitBtn = document.getElementById('postJobSubmitBtn');
@@ -1594,6 +1661,10 @@ SCREENING: ${screeningQ.length > 0 ? screeningQ.length + ' questions added' : 'N
         document.getElementById("jobStep3Form").reset();
         document.getElementById("jobStep2Form").reset();
         document.getElementById("jobStep1Form").reset();
+        
+        // Ensure dropdowns and hidden containers reset properly
+        document.getElementById("add-screening-questions").value = "no";
+        document.getElementById("screening-questions-container").classList.add("hidden");
 
         switchEmployerView("employer-management-view");
     } catch (error) {
