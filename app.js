@@ -15,11 +15,12 @@ window.showView = (view) => {
 };
 
 window.triggerViewAllJobs = () => {
-    // Access sessionStorage directly since getLocalUser is scoped elsewhere
-    const user = JSON.parse(sessionStorage.getItem("localUser"));
+    // Access sessionStorage directly to avoid scoping issues with getLocalUser()
+    const rawUser = sessionStorage.getItem("localUser");
+    const user = rawUser ? JSON.parse(rawUser) : null;
     
     if (!user) {
-        // 1. Show the status message popup if it exists
+        // 1. Show the status message popup to the guest
         if (window.showStatusMessage) {
             window.showStatusMessage(
                 "Login Required", 
@@ -36,7 +37,7 @@ window.triggerViewAllJobs = () => {
             const authModal = document.getElementById("authModal");
             
             if (loginForm && authModal) {
-                // Ensure all other auth containers are hidden first
+                // Ensure other auth views are hidden
                 document.querySelectorAll('#authModal .auth-container').forEach(f => f.classList.add("hidden"));
                 loginForm.classList.remove("hidden");
                 authModal.style.display = "block";
@@ -44,7 +45,7 @@ window.triggerViewAllJobs = () => {
         }, 500);
         
     } else {
-        // User is logged in, use the global showView
+        // User is logged in, use the global router to show the dashboard
         if (window.showView) {
             window.showView('dashboard');
         }
