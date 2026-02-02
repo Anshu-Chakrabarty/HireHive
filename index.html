@@ -639,7 +639,27 @@
 
         </div>
     </footer>
+     <div id="jobDetailsModal" class="modal">
+    <div class="modal-content large-modal">
+        <span class="close-btn" id="closeJobDetails">&times;</span>
+        <div id="job-details-body">
+            </div>
+        <hr style="margin: 20px 0;">
+        <div id="application-form-area">
+            <h3>Apply for this Position</h3>
+            <label for="cover-letter">Cover Letter / Message to Employer</label>
+            <textarea id="cover-letter" placeholder="Explain why you are a good fit for this role..." rows="4" style="width: 100%; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ccc; padding: 10px;"></textarea>
+            
+            <div id="screening-questions-seeker-area" class="hidden" style="margin-bottom: 15px;">
+                <h4 style="margin-bottom: 10px;">Screening Questions</h4>
+                <div id="seeker-questions-list"></div>
+            </div>
 
+            <button id="finalApplyBtn" class="btn btn-primary" style="width: 100%;">Submit Application</button>
+        </div>
+    </div>
+</div>
+ 
     <div id="statusMessageModal" class="modal">
 
         <div class="modal-content small-modal">

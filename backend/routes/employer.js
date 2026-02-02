@@ -193,11 +193,13 @@ router.delete('/jobs/:jobId', auth, isEmployer, async(req, res) => {
 // 4. APPLICANT TRACKING (ATS)
 // ------------------------------------------------------------------
 
+// --- UPDATED APPLICANT TRACKING (ATS) IN employer.js ---
+
 router.get('/applicants/:jobId', auth, isEmployer, async(req, res) => {
     try {
         const { jobId } = req.params;
 
-        // Ensure Employer Owns the Job
+        // 1. Ensure Employer Owns the Job
         const { data: job } = await supabase
             .from('jobs')
             .select('title, screening_questions')
@@ -207,22 +209,29 @@ router.get('/applicants/:jobId', auth, isEmployer, async(req, res) => {
 
         if (!job) return res.status(403).json({ error: 'Access denied. You do not own this job.' });
 
+        // 2. Fetch Applications INCLUDING the coverLetter field
         const { data: apps, error } = await supabase
             .from('applications')
             .select(`
-                answers, status, applieddate, seekerid,
+                answers, 
+                status, 
+                applieddate, 
+                seekerid,
+                coverLetter, 
                 seekers:seekerid (name, email, phone, skills, education, cvfilename)
             `)
             .eq('jobid', jobId);
 
         if (error) throw error;
 
+        // 3. Format the data for the frontend
         const formatted = apps.map(app => ({
             ...app.seekers,
             applicationAnswers: app.answers,
             status: app.status,
             appliedDate: app.applieddate,
             seekerid: app.seekerid,
+            coverLetter: app.coverLetter, // <--- SENDING THE COVER LETTER TO FRONTEND
             jobId: jobId
         }));
 

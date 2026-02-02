@@ -147,17 +147,33 @@ router.get('/applications', auth, isSeeker, async(req, res) => {
     }
 });
 
+// --- UPDATED APPLICATION ROUTE IN seeker.js ---
+
 router.post('/apply/:jobId', auth, isSeeker, async(req, res) => {
     try {
         const { jobId } = req.params;
-        const { answers } = req.body;
+        const { answers, coverLetter } = req.body; 
         const seekerId = req.user.id;
 
-        // Prevent Duplicate Applications
+        // 1. MANDATORY CV VALIDATION
+        // Fetch the user's profile to check if a CV exists
+        const { data: userProfile, error: userError } = await supabase
+            .from('users')
+            .select('cvfilename')
+            .eq('id', seekerId)
+            .single();
+
+        if (userError || !userProfile.cvfilename) {
+            return res.status(400).json({ 
+                error: 'CV Required. Please upload a CV to your profile before applying for this job.' 
+            });
+        }
+
+        // 2. Prevent Duplicate Applications
         const { data: exists } = await supabase.from('applications').select('id').eq('seekerid', seekerId).eq('jobid', jobId).maybeSingle();
         if (exists) return res.status(409).json({ error: 'Already applied for this hive.' });
 
-        // --- NEW: FETCH JOB & EMPLOYER DETAILS FOR EMAIL ---
+        // 3. FETCH JOB & EMPLOYER DETAILS FOR EMAIL
         const { data: jobData } = await supabase
             .from('jobs')
             .select(`
@@ -169,25 +185,25 @@ router.post('/apply/:jobId', auth, isSeeker, async(req, res) => {
             .single();
 
         if (!jobData) return res.status(404).json({ error: "Job not found" });
-        // ----------------------------------------------------
 
+        // 4. INSERT APPLICATION WITH COVER LETTER
         const { data, error } = await supabase
             .from('applications')
             .insert([{
                 jobid: jobId,
                 seekerid: seekerId,
                 status: 'applied',
-                answers: answers || []
+                answers: answers || [],
+                coverLetter: coverLetter || "" 
             }])
             .select()
             .single();
 
         if (error) throw error;
 
-        // --- NEW: SEND NOTIFICATION TO EMPLOYER ---
+        // 5. SEND NOTIFICATION TO EMPLOYER
         try {
             if (jobData.users && jobData.users.email) {
-                // Get seeker name
                 const { data: seekerProfile } = await supabase.from('users').select('name').eq('id', seekerId).single();
 
                 sendApplicationAlertToEmployer(
@@ -199,9 +215,8 @@ router.post('/apply/:jobId', auth, isSeeker, async(req, res) => {
         } catch (emailErr) {
             console.error("Failed to send employer email alert:", emailErr);
         }
-        // -----------------------------------------
 
-        res.json({ message: 'Application submitted!', application: data });
+        res.json({ message: 'Application submitted successfully!', application: data });
 
     } catch (err) {
         res.status(400).json({ error: err.message });
