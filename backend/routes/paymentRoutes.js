@@ -83,18 +83,24 @@ router.post('/pay', async (req, res) => {
 
     const token = await getAuthToken();
 
-    const payload = {
-      merchantId: process.env.PHONEPE_MERCHANT_ID,
-      merchantTransactionId,
-      merchantUserId,
-      amount: amountInPaise,
-      redirectUrl: `${BACKEND_URL}/api/payment/callback/${merchantTransactionId}/${planKey}/${userId}`,
-      redirectMode: 'POST',
-      callbackUrl: `${BACKEND_URL}/api/payment/callback/${merchantTransactionId}/${planKey}/${userId}`,
-      paymentInstrument: {
-        type: 'PAY_PAGE'
-      }
-    };
+const payload = {
+  merchantId: process.env.PHONEPE_MERCHANT_ID,
+  merchantTransactionId,
+  merchantOrderId: merchantTransactionId,   // ✅ ADD THIS LINE
+  merchantUserId,
+  amount: amountInPaise,
+  redirectUrl: `${BACKEND_URL}/api/payment/callback/${merchantTransactionId}/${planKey}/${userId}`,
+  redirectMode: 'POST',
+  callbackUrl: `${BACKEND_URL}/api/payment/callback/${merchantTransactionId}/${planKey}/${userId}`,
+  paymentInstrument: {
+    type: 'PAY_PAGE'
+  }
+};
+
+
+
+console.log("📦 PAYLOAD SENT TO PHONEPE:", payload);
+
 
 const response = await axios.post(PAY_ENDPOINT, payload, {
     headers: {
