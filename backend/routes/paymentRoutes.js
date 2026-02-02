@@ -14,13 +14,15 @@ const router = express.Router();
 // ==================================================================
 const IS_PROD = process.env.PHONEPE_ENV === 'production';
 
-const HOST_URL = IS_PROD
-  ? 'https://api.phonepe.com/apis/hermes'
-  : 'https://api-preprod.phonepe.com/apis/pg-sandbox';
+const HOST_URL = IS_PROD 
+    ? "https://api.phonepe.com/apis/pg"
+    : "https://api-preprod.phonepe.com/apis/pg-sandbox";
+
 
 const AUTH_ENDPOINT = IS_PROD
-  ? 'https://api.phonepe.com/apis/identity-manager/v1/oauth/token'
-  : 'https://api-preprod.phonepe.com/apis/pg-sandbox/v1/oauth/token';
+    ? "https://api.phonepe.com/apis/pg/v1/oauth/token"
+    : "https://api-preprod.phonepe.com/apis/pg-sandbox/v1/oauth/token";
+
 
 const PAY_ENDPOINT = `${HOST_URL}/checkout/v2/pay`;
 
@@ -93,18 +95,13 @@ router.post('/pay', async (req, res) => {
       }
     };
 
-    const base64Payload = Buffer.from(JSON.stringify(payload)).toString('base64');
+const response = await axios.post(PAY_ENDPOINT, payload, {
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `O-Bearer ${token}`
+    }
+});
 
-    const response = await axios.post(
-      PAY_ENDPOINT,
-      { request: base64Payload },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        }
-      }
-    );
 
     if (!response.data.success) {
       console.error('❌ PhonePe rejected payment:', response.data);
